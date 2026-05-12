@@ -4,14 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Radar CNH — Só Multas</title>
+
 <!-- PWA -->
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0d1f3c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Radar CNH">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,300;1,400;1,600&display=swap" rel="stylesheet">
@@ -396,6 +400,175 @@ td.over{color:var(--red);font-weight:700}
 }
 
 /* ══════════════════════════════════════════════
+   PÁGINA DE ORÇAMENTO
+   ══════════════════════════════════════════════ */
+#pagOrcamento{
+  display:none;position:fixed;inset:0;background:var(--main-bg);
+  z-index:200;flex-direction:column;overflow:hidden;
+}
+#pagOrcamento.ativo{display:flex}
+
+.orc-topbar{
+  height:var(--topbar-h);min-height:var(--topbar-h);background:var(--sb);
+  border-bottom:1px solid var(--sb-border);display:flex;align-items:center;
+  padding:0 1rem;gap:.5rem;flex-shrink:0;z-index:100;
+}
+.orc-topbar-title{font-size:14px;font-weight:700;color:var(--sb-text);flex:1;letter-spacing:-.2px}
+.orc-topbar-title span{font-size:11px;color:var(--sb-muted);font-weight:400;margin-left:.5rem}
+
+.orc-body{display:grid;grid-template-columns:380px 1fr;flex:1;overflow:hidden;min-height:0}
+
+/* ── Painel esquerdo (formulário) ── */
+.orc-panel{
+  background:var(--sb);border-right:1px solid var(--sb-border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.orc-panel-scroll{flex:1;overflow-y:auto;padding-bottom:2rem}
+.orc-section{padding:1rem 1.25rem;border-bottom:1px solid var(--sb-border)}
+.orc-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--sb-muted);margin-bottom:.875rem}
+
+.orc-form-group{margin-bottom:.6rem}
+.orc-form-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.orc-form-group label{display:block;font-size:11px;color:var(--sb-muted);margin-bottom:.25rem;font-weight:500}
+.orc-form-group input,.orc-form-group select,.orc-form-group textarea{
+  width:100%;background:var(--sb-card);border:1px solid var(--sb-border);
+  color:var(--sb-text);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;
+  outline:none;transition:border .15s;font-family:'Titillium Web',sans-serif;resize:none;
+}
+.orc-form-group input:focus,.orc-form-group select:focus,.orc-form-group textarea:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(9,122,82,.2)}
+.orc-form-group select option{background:var(--sb-card)}
+.orc-form-group input::placeholder,.orc-form-group textarea::placeholder{color:#374151}
+
+/* Serviços no formulário */
+.svc-item-form{
+  background:var(--sb-card);border:1px solid var(--sb-border);border-radius:var(--radius-sm);
+  padding:.6rem .75rem;margin-bottom:.4rem;display:flex;gap:8px;align-items:center;
+}
+.svc-item-form-label{font-size:12px;color:var(--sb-text);flex:1;font-weight:600}
+.svc-item-form-price{font-size:12px;color:#34D399;font-weight:700;white-space:nowrap}
+.svc-item-form-del{background:none;border:none;color:#374151;cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0}
+.svc-item-form-del:hover{color:#F87171}
+
+.btn-add-svc{
+  width:100%;background:rgba(9,122,82,.15);color:#34D399;border:1px dashed rgba(52,211,153,.4);
+  border-radius:var(--radius-sm);padding:8px;font-size:12px;font-weight:700;cursor:pointer;
+  margin-top:.5rem;transition:all .2s;font-family:'Titillium Web',sans-serif;
+}
+.btn-add-svc:hover{background:rgba(9,122,82,.25);border-color:rgba(52,211,153,.7)}
+
+/* ── Prévia (direita) ── */
+.orc-preview-area{
+  overflow-y:auto;padding:2rem;background:#e8ebf0;
+  display:flex;align-items:flex-start;justify-content:center;
+}
+
+/* O documento de orçamento — dimensionado para 1 página A4 */
+#orcDocumento{
+  width:794px;min-width:794px;background:#fff;
+  border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.18);
+  font-family:'Titillium Web',sans-serif;
+  overflow:hidden;position:relative;
+  /* Altura dinâmica — vai crescer com conteúdo, mas a exportação escala para 1 página */
+}
+
+.orc-doc-header{
+  background:var(--sb);padding:1.5rem 2rem 1.25rem;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+}
+.orc-doc-logo-area{display:flex;align-items:center;gap:10px}
+.orc-doc-logo{width:38px;height:38px;background:linear-gradient(135deg,var(--apoio-blue1),var(--apoio-blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 10px rgba(0,114,255,.4)}
+.orc-doc-brand{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.3px}
+.orc-doc-brand-sub{font-size:10px;color:var(--sb-muted);margin-top:1px}
+.orc-doc-title-area{text-align:right}
+.orc-doc-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:-.5px;text-transform:uppercase}
+.orc-doc-subtitle{font-size:10px;color:var(--sb-muted);margin-top:2px}
+.orc-doc-num{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;font-family:'Courier New',monospace}
+
+.orc-doc-client-bar{
+  background:linear-gradient(135deg,var(--primary),#2e4f7a);
+  padding:.75rem 2rem;display:flex;gap:2rem;align-items:center;
+}
+.orc-doc-client-field{display:flex;flex-direction:column;gap:2px}
+.orc-doc-client-field-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.55)}
+.orc-doc-client-field-val{font-size:13px;font-weight:700;color:#fff}
+
+.orc-doc-body{padding:1.5rem 2rem}
+
+.orc-doc-section-title{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);margin-bottom:.75rem;padding-bottom:.4rem;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;
+}
+
+/* Tabela de serviços */
+.orc-doc-table{width:100%;border-collapse:collapse;margin-bottom:1rem;font-size:13px}
+.orc-doc-table thead tr{background:#F8FAFC}
+.orc-doc-table th{
+  text-align:left;padding:8px 10px;font-size:9.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+  border-bottom:2px solid var(--border);
+}
+.orc-doc-table th:last-child{text-align:right}
+.orc-doc-table td{padding:9px 10px;border-bottom:1px solid #F3F4F6;vertical-align:top;font-size:13px}
+.orc-doc-table tr:last-child td{border-bottom:none}
+.orc-doc-table td:last-child{text-align:right;font-weight:700;color:var(--green);white-space:nowrap}
+.orc-doc-table .svc-name{font-weight:700;color:var(--text);margin-bottom:2px}
+.orc-doc-table .svc-obs{font-size:11px;color:var(--muted);line-height:1.4}
+
+.orc-doc-totals{
+  display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;margin-bottom:1.25rem;
+}
+.orc-total-row{display:flex;gap:2rem;align-items:center;font-size:13px}
+.orc-total-label{color:var(--muted);min-width:180px;text-align:right;font-size:12px}
+.orc-total-value{font-weight:700;color:var(--text);min-width:80px;text-align:right}
+.orc-total-row.grand{border-top:2px solid var(--border);padding-top:.5rem;margin-top:.15rem}
+.orc-total-row.grand .orc-total-label{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+.orc-total-row.grand .orc-total-value{font-size:18px;color:var(--green)}
+
+/* Condições de pagamento */
+.orc-payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.orc-payment-item{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1rem}
+.orc-payment-item-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.3rem}
+.orc-payment-item-val{font-size:14px;font-weight:700;color:var(--text)}
+.orc-payment-item-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Observações / diagnóstico */
+.orc-obs-box{
+  background:var(--blue-bg);border:1px solid var(--blue-border);border-left:3px solid var(--primary);
+  border-radius:var(--radius-sm);padding:.875rem 1rem;margin-bottom:1rem;font-size:12px;
+  color:var(--text);line-height:1.7;
+}
+
+/* Rodapé */
+.orc-doc-footer{
+  border-top:1px solid var(--border);padding:1rem 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#FAFBFC;
+}
+.orc-doc-footer-brand{font-size:11px;font-weight:700;color:var(--muted)}
+.orc-doc-footer-validade{font-size:10px;color:var(--subtle);text-align:center}
+.orc-doc-footer-assinatura{border-top:1px solid var(--border);width:140px;text-align:center;padding-top:.4rem;font-size:9px;color:var(--subtle)}
+
+/* Botão de exportar imagem */
+.btn-export-img{
+  background:linear-gradient(135deg,#097A52,#0fa870);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Titillium Web',sans-serif;
+  transition:all .2s;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(9,122,82,.35);
+}
+.btn-export-img:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(9,122,82,.45)}
+
+.discount-badge{display:inline-block;background:var(--red-bg);color:var(--red-dark);border:1px solid var(--red-border);border-radius:4px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.svc-item-form-edit{background:none;border:none;color:var(--sb-muted);cursor:pointer;font-size:13px;padding:0 2px;line-height:1;flex-shrink:0;transition:color .15s}
+.svc-item-form-edit:hover{color:#91d8f5}
+
+@media(max-width:900px){
+  .orc-body{grid-template-columns:1fr;overflow:auto}
+  .orc-panel{overflow:visible;max-height:none}
+  .orc-preview-area{padding:.75rem}
+  #orcDocumento{width:100%;min-width:0;transform-origin:top left}
+}
+
+/* ══════════════════════════════════════════════
    MOBILE TABS
    ══════════════════════════════════════════════ */
 .mobile-tabs{
@@ -413,11 +586,8 @@ td.over{color:var(--red);font-weight:700}
 }
 .mobile-tab-btn.active{color:#fff;border-bottom-color:var(--primary)}
 
-/* ══════════════════════════════════════════════
-   RESPONSIVE — telas menores que 900px (portrait e landscape)
-   ══════════════════════════════════════════════ */
 @media(max-width:900px){
-  :root{--sidebar-w:100%;--topbar-h:44px}
+  :root{--sidebar-w:100%}
   .layout{grid-template-columns:1fr;position:relative;overflow:hidden}
   .sidebar{
     width:100%;height:100%;
@@ -432,80 +602,6 @@ td.over{color:var(--red);font-weight:700}
   .mobile-tabs{display:flex}
   .topbar-actions{gap:.25rem;padding:0 .5rem}
   .tb-btn{padding:6px 8px;font-size:11px}
-  .main-scroll{padding:1rem}
-  .card{padding:.75rem 1rem}
-  .metric-value{font-size:22px}
-}
-
-/* ══════════════════════════════════════════════
-   LANDSCAPE em tela pequena (celular/tablet deitado)
-   ══════════════════════════════════════════════ */
-@media(max-width:900px) and (orientation:landscape){
-  :root{--topbar-h:38px;--sidebar-w:300px}
-
-  /* No landscape, voltamos ao layout side-by-side, mas com sidebar menor */
-  .layout{
-    grid-template-columns:var(--sidebar-w) 1fr;
-    position:static;
-    overflow:hidden;
-  }
-
-  /* Sidebar fica visível sempre no landscape — sem tab */
-  .sidebar{
-    position:static;
-    transform:none !important;
-    height:100%;
-    width:var(--sidebar-w);
-    display:flex;
-  }
-  .main-scroll.mobile-hidden{display:block !important}
-
-  /* Esconde as tabs no landscape pois sidebar fica ao lado */
-  .mobile-tabs{display:none !important}
-
-  /* Topbar: mostra brand novamente */
-  .topbar-brand{display:flex;width:var(--sidebar-w);min-width:var(--sidebar-w)}
-
-  /* Fonte e espaços mais compactos */
-  body{font-size:12px}
-  .form-group input,.form-group select{padding:5px 7px;font-size:12px}
-  .btn-add{padding:8px;font-size:12px}
-  .sidebar-section{padding:.65rem .875rem}
-  .section-label{margin-bottom:.5rem}
-  .form-group{margin-bottom:.45rem}
-  .inf-item{padding:.35rem .5rem}
-  .inf-desc{font-size:11px}
-  .inf-detail{font-size:10px}
-
-  /* Main area mais compacta */
-  .main-scroll{padding:.75rem 1rem}
-  .metrics-row{grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.75rem}
-  .metric-card{padding:.5rem .75rem}
-  .metric-value{font-size:20px}
-  .metric-label{font-size:9px}
-  .card{padding:.625rem .875rem;margin-bottom:.625rem}
-  .analysis-header{padding:.625rem 1rem;margin-bottom:.75rem}
-  .driver-name{font-size:15px}
-
-  /* Topbar compacta */
-  .tb-btn{padding:4px 8px;font-size:11px}
-  .topbar-name{font-size:12px}
-  .topbar-sub{display:none}
-  .topbar-logo{width:26px;height:26px;font-size:12px}
-  .topbar-brand{gap:7px;padding:0 .75rem}
-}
-
-/* ══════════════════════════════════════════════
-   PORTRAIT em tela pequena — experiência vertical limpa
-   ══════════════════════════════════════════════ */
-@media(max-width:900px) and (orientation:portrait){
-  :root{--topbar-h:48px}
-  .metrics-row{grid-template-columns:1fr 1fr;gap:.5rem}
-  .form-row{grid-template-columns:1fr 1fr}
-  .commercial-fields{grid-template-columns:1fr}
-  .main-scroll{padding:1rem .875rem}
-  .analysis-header{flex-wrap:wrap}
-  .status-badge{margin-left:0;width:100%}
 }
 </style>
 </head>
@@ -536,6 +632,10 @@ td.over{color:var(--red);font-weight:700}
       </button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
       <button class="tb-btn tb-btn-ghost" onclick="exportPDF()">📄 Exportar PDF</button>
+      <div class="topbar-sep"></div>
+      <button class="tb-btn tb-btn-primary" onclick="abrirOrcamento()" id="btnOrcamento" style="background:linear-gradient(135deg,#097A52,#0fa870);box-shadow:0 2px 8px rgba(9,122,82,.35)">
+        💰 Montar Orçamento
+      </button>
     </div>
   </header>
 
@@ -813,6 +913,300 @@ td.over{color:var(--red);font-weight:700}
     </main>
   </div>
 
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PÁGINA DE ORÇAMENTO
+     ════════════════════════════════════════════════════════ -->
+<div id="pagOrcamento">
+
+  <!-- Topbar do orçamento -->
+  <header class="orc-topbar">
+    <button class="tb-btn tb-btn-ghost" onclick="fecharOrcamento()" style="gap:5px">← Voltar</button>
+    <div class="orc-topbar-title">Montar Orçamento <span id="orcClienteNome"></span></div>
+    <button class="tb-btn tb-btn-ghost" onclick="novoOrcamento()" style="color:#F87171;border-color:rgba(248,113,113,.3)" title="Apaga tudo e começa do zero">🗑️ Novo Orçamento</button>
+    <button class="btn-export-img" onclick="exportarOrcamentoImagem()">
+      🖼️ Exportar como Imagem
+    </button>
+  </header>
+
+  <div class="orc-body">
+
+    <!-- ── Painel esquerdo: formulário ── -->
+    <aside class="orc-panel">
+      <div class="orc-panel-scroll">
+
+        <!-- Cliente -->
+        <div class="orc-section">
+          <div class="orc-section-label">Dados do Cliente</div>
+          <div class="orc-form-group">
+            <label>Nome completo</label>
+            <input type="text" id="orcNome" placeholder="Nome do cliente" oninput="renderOrc()">
+          </div>
+          <div class="orc-form-row">
+            <div class="orc-form-group">
+              <label>CPF</label>
+              <input type="text" id="orcCpf" placeholder="000.000.000-00" oninput="renderOrc()">
+            </div>
+            <div class="orc-form-group">
+              <label>Telefone</label>
+              <input type="text" id="orcTel" placeholder="(11) 99999-9999" oninput="renderOrc()">
+            </div>
+          </div>
+          <div class="orc-form-group">
+            <label>E-mail</label>
+            <input type="text" id="orcEmail" placeholder="email@exemplo.com" oninput="renderOrc()">
+          </div>
+          <div class="orc-form-row">
+            <div class="orc-form-group">
+              <label>Placa do veículo</label>
+              <input type="text" id="orcPlaca" placeholder="ABC-1234" oninput="renderOrc()">
+            </div>
+            <div class="orc-form-group">
+              <label>Nº do Orçamento</label>
+              <input type="text" id="orcNumero" placeholder="ORC-0001" oninput="renderOrc()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Serviços -->
+        <div class="orc-section">
+          <div class="orc-section-label">Serviços</div>
+          <div id="orcSvcLista"></div>
+
+          <!-- Adicionar serviço -->
+          <div style="background:var(--sb-card);border:1px solid var(--sb-border);border-radius:var(--radius-sm);padding:.75rem;margin-top:.5rem" id="addSvcBox">
+            <div class="orc-form-group">
+              <label>Serviço</label>
+              <select id="orcSvcSelect" onchange="onSvcSelectChange()">
+                <option value="">— Selecione um serviço —</option>
+                <optgroup label="Defesa — Tratamento Especial">
+                  <option value="Defesa Tratamento Especial - PAI|1800">Defesa Tratamento Especial - PAI — R$ 1.800</option>
+                  <option value="Defesa Tratamento Especial - PAP|1800">Defesa Tratamento Especial - PAP — R$ 1.800</option>
+                  <option value="Defesa Tratamento Especial - Lei Seca|2300">Defesa Tratamento Especial - Lei Seca — R$ 2.300</option>
+                  <option value="Defesa Tratamento Especial - Cassação|2300">Defesa Tratamento Especial - Cassação — R$ 2.300</option>
+                </optgroup>
+                <optgroup label="Recurso — Tratamento Especial">
+                  <option value="Recurso Tratamento Especial - PAI|1800">Recurso Tratamento Especial - PAI — R$ 1.800</option>
+                  <option value="Recurso Tratamento Especial - PAP|1800">Recurso Tratamento Especial - PAP — R$ 1.800</option>
+                  <option value="Recurso Tratamento Especial - Lei Seca|2300">Recurso Tratamento Especial - Lei Seca — R$ 2.300</option>
+                  <option value="Recurso Tratamento Especial - Cassação|2300">Recurso Tratamento Especial - Cassação — R$ 2.300</option>
+                </optgroup>
+                <optgroup label="Processo Administrativo">
+                  <option value="Processo Administrativo por pontuação|1800">Processo Administrativo por pontuação — R$ 1.800</option>
+                  <option value="Processo Administrativo por infração|1800">Processo Administrativo por infração — R$ 1.800</option>
+                  <option value="Processo Administrativo - Lei Seca|2300">Processo Administrativo - Lei Seca — R$ 2.300</option>
+                  <option value="Processo Administrativo por Cassação|2300">Processo Administrativo por Cassação — R$ 2.300</option>
+                </optgroup>
+                <optgroup label="Proteção ao Prontuário Permissionário">
+                  <option value="Defesa de Proteção ao Prontuário Permissionário|2300">Defesa de Proteção ao Prontuário Permissionário — R$ 2.300</option>
+                  <option value="Recurso de Proteção ao Prontuário Permissionário|2300">Recurso de Proteção ao Prontuário Permissionário — R$ 2.300</option>
+                </optgroup>
+                <optgroup label="Outros Serviços">
+                  <option value="Defesa de Autuação|manual">Defesa de Autuação — (valor manual)</option>
+                  <option value="Recurso de Multa|manual">Recurso de Multa — (valor manual)</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="orc-form-group" id="svcPrecoManualBox" style="display:none">
+              <label>Valor (R$)</label>
+              <input type="number" id="orcSvcPrecoManual" placeholder="0,00" min="0" step="0.01">
+            </div>
+            <div class="orc-form-group">
+              <label>Observação <span style="font-size:9px;color:var(--sb-muted)">(opcional)</span></label>
+              <input type="text" id="orcSvcObs" placeholder="Ex: Auto de Infração nº AA123456789">
+            </div>
+            <input type="hidden" id="orcSvcEditId" value="">
+            <button class="btn-add-svc" id="btnAddSvc" onclick="adicionarServico()">＋ Adicionar Serviço</button>
+            <button class="btn-cancel" id="btnCancelSvcEdit" style="display:none" onclick="cancelarEdicaoSvc()">✕ Cancelar edição</button>
+          </div>
+        </div>
+
+        <!-- Desconto -->
+        <div class="orc-section">
+          <div class="orc-section-label">Desconto</div>
+          <div style="font-size:10px;color:var(--sb-muted);line-height:1.5;margin-bottom:.5rem;background:rgba(255,255,255,.04);padding:.4rem .5rem;border-radius:5px">
+            ⚠️ O desconto é aplicado apenas sobre serviços com valor ≥ R$ 1.800. Serviços com valor inferior não sofrem desconto.
+          </div>
+          <div class="orc-form-row">
+            <div class="orc-form-group">
+              <label>Tipo</label>
+              <select id="orcDescTipo" onchange="renderOrc()">
+                <option value="nenhum">Sem desconto</option>
+                <option value="pct">Percentual (%)</option>
+                <option value="fixo">Valor fixo (R$)</option>
+              </select>
+            </div>
+            <div class="orc-form-group">
+              <label>Valor</label>
+              <input type="number" id="orcDescValor" placeholder="0" min="0" step="0.01" oninput="renderOrc()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Condições de pagamento -->
+        <div class="orc-section">
+          <div class="orc-section-label">Condições de Pagamento</div>
+          <div class="orc-form-group">
+            <label>Forma de pagamento</label>
+            <select id="orcPagForma" onchange="renderOrc()">
+              <option value="">— Selecione —</option>
+              <option value="À vista — PIX">À vista — PIX</option>
+              <option value="À vista — Cartão de Crédito">À vista — Cartão de Crédito</option>
+              <option value="À vista — Boleto">À vista — Boleto</option>
+              <option value="À vista — Transferência">À vista — Transferência</option>
+              <option value="2x sem juros no cartão">2x sem juros no cartão</option>
+              <option value="3x sem juros no cartão">3x sem juros no cartão</option>
+              <option value="4x sem juros no cartão">4x sem juros no cartão</option>
+              <option value="6x sem juros no cartão">6x sem juros no cartão</option>
+              <option value="10x sem juros no cartão">10x sem juros no cartão</option>
+              <option value="12x sem juros no cartão">12x sem juros no cartão</option>
+              <option value="Entrada + parcelamento">Entrada + parcelamento</option>
+              <option value="A combinar">A combinar</option>
+            </select>
+          </div>
+          <div class="orc-form-row">
+            <div class="orc-form-group">
+              <label>Entrada (R$) <span style="font-size:9px;color:var(--sb-muted)">(se houver)</span></label>
+              <input type="number" id="orcEntrada" placeholder="0,00" min="0" step="0.01" oninput="renderOrc()">
+            </div>
+            <div class="orc-form-group">
+              <label>Validade do orçamento</label>
+              <input type="date" id="orcValidade" oninput="renderOrc()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="orc-section">
+          <div class="orc-section-label">Observações / Diagnóstico</div>
+          <div class="orc-form-group">
+            <textarea id="orcObs" rows="5" placeholder="Inclua aqui o diagnóstico resumido, alertas ou observações importantes para o cliente..." oninput="renderOrc()"></textarea>
+          </div>
+          <div class="orc-form-group">
+            <label>Responsável / Consultor</label>
+            <input type="text" id="orcResponsavel" placeholder="Nome do consultor" oninput="renderOrc()">
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ── Prévia do documento ── -->
+    <div class="orc-preview-area">
+      <div id="orcDocumento">
+
+        <!-- Cabeçalho -->
+        <div class="orc-doc-header">
+          <div class="orc-doc-logo-area">
+            <!-- espaço vazio intencional -->
+          </div>
+          <div class="orc-doc-title-area">
+            <div class="orc-doc-title">Proposta Comercial</div>
+            <div class="orc-doc-subtitle" style="color:rgba(255,255,255,.75);font-size:12px;margin-top:4px;font-style:italic">A sua ajuda especializada</div>
+            <div class="orc-doc-num" id="dNumOrc">—</div>
+          </div>
+        </div>
+
+        <!-- Barra do cliente -->
+        <div class="orc-doc-client-bar">
+          <div class="orc-doc-client-field" style="flex:2">
+            <div class="orc-doc-client-field-label">Cliente</div>
+            <div class="orc-doc-client-field-val" id="dNome">—</div>
+          </div>
+          <div class="orc-doc-client-field">
+            <div class="orc-doc-client-field-label">CPF</div>
+            <div class="orc-doc-client-field-val" id="dCpf">—</div>
+          </div>
+          <div class="orc-doc-client-field">
+            <div class="orc-doc-client-field-label">Placa</div>
+            <div class="orc-doc-client-field-val" id="dPlacaOrc">—</div>
+          </div>
+          <div class="orc-doc-client-field">
+            <div class="orc-doc-client-field-label">Data</div>
+            <div class="orc-doc-client-field-val" id="dDataOrc">—</div>
+          </div>
+          <div class="orc-doc-client-field">
+            <div class="orc-doc-client-field-label">Contato</div>
+            <div class="orc-doc-client-field-val" id="dTelOrc" style="font-size:12px">—</div>
+          </div>
+        </div>
+
+        <!-- Corpo -->
+        <div class="orc-doc-body">
+
+          <!-- Serviços -->
+          <div class="orc-doc-section-title">📋 Serviços Contratados</div>
+          <table class="orc-doc-table">
+            <thead>
+              <tr>
+                <th style="width:28px">#</th>
+                <th>Descrição do Serviço</th>
+                <th style="text-align:right;width:110px">Valor Unit.</th>
+                <th style="text-align:right;width:110px">Total</th>
+              </tr>
+            </thead>
+            <tbody id="dSvcBody">
+              <tr><td colspan="5" style="text-align:center;color:var(--subtle);padding:1.5rem;font-size:12px">Nenhum serviço adicionado</td></tr>
+            </tbody>
+          </table>
+
+          <!-- Totais -->
+          <div class="orc-doc-totals" id="dTotais" style="display:none">
+            <div class="orc-total-row" id="dRowSubtotal">
+              <span class="orc-total-label">Subtotal</span>
+              <span class="orc-total-value" id="dSubtotal">R$ 0,00</span>
+            </div>
+            <div class="orc-total-row" id="dRowDesc" style="display:none">
+              <span class="orc-total-label" id="dDescLabel">Desconto</span>
+              <span class="orc-total-value" style="color:var(--red)" id="dDescValor">- R$ 0,00</span>
+            </div>
+            <div class="orc-total-row" id="dRowEntrada" style="display:none">
+              <span class="orc-total-label">Entrada</span>
+              <span class="orc-total-value" style="color:var(--blue)" id="dEntrada">R$ 0,00</span>
+            </div>
+            <div class="orc-total-row grand">
+              <span class="orc-total-label">TOTAL</span>
+              <span class="orc-total-value" id="dTotal">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Pagamento -->
+          <div class="orc-doc-section-title" style="margin-top:.5rem">💳 Condições de Pagamento</div>
+          <div class="orc-payment-grid" id="dPagGrid">
+            <div class="orc-payment-item">
+              <div class="orc-payment-item-label">Forma</div>
+              <div class="orc-payment-item-val" id="dPagForma">—</div>
+            </div>
+            <div class="orc-payment-item" id="dPagEntradaCard" style="display:none">
+              <div class="orc-payment-item-label">Entrada</div>
+              <div class="orc-payment-item-val" id="dPagEntrada">—</div>
+            </div>
+            <div class="orc-payment-item">
+              <div class="orc-payment-item-label">Validade desta proposta</div>
+              <div class="orc-payment-item-val" id="dValidade">—</div>
+            </div>
+          </div>
+
+          <!-- Diagnóstico / obs -->
+          <div id="dObsBox" class="orc-obs-box" style="display:none">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--primary);margin-bottom:.4rem">📝 Diagnóstico / Observações</div>
+            <div id="dObs"></div>
+          </div>
+
+        </div>
+
+        <!-- Rodapé -->
+        <div class="orc-doc-footer">
+          <div class="orc-doc-footer-brand">Radar CNH — Só Multas</div>
+          <div class="orc-doc-footer-validade" id="dFooterValidade"></div>
+          <div style="font-size:9px;color:var(--subtle);text-align:right">Documento gerado em <span id="dFooterData"></span></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- Modal Novo Cliente -->
@@ -2180,13 +2574,7 @@ function loadDemo(){
 // ═══════════════════════════════════════════════
 // MOBILE TABS
 // ═══════════════════════════════════════════════
-function isLandscapeMobile(){
-  return window.innerWidth<=900&&window.innerWidth>window.innerHeight;
-}
-
 function setMobileTab(tab){
-  // No landscape com sidebar ao lado, tabs não se aplicam
-  if(isLandscapeMobile()) return;
   const sidebar=document.querySelector('.sidebar');
   const main=document.getElementById('mainArea');
   const btnSidebar=document.getElementById('tabSidebar');
@@ -2204,31 +2592,324 @@ function setMobileTab(tab){
   }
 }
 
-// Ao girar a tela, reajusta o layout automaticamente
-window.addEventListener('resize',()=>{
-  if(isLandscapeMobile()){
-    // Landscape: garante que main e sidebar ficam visíveis
-    const sidebar=document.querySelector('.sidebar');
-    const main=document.getElementById('mainArea');
-    sidebar.classList.remove('mobile-visible');
-    main.classList.remove('mobile-hidden');
-  }else if(window.innerWidth<=900){
-    // Voltou ao portrait: mostra sidebar por padrão
-    setMobileTab('sidebar');
+// ═══════════════════════════════════════════════════════════════
+// PÁGINA DE ORÇAMENTO
+// ═══════════════════════════════════════════════════════════════
+let orcServicos = [];
+
+function abrirOrcamento(){
+  const page = document.getElementById('pagOrcamento');
+  page.classList.add('ativo');
+  const nome = document.getElementById('dName').value.trim();
+  const placa = document.getElementById('dPlate').value.trim();
+  // Preenche nome e placa sempre que os campos do condutor tiverem valor
+  if(nome) document.getElementById('orcNome').value = nome;
+  if(placa) document.getElementById('orcPlaca').value = placa;
+  // CPF e telefone ficam em branco para preenchimento manual
+  if(!document.getElementById('orcNumero').value){
+    const d = new Date();
+    document.getElementById('orcNumero').value = `ORC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(Math.floor(Math.random()*900)+100)}`;
   }
-});
+  if(!document.getElementById('orcValidade').value){
+    const v = new Date(); v.setDate(v.getDate()+15);
+    document.getElementById('orcValidade').value = v.toISOString().slice(0,10);
+  }
+  if(!document.getElementById('orcObs').value){
+    document.getElementById('orcObs').value = '⚠️ ATENÇÃO: A situação do seu prontuário exige ação imediata. Os prazos legais para defesa e recurso são IMPRORROGÁVEIS — uma vez vencidos, qualquer possibilidade de contestação é perdida definitivamente. Cada dia de atraso pode significar a manutenção de pontos, multas ou até a suspensão da sua CNH. Nossa equipe já identificou os caminhos para reverter esse quadro. Não deixe para depois o que pode custar caro amanhã.';
+  }
+  if(orcServicos.length === 0){
+    const svcCards = document.querySelectorAll('#cServices .service-card');
+    svcCards.forEach(card => {
+      const svcNome = card.querySelector('.service-name')?.textContent || '';
+      const desc = card.querySelector('.service-desc')?.textContent || '';
+      if(svcNome) orcServicos.push({id: Date.now()+Math.random(), nome: svcNome, obs: desc.substring(0,80), preco: 0, qtd: 1});
+    });
+  }
+  document.getElementById('orcClienteNome').textContent = nome ? `— ${nome}` : '';
+  renderOrcSvcLista();
+  renderOrc();
+}
+
+function fecharOrcamento(){
+  document.getElementById('pagOrcamento').classList.remove('ativo');
+}
+
+function novoOrcamento(){
+  if(!confirm('Deseja apagar todos os dados e começar um orçamento do zero?')) return;
+  orcServicos = [];
+  cancelarEdicaoSvc();
+  const campos = ['orcNome','orcCpf','orcTel','orcEmail','orcPlaca','orcNumero','orcDescValor','orcEntrada','orcObs','orcResponsavel'];
+  campos.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('orcDescTipo').value='nenhum';
+  document.getElementById('orcPagForma').value='';
+  document.getElementById('orcValidade').value='';
+  document.getElementById('orcClienteNome').textContent='';
+  renderOrcSvcLista();
+  renderOrc();
+  showToast('Orçamento resetado com sucesso.','success');
+}
+
+// Catálogo de serviços
+const CATALOGO_SERVICOS = [
+  {value:'Defesa Tratamento Especial - PAI|1800', nome:'Defesa Tratamento Especial - PAI', preco:1800},
+  {value:'Defesa Tratamento Especial - PAP|1800', nome:'Defesa Tratamento Especial - PAP', preco:1800},
+  {value:'Defesa Tratamento Especial - Lei Seca|2300', nome:'Defesa Tratamento Especial - Lei Seca', preco:2300},
+  {value:'Defesa Tratamento Especial - Cassação|2300', nome:'Defesa Tratamento Especial - Cassação', preco:2300},
+  {value:'Recurso Tratamento Especial - PAI|1800', nome:'Recurso Tratamento Especial - PAI', preco:1800},
+  {value:'Recurso Tratamento Especial - PAP|1800', nome:'Recurso Tratamento Especial - PAP', preco:1800},
+  {value:'Recurso Tratamento Especial - Lei Seca|2300', nome:'Recurso Tratamento Especial - Lei Seca', preco:2300},
+  {value:'Recurso Tratamento Especial - Cassação|2300', nome:'Recurso Tratamento Especial - Cassação', preco:2300},
+  {value:'Processo Administrativo por pontuação|1800', nome:'Processo Administrativo por pontuação', preco:1800},
+  {value:'Processo Administrativo por infração|1800', nome:'Processo Administrativo por infração', preco:1800},
+  {value:'Processo Administrativo - Lei Seca|2300', nome:'Processo Administrativo - Lei Seca', preco:2300},
+  {value:'Processo Administrativo por Cassação|2300', nome:'Processo Administrativo por Cassação', preco:2300},
+  {value:'Defesa de Proteção ao Prontuário Permissionário|2300', nome:'Defesa de Proteção ao Prontuário Permissionário', preco:2300},
+  {value:'Recurso de Proteção ao Prontuário Permissionário|2300', nome:'Recurso de Proteção ao Prontuário Permissionário', preco:2300},
+  {value:'Defesa de Autuação|manual', nome:'Defesa de Autuação', preco:null},
+  {value:'Recurso de Multa|manual', nome:'Recurso de Multa', preco:null},
+];
+
+function onSvcSelectChange(){
+  const sel = document.getElementById('orcSvcSelect').value;
+  const manualBox = document.getElementById('svcPrecoManualBox');
+  if(!sel){ manualBox.style.display='none'; return; }
+  const parts = sel.split('|');
+  manualBox.style.display = (parts[1]==='manual') ? 'block' : 'none';
+}
+
+function adicionarServico(){
+  const sel = document.getElementById('orcSvcSelect').value;
+  if(!sel){showToast('Selecione um serviço.','error');return;}
+  const parts = sel.split('|');
+  const nomeBase = parts[0];
+  const precoTipo = parts[1];
+  const obs = document.getElementById('orcSvcObs').value.trim();
+  let preco;
+  if(precoTipo === 'manual'){
+    preco = parseFloat(document.getElementById('orcSvcPrecoManual').value) || 0;
+    if(!preco){showToast('Informe o valor do serviço.','error');return;}
+  } else {
+    preco = parseFloat(precoTipo);
+  }
+
+  const editId = document.getElementById('orcSvcEditId').value;
+  if(editId){
+    // Modo edição — atualiza o serviço existente
+    const idx = orcServicos.findIndex(s=>s.id==editId);
+    if(idx>=0){
+      orcServicos[idx] = {...orcServicos[idx], nome:nomeBase, obs, preco};
+    }
+    cancelarEdicaoSvc();
+  } else {
+    orcServicos.push({id: Date.now(), nome: nomeBase, obs, preco, qtd:1});
+    resetFormSvc();
+  }
+  renderOrcSvcLista();
+  renderOrc();
+}
+
+function resetFormSvc(){
+  document.getElementById('orcSvcSelect').value='';
+  document.getElementById('orcSvcObs').value='';
+  document.getElementById('orcSvcPrecoManual').value='';
+  document.getElementById('svcPrecoManualBox').style.display='none';
+  document.getElementById('orcSvcEditId').value='';
+}
+
+function cancelarEdicaoSvc(){
+  resetFormSvc();
+  document.getElementById('btnAddSvc').textContent='＋ Adicionar Serviço';
+  document.getElementById('btnCancelSvcEdit').style.display='none';
+}
+
+function editarServico(id){
+  const s = orcServicos.find(x=>x.id===id);
+  if(!s) return;
+  // Encontra o value correspondente no catálogo
+  const cat = CATALOGO_SERVICOS.find(c=>c.nome===s.nome);
+  const selVal = cat ? cat.value : (s.nome+'|manual');
+  const sel = document.getElementById('orcSvcSelect');
+  // Verifica se a option existe, caso contrário usa manual
+  let found = false;
+  for(let opt of sel.options){ if(opt.value===selVal){sel.value=selVal;found=true;break;} }
+  if(!found) sel.value='';
+  document.getElementById('orcSvcObs').value = s.obs || '';
+  const isManual = !cat || cat.preco === null;
+  const manualBox = document.getElementById('svcPrecoManualBox');
+  if(isManual){
+    manualBox.style.display='block';
+    document.getElementById('orcSvcPrecoManual').value = s.preco;
+  } else {
+    manualBox.style.display='none';
+  }
+  document.getElementById('orcSvcEditId').value = id;
+  document.getElementById('btnAddSvc').textContent='💾 Salvar Alterações';
+  document.getElementById('btnCancelSvcEdit').style.display='block';
+  // Scroll para o formulário
+  document.getElementById('addSvcBox').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function removerServico(id){
+  orcServicos = orcServicos.filter(s=>s.id!==id);
+  // Se estava editando este serviço, cancela edição
+  if(document.getElementById('orcSvcEditId').value == id) cancelarEdicaoSvc();
+  renderOrcSvcLista();
+  renderOrc();
+}
+
+function renderOrcSvcLista(){
+  const el = document.getElementById('orcSvcLista');
+  if(orcServicos.length === 0){ el.innerHTML='<p style="font-size:12px;color:var(--sb-muted);text-align:center;padding:.5rem 0">Nenhum serviço adicionado.</p>'; return; }
+  el.innerHTML = orcServicos.map(s=>`
+    <div class="svc-item-form" id="svc-row-${s.id}">
+      <div class="inf-meta">
+        <div class="svc-item-form-label">${s.nome}</div>
+        ${s.obs?'<div style="font-size:10px;color:var(--sb-muted);margin-top:1px">'+s.obs+'</div>':''}
+      </div>
+      <span class="svc-item-form-price">R$ ${fmtMoeda(s.preco)}</span>
+      <button class="svc-item-form-edit" onclick="editarServico(${s.id})" title="Editar serviço">✏️</button>
+      <button class="svc-item-form-del" onclick="removerServico(${s.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function fmtMoeda(v){
+  return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function fmtDateBR(str){
+  if(!str) return '—';
+  const parts=str.split('-');
+  return parts[2]+'/'+parts[1]+'/'+parts[0];
+}
+
+function calcTotais(){
+  const subtotal = orcServicos.reduce((a,s)=>a+(s.preco*s.qtd),0);
+  // Base elegível para desconto: apenas serviços com valor unitário >= 1800
+  const subtotalComDesconto = orcServicos.reduce((a,s)=>a+(s.preco>=1800 ? s.preco*s.qtd : 0),0);
+  const descTipo = document.getElementById('orcDescTipo').value;
+  const descValBruto = parseFloat(document.getElementById('orcDescValor').value)||0;
+  let descValor = 0;
+  if(descTipo==='pct') descValor = subtotalComDesconto*(descValBruto/100);
+  else if(descTipo==='fixo') descValor = Math.min(descValBruto, subtotalComDesconto);
+  const total = Math.max(0, subtotal - descValor);
+  const entrada = parseFloat(document.getElementById('orcEntrada').value)||0;
+  return {subtotal, descValor, descTipo, descValBruto, total, entrada, subtotalComDesconto};
+}
+
+function renderOrc(){
+  const orcNome = document.getElementById('orcNome').value.trim();
+  const cpf = document.getElementById('orcCpf').value.trim();
+  const tel = document.getElementById('orcTel').value.trim();
+  const email = document.getElementById('orcEmail').value.trim();
+  const placa = document.getElementById('orcPlaca').value.trim();
+  const numero = document.getElementById('orcNumero').value.trim();
+  const forma = document.getElementById('orcPagForma').value;
+  const validade = document.getElementById('orcValidade').value;
+  const obs = document.getElementById('orcObs').value.trim();
+  const responsavel = document.getElementById('orcResponsavel').value.trim();
+
+  document.getElementById('dNumOrc').textContent = numero ? 'No '+numero : '';
+  document.getElementById('dNome').textContent = orcNome || '—';
+  document.getElementById('dCpf').textContent = cpf || '—';
+  document.getElementById('dPlacaOrc').textContent = placa || '—';
+  document.getElementById('dTelOrc').textContent = [tel,email].filter(Boolean).join(' · ') || '—';
+  document.getElementById('dDataOrc').textContent = new Date().toLocaleDateString('pt-BR');
+  document.getElementById('dPagForma').textContent = forma || '—';
+  document.getElementById('dValidade').textContent = fmtDateBR(validade);
+
+  const tbody = document.getElementById('dSvcBody');
+  if(orcServicos.length===0){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--subtle);padding:1.5rem;font-size:12px">Nenhum servico adicionado</td></tr>';
+  } else {
+    tbody.innerHTML = orcServicos.map((s,i)=>(
+      '<tr>' +
+      '<td style="color:var(--muted);font-size:12px;font-weight:700">'+(i+1)+'</td>' +
+      '<td><div class="svc-name">'+s.nome+'</div>'+(s.obs?'<div class="svc-obs">'+s.obs+'</div>':'')+'</td>' +
+      '<td style="text-align:right;color:var(--muted)">R$ '+fmtMoeda(s.preco)+'</td>' +
+      '<td>R$ '+fmtMoeda(s.preco)+'</td>' +
+      '</tr>'
+    )).join('');
+  }
+
+  const {subtotal, descValor, descTipo, descValBruto, total, entrada, subtotalComDesconto} = calcTotais();
+  const dTotais = document.getElementById('dTotais');
+  dTotais.style.display = orcServicos.length>0 ? 'flex' : 'none';
+  document.getElementById('dSubtotal').textContent = 'R$ '+fmtMoeda(subtotal);
+  document.getElementById('dTotal').textContent = 'R$ '+fmtMoeda(total);
+  const rowDesc = document.getElementById('dRowDesc');
+  if(descValor>0){
+    rowDesc.style.display='flex';
+    let descLabel = descTipo==='pct' ? 'Desconto ('+descValBruto+'%)' : 'Desconto';
+    // Indica que desconto é parcial se há serviços sem desconto
+    const temSemDesconto = orcServicos.some(s=>s.preco<1800);
+    if(temSemDesconto) descLabel += ' *';
+    document.getElementById('dDescLabel').textContent = descLabel;
+    document.getElementById('dDescValor').textContent = '- R$ '+fmtMoeda(descValor);
+  } else rowDesc.style.display='none';
+  const rowEntrada = document.getElementById('dRowEntrada');
+  const cardEntrada = document.getElementById('dPagEntradaCard');
+  if(entrada>0){
+    rowEntrada.style.display='flex'; cardEntrada.style.display='block';
+    document.getElementById('dEntrada').textContent = 'R$ '+fmtMoeda(entrada);
+    document.getElementById('dPagEntrada').textContent = 'R$ '+fmtMoeda(entrada);
+  } else { rowEntrada.style.display='none'; cardEntrada.style.display='none'; }
+
+  const obsBox = document.getElementById('dObsBox');
+  if(obs){ obsBox.style.display='block'; document.getElementById('dObs').textContent = obs; }
+  else obsBox.style.display='none';
+
+  document.getElementById('dFooterValidade').textContent = validade ? 'Proposta valida ate '+fmtDateBR(validade) : '';
+  document.getElementById('dFooterData').textContent = new Date().toLocaleDateString('pt-BR');
+}
+
+async function exportarOrcamentoImagem(){
+  const doc = document.getElementById('orcDocumento');
+  const btn = document.querySelector('.btn-export-img');
+  if(orcServicos.length===0){showToast('Adicione pelo menos um servico antes de exportar.','error');return;}
+  btn.textContent = 'Gerando...';
+  btn.disabled = true;
+  try{
+    const canvas = await html2canvas(doc, {
+      scale: 2.5, useCORS: true, allowTaint: true, logging: false,
+      backgroundColor: '#ffffff', scrollX: 0, scrollY: 0,
+      width: doc.scrollWidth, height: doc.scrollHeight,
+    });
+    const A4_W = 2480, A4_H = 3508;
+    const sc = Math.min(A4_W/canvas.width, A4_H/canvas.height);
+    const finalW = Math.round(canvas.width*sc), finalH = Math.round(canvas.height*sc);
+    const final = document.createElement('canvas');
+    final.width = A4_W; final.height = A4_H;
+    const ctx = final.getContext('2d');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,A4_W,A4_H);
+    ctx.drawImage(canvas, Math.round((A4_W-finalW)/2), Math.round((A4_H-finalH)/2), finalW, finalH);
+    const link = document.createElement('a');
+    const nomeArq = (document.getElementById('orcNome').value||'orcamento').replace(/\s+/g,'-').toLowerCase();
+    const numArq = (document.getElementById('orcNumero').value||'').replace(/[^a-zA-Z0-9-]/g,'-');
+    link.download = 'orcamento-'+nomeArq+'-'+(numArq||new Date().toISOString().slice(0,10))+'.png';
+    link.href = final.toDataURL('image/png');
+    link.click();
+    showToast('Orcamento exportado como imagem A4!','success');
+  }catch(e){
+    console.error(e); showToast('Erro ao exportar: '+e.message,'error');
+  }finally{
+    btn.textContent='Exportar como Imagem'; btn.disabled=false;
+  }
+}
 
 renderAll();
 // Inicia mostrando painel de dados no mobile
 setMobileTab('sidebar');
+</script>
 
-// ═══════════════════════════════════════════════
-// PWA — Service Worker
-// ═══════════════════════════════════════════════
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js')
-    .then(()=>console.log('✓ Service Worker registrado'))
-    .catch(e=>console.warn('SW erro:',e));
+<!-- Registro do Service Worker (PWA) -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado:', reg.scope))
+      .catch(err => console.warn('SW falhou:', err));
+  });
 }
 </script>
 </body>

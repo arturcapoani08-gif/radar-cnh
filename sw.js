@@ -2,7 +2,7 @@
 // Radar CNH — Service Worker
 // Versão do cache: incrementar ao atualizar o app
 // ═══════════════════════════════════════════════
-const CACHE = 'radar-cnh-v2';
+const CACHE = 'radar-cnh-v3';
 
 // Recursos locais sempre em cache
 const LOCAL_ASSETS = [
@@ -24,13 +24,13 @@ const CDN_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE).then(cache => {
-      // Locais: falha se não encontrar
-      cache.addAll(LOCAL_ASSETS).catch(()=>{});
+      // Locais: tenta cachear silenciosamente
+      cache.addAll(LOCAL_ASSETS).catch(() => {});
       // CDNs: tenta silenciosamente
       CDN_ASSETS.forEach(url => {
-        fetch(url, {mode:'cors'})
-          .then(r => { if(r.ok) cache.put(url, r); })
-          .catch(()=>{});
+        fetch(url, { mode: 'cors' })
+          .then(r => { if (r.ok) cache.put(url, r); })
+          .catch(() => {});
       });
     })
   );
@@ -51,8 +51,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = event.request.url;
 
+  // Ignora requisições não-GET
+  if (event.request.method !== 'GET') return;
+
   // Arquivos locais: cache first
-  if (LOCAL_ASSETS.some(a => url.endsWith(a.replace('./', '')))) {
+  if (LOCAL_ASSETS.some(a => url.includes(a.replace('./', '')))) {
     event.respondWith(
       caches.match(event.request).then(cached => cached || fetch(event.request))
     );
