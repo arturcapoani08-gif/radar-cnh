@@ -4,7 +4,7 @@
   "description": "Análise inteligente de prontuário CNH",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#0d1f3c",
   "theme_color": "#0d1f3c",
   "lang": "pt-BR",
