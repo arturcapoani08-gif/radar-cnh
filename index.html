@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar CNH — Só Multas</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1f3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Radar CNH">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,300;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* ── Paleta principal Só Multas ── */
+  --primary:#3A5F8C;
+  --primary-hover:#2e4f7a;
+  --primary-light:#e8eef5;
+  --accent:#A32532;
+
+  /* ── Sidebar (deep blue da marca) ── */
+  --sb:#0d1f3c;
+  --sb-card:#132848;
+  --sb-border:#1e3a5f;
+  --sb-text:#F0F6FF;
+  --sb-muted:#7a9cc0;
+  --sb-hover:#1a3255;
+
+  /* ── Main area ── */
+  --main-bg:#F2F4F7;
+  --card:#FFFFFF;
+  --border:#E2E5EA;
+  --text:#0d1f3c;
+  --muted:#6B7280;
+  --subtle:#9CA3AF;
+
+  /* ── Cores semânticas (alinhadas com paleta da marca) ── */
+  --red:#A32532;--red-bg:#f8eaec;--red-border:#e0adb4;--red-dark:#6b0f1a;
+  --amber:#C47D0A;--amber-bg:#FEF9EB;--amber-border:#F9D98A;
+  --green:#097A52;--green-bg:#EAF7F1;--green-border:#9FD9BF;
+  --blue:#3A5F8C;--blue-bg:#e8eef5;--blue-border:#a8c0d6;
+  --orange:#B83F10;--orange-bg:#FEF2EC;--orange-border:#F9C9B0;
+  --purple:#6D35C7;--purple-bg:#F3F0FC;--purple-border:#CFC0F0;
+
+  /* ── Cores de apoio (manual da marca) ── */
+  --apoio-blue1:#0072ff;
+  --apoio-blue2:#009fd7;
+  --apoio-blue3:#91d8f5;
+
+  --radius:10px;--radius-sm:7px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(13,31,60,.07),0 1px 2px rgba(13,31,60,.04);
+  --shadow-md:0 4px 12px rgba(13,31,60,.10),0 2px 4px rgba(13,31,60,.05);
+  --shadow-lg:0 20px 60px rgba(13,31,60,.16);
+
+  --topbar-h:52px;
+  --sidebar-w:360px;
+
+  font-family:'Titillium Web',system-ui,sans-serif;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-size:14px;background:var(--main-bg);color:var(--text);height:100%}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--subtle)}
+
+/* ══════════════════════════════════════════════
+   TOP BAR
+   ══════════════════════════════════════════════ */
+.topbar{
+  height:var(--topbar-h);min-height:var(--topbar-h);
+  background:var(--sb);
+  border-bottom:1px solid var(--sb-border);
+  display:flex;align-items:center;padding:0 1rem 0 0;
+  gap:0;flex-shrink:0;position:relative;z-index:100;
+}
+.topbar-brand{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  display:flex;align-items:center;gap:10px;
+  padding:0 1.25rem;border-right:1px solid var(--sb-border);height:100%;
+}
+.topbar-logo{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--apoio-blue1),var(--apoio-blue2));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,114,255,.35);
+}
+.topbar-name{font-size:14px;font-weight:700;color:var(--sb-text);letter-spacing:-.2px}
+.topbar-sub{font-size:10px;color:var(--sb-muted);margin-top:1px}
+
+.topbar-actions{display:flex;align-items:center;gap:.5rem;padding:0 1rem;flex:1}
+
+.tb-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  border:none;border-radius:var(--radius-sm);padding:7px 13px;
+  font-size:12px;font-weight:600;cursor:pointer;font-family:'Titillium Web',sans-serif;
+  transition:all .15s;white-space:nowrap;letter-spacing:.1px;
+}
+.tb-btn-ghost{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1)}
+.tb-btn-ghost:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.18)}
+.tb-btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(58,95,140,.3)}
+.tb-btn-primary:hover{background:var(--primary-hover)}
+
+.topbar-sep{width:1px;height:24px;background:var(--sb-border);margin:0 .25rem}
+
+/* ══════════════════════════════════════════════
+   LAYOUT
+   ══════════════════════════════════════════════ */
+#appRoot{display:flex;flex-direction:column;height:100%}
+.layout{display:grid;grid-template-columns:var(--sidebar-w) 1fr;flex:1;overflow:hidden;min-height:0}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  background:var(--sb);color:var(--sb-text);
+  display:flex;flex-direction:column;overflow:hidden;
+  border-right:1px solid var(--sb-border);
+}
+.sidebar-scroll{flex:1;overflow-y:auto;padding-bottom:2rem}
+.sidebar-section{padding:1rem 1.25rem;border-bottom:1px solid var(--sb-border)}
+.section-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--sb-muted);margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;
+}
+.link-btn{background:none;border:none;color:#91d8f5;cursor:pointer;font-size:11px;padding:0;font-family:'Titillium Web',sans-serif}
+.link-btn:hover{text-decoration:underline}
+.link-btn-danger{color:#F87171}
+
+.form-group{margin-bottom:.65rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.form-group label{display:block;font-size:11px;color:var(--sb-muted);margin-bottom:.25rem;font-weight:500}
+.form-group input,.form-group select{
+  width:100%;background:var(--sb-card);border:1px solid var(--sb-border);
+  color:var(--sb-text);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;
+  outline:none;transition:border .15s;font-family:'Titillium Web',sans-serif;
+}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(58,95,140,.2)}
+.form-group select option{background:var(--sb-card)}
+.form-group input::placeholder{color:#374151}
+
+.btn-add{
+  width:100%;background:linear-gradient(135deg,var(--apoio-blue1),var(--apoio-blue2));
+  color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:10px;font-size:13px;font-weight:700;cursor:pointer;
+  margin-top:.5rem;transition:all .2s;font-family:'Titillium Web',sans-serif;
+  letter-spacing:.2px;box-shadow:0 3px 10px rgba(0,114,255,.35);
+}
+.btn-add:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,114,255,.45)}
+.btn-cancel{
+  width:100%;background:transparent;color:var(--sb-muted);
+  border:1px solid var(--sb-border);border-radius:var(--radius-sm);
+  padding:6px;font-size:12px;cursor:pointer;margin-top:4px;font-family:'Titillium Web',sans-serif;
+}
+.btn-cancel:hover{background:rgba(255,255,255,.05)}
+
+.inf-item{
+  background:var(--sb-card);border:1px solid var(--sb-border);
+  border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:.35rem;
+  display:flex;align-items:flex-start;gap:8px;cursor:pointer;
+  transition:all .15s;
+}
+.inf-item:hover{border-color:var(--primary);background:var(--sb-hover)}
+.inf-item.pap-item{border-left:3px solid var(--red)}
+.inf-item.post-item{border-left:3px solid transparent}
+.inf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.inf-dot.leve{background:#34D399}
+.inf-dot.media{background:#FBBF24}
+.inf-dot.grave{background:#F97316}
+.inf-dot.gravissima{background:#F87171}
+.inf-meta{flex:1;min-width:0}
+.inf-desc{font-size:12px;color:var(--sb-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.inf-detail{font-size:11px;color:var(--sb-muted);margin-top:2px}
+.inf-pts{font-size:12px;font-weight:700;color:var(--sb-text);white-space:nowrap}
+.inf-del{background:none;border:none;color:#374151;cursor:pointer;font-size:16px;padding:0 2px;line-height:1;flex-shrink:0}
+.inf-del:hover{color:#F87171}
+
+#codeTag{min-height:20px;margin-top:5px}
+.badge-auto,.badge-adm{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.badge-auto{background:#FEF2F2;color:#7F1D1D;border:1px solid #FECACA}
+.badge-adm{background:#e8eef5;color:#3A5F8C;border:1px solid #a8c0d6}
+
+/* ══════════════════════════════════════════════
+   MAIN AREA
+   ══════════════════════════════════════════════ */
+.main-scroll{overflow-y:auto;padding:1.5rem 2rem;background:var(--main-bg)}
+
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:70vh;text-align:center;color:var(--muted);
+}
+.empty-icon{
+  width:72px;height:72px;
+  background:linear-gradient(135deg,var(--primary-light),#c5d9ee);
+  border-radius:20px;display:flex;align-items:center;justify-content:center;
+  font-size:32px;margin:0 auto 1.25rem;
+  box-shadow:0 4px 16px rgba(58,95,140,.12);
+}
+.empty-state h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:.5rem;letter-spacing:-.3px}
+.empty-state p{font-size:14px;line-height:1.7;margin-bottom:1.75rem;max-width:380px}
+.btn-demo{
+  background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:11px 24px;font-size:13px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 12px rgba(58,95,140,.35);transition:all .2s;font-family:'Titillium Web',sans-serif;
+  letter-spacing:.2px;
+}
+.btn-demo:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 8px 20px rgba(58,95,140,.4)}
+
+.analysis-header{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.25rem;margin-bottom:1.25rem;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  box-shadow:var(--shadow);
+}
+.driver-name{font-size:19px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.driver-plate{font-size:12px;color:var(--muted);font-family:'Courier New',monospace;margin-top:2px}
+
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;margin-left:auto}
+.badge-danger{background:var(--red-bg);color:var(--red-dark);border:1px solid var(--red-border)}
+.badge-warning{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge-info{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge-orange{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+.badge-purple{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem}
+.metric-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.875rem 1rem;box-shadow:var(--shadow);transition:box-shadow .15s;
+}
+.metric-card:hover{box-shadow:var(--shadow-md)}
+.metric-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:.4rem}
+.metric-value{font-size:28px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:.25rem;font-weight:500}
+.metric-danger .metric-value{color:var(--red)}
+.metric-warning .metric-value{color:var(--amber)}
+.metric-success .metric-value{color:var(--green)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.875rem;letter-spacing:-.1px}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;padding:9px 10px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+  border-bottom:2px solid var(--border);white-space:nowrap;background:#FAFBFC;
+}
+td{padding:9px 10px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,0,0,.015)}
+tr.row-pap{background:#FFF5F5}
+tr.row-pap-trigger td:first-child{border-left:3px solid var(--red)}
+tr.row-post{background:#FFFCF0}
+tr.row-post td:first-child{border-left:3px solid var(--amber)}
+tr.row-excluida{background:#F8F8FF}
+tr.row-excluida td:first-child{border-left:3px solid #7C3AED}
+tr.row-auto{background:#F5F3FF}
+tr.row-auto td:first-child{border-left:3px solid #7C3AED}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-family:'Courier New',monospace}
+td.over{color:var(--red);font-weight:700}
+
+.grav-tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700}
+.grav-leve{background:var(--green-bg);color:var(--green)}
+.grav-media{background:var(--amber-bg);color:var(--amber)}
+.grav-grave{background:var(--orange-bg);color:var(--orange)}
+.grav-gravissima{background:var(--red-bg);color:var(--red-dark)}
+
+.tick{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700}
+.tick-ok{background:var(--green-bg);color:var(--green)}
+.tick-err{background:var(--red-bg);color:var(--red-dark)}
+
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.625rem 1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-box{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+.prog-wrap{height:5px;background:#F3F4F6;border-radius:3px;margin-top:.4rem;overflow:hidden}
+.prog-bar{height:100%;border-radius:3px;transition:width .4s ease}
+.prog-ok{background:linear-gradient(90deg,var(--green),#34D399)}
+.prog-warn{background:linear-gradient(90deg,var(--amber),#FCD34D)}
+.prog-over{background:linear-gradient(90deg,var(--red),#F87171)}
+
+.pap-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.pap-section-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.pap-row{display:flex;align-items:center;gap:.75rem;padding:.6rem .875rem;border-radius:var(--radius-sm);margin-bottom:.4rem;font-size:13px}
+.pap-row.pap-first{background:var(--red-bg);border:1px solid var(--red-border)}
+.pap-row.pap-second{background:var(--amber-bg);border:1px solid var(--amber-border)}
+.pap-row.pap-auto{background:var(--purple-bg);border:1px solid var(--purple-border)}
+.pap-row.pap-leisseca{background:var(--purple-bg);border:1px solid var(--purple-border)}
+.pap-num{font-size:11px;font-weight:700;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.pap-first .pap-num{background:var(--red);color:#fff}
+.pap-second .pap-num{background:var(--amber);color:#fff}
+.pap-auto .pap-num{background:var(--purple);color:#fff}
+.pap-leisseca .pap-num{background:var(--purple);color:#fff}
+.pap-info{flex:1}
+.pap-info strong{font-weight:700}
+.pap-info small{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+
+.commercial-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:1.5rem;margin-bottom:1rem;box-shadow:var(--shadow-md);
+  border:1px solid var(--border);
+}
+.commercial-danger{border-top:3px solid var(--red)}
+.commercial-warning{border-top:3px solid var(--amber)}
+.commercial-orange{border-top:3px solid var(--orange)}
+.commercial-success{border-top:3px solid var(--green)}
+.commercial-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.commercial-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.commercial-title{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.commercial-sub{font-size:12px;color:var(--muted)}
+.btn-print{margin-left:auto;background:var(--primary);border:none;color:#fff;border-radius:var(--radius-sm);padding:6px 14px;font-size:12px;cursor:pointer;font-family:'Titillium Web',sans-serif;transition:all .15s;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.btn-print:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.commercial-fields{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.field-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.35rem}
+.field-value{font-size:15px;font-weight:700;color:var(--text);line-height:1.3}
+.field-body{font-size:13px;color:var(--text);line-height:1.75}
+
+.service-card{
+  background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:.875rem 1rem;margin-bottom:.5rem;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+  transition:box-shadow .15s;
+}
+.service-card:hover{box-shadow:var(--shadow-md)}
+.service-card.s-danger{background:var(--red-bg);border-color:var(--red-border);border-left:3px solid var(--red)}
+.service-card.s-warning{background:var(--amber-bg);border-color:var(--amber-border);border-left:3px solid var(--amber)}
+.service-card.s-success{background:var(--green-bg);border-color:var(--green-border);border-left:3px solid var(--green)}
+.service-card.s-blue{background:var(--blue-bg);border-color:var(--blue-border);border-left:3px solid var(--blue)}
+.service-card.s-purple{background:var(--purple-bg);border-color:var(--purple-border);border-left:3px solid var(--purple)}
+.service-card.s-orange{background:var(--orange-bg);border-color:var(--orange-border);border-left:3px solid var(--orange)}
+.service-card.s-gray{border-left:3px solid var(--subtle)}
+.service-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.service-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.service-price{font-size:15px;font-weight:700;color:var(--green);white-space:nowrap}
+.service-priority-badge{display:inline-block;font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:6px;vertical-align:middle}
+.service-prazo-badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:4px;vertical-align:middle}
+.prazo-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.prazo-vencido{background:var(--red-bg);color:var(--red-dark);border:1px solid var(--red-border)}
+.prazo-consultar{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+
+.services-total{
+  background:linear-gradient(135deg,#F0FDF4,#DCFCE7);
+  border:1px solid var(--green-border);border-top:2px solid var(--green);
+  border-radius:var(--radius-sm);padding:.875rem 1rem;
+  display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;
+}
+.services-total-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.services-total-value{font-size:19px;font-weight:700;color:var(--green)}
+
+.annulable-alert{display:flex;gap:10px;background:var(--blue-bg);border:1px solid var(--blue-border);border-left:3px solid var(--blue);border-radius:var(--radius-sm);padding:.875rem 1rem;margin-top:1rem}
+.alert-block{display:flex;gap:10px;border-radius:var(--radius-sm);padding:.875rem 1rem;margin-top:.75rem}
+.alert-cassacao{background:var(--purple-bg);border:1px solid var(--purple-border);border-left:3px solid var(--purple)}
+.alert-title{font-size:12px;font-weight:700;margin-bottom:3px}
+.alert-cassacao .alert-title{color:var(--purple)}
+.alert-body{font-size:12px;line-height:1.6}
+.alert-cassacao .alert-body{color:#4C1D95}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px)}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal-box{background:#fff;border-radius:var(--radius);padding:1.5rem;max-width:360px;width:90%;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:.5rem}
+.modal-body{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.7}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.modal-btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px;font-size:13px;cursor:pointer;font-family:'Titillium Web',sans-serif}
+.modal-btn-cancel:hover{background:var(--main-bg)}
+.modal-btn-confirm{background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Titillium Web',sans-serif}
+.modal-btn-confirm:hover{background:var(--primary-hover)}
+
+.toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  background:#111827;color:#F9FAFB;
+  padding:.75rem 1.25rem;border-radius:var(--radius);
+  font-size:13px;font-weight:600;z-index:9999;
+  opacity:0;transform:translateY(10px);
+  transition:all .3s;pointer-events:none;
+  border:1px solid #1F2937;letter-spacing:.1px;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+
+@media print{
+  .sidebar,.topbar,.btn-print,.btn-add,.btn-cancel,.inf-del,.link-btn,.btn-demo,.mobile-tabs{display:none!important}
+  .layout{display:block}
+  .main-scroll{overflow:visible;padding:.5rem}
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE TABS
+   ══════════════════════════════════════════════ */
+.mobile-tabs{
+  display:none;
+  background:var(--sb);
+  border-bottom:1px solid var(--sb-border);
+  flex-shrink:0;
+}
+.mobile-tab-btn{
+  flex:1;padding:10px 0;background:none;border:none;
+  color:var(--sb-muted);font-size:12px;font-weight:700;
+  font-family:'Titillium Web',sans-serif;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.mobile-tab-btn.active{color:#fff;border-bottom-color:var(--primary)}
+
+@media(max-width:900px){
+  :root{--sidebar-w:100%}
+  .layout{grid-template-columns:1fr;position:relative;overflow:hidden}
+  .sidebar{
+    width:100%;height:100%;
+    transform:translateX(-100%);transition:transform .25s;
+    position:absolute;inset:0;z-index:50;
+  }
+  .sidebar.mobile-visible{transform:translateX(0)}
+  .main-scroll.mobile-hidden{display:none}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .commercial-fields{grid-template-columns:1fr}
+  .topbar-brand{display:none}
+  .mobile-tabs{display:flex}
+  .topbar-actions{gap:.25rem;padding:0 .5rem}
+  .tb-btn{padding:6px 8px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div id="appRoot">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><span style="font-weight:900;font-size:11px;letter-spacing:-.5px;font-family:'Titillium Web',sans-serif">📡</span></div>
+      <div>
+        <div class="topbar-name">Radar CNH</div>
+        <div class="topbar-sub">Seu radar inteligente de pontuação</div>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="tb-btn tb-btn-primary" onclick="confirmarNovoCliente()" title="Iniciar novo prontuário">
+        ＋ Novo Cliente
+      </button>
+      <div class="topbar-sep"></div>
+      <button class="tb-btn tb-btn-ghost" onclick="exportData()" title="Exportar prontuário como JSON">
+        ↓ Exportar
+      </button>
+      <button class="tb-btn tb-btn-ghost" onclick="document.getElementById('importFile').click()" title="Importar prontuário JSON">
+        ↑ Importar
+      </button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="tb-btn tb-btn-ghost" onclick="exportPDF()">📄 Exportar PDF</button>
+    </div>
+  </header>
+
+  <!-- MOBILE TABS -->
+  <div class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab-btn active" id="tabSidebar" onclick="setMobileTab('sidebar')">✏️ Inserir Dados</button>
+    <button class="mobile-tab-btn" id="tabMain" onclick="setMobileTab('main')">📊 Análise</button>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- ══════════ SIDEBAR ══════════ -->
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+
+        <!-- Dados do Condutor -->
+        <div class="sidebar-section">
+          <div class="section-label">Dados do Condutor</div>
+          <div class="form-group">
+            <label>Nome completo</label>
+            <input type="text" id="dName" placeholder="Ex: João da Silva" oninput="renderAll()">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Placa</label>
+              <input type="text" id="dPlate" placeholder="ABC-1234" oninput="renderAll()">
+            </div>
+            <div class="form-group">
+              <label>RENAVAM</label>
+              <input type="text" id="dRenavam" placeholder="00000000000">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Chassi</label>
+            <input type="text" id="dChassi" placeholder="9BWZZZ377VT004251">
+          </div>
+          <div class="form-group">
+            <label>Possui EAR?</label>
+            <select id="dEAR" onchange="renderAll()">
+              <option value="nao" selected>Não possui EAR</option>
+              <option value="sim">Sim — atividade remunerada</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Add Infraction Form -->
+        <div class="sidebar-section">
+          <div class="section-label">
+            <span id="formTitle">Adicionar Infração</span>
+            <button class="link-btn" onclick="loadDemo()">demo</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data do AIT *</label>
+              <input type="date" id="fDate">
+            </div>
+            <div class="form-group">
+              <label>Nº do AIT</label>
+              <input type="text" id="fNum" placeholder="00000000000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código CTB</label>
+              <input type="text" id="fCode" placeholder="55412" oninput="autoFillFromCode()">
+              <div id="codeTag"></div>
+            </div>
+            <div class="form-group">
+              <label>Gravidade *</label>
+              <select id="fSev" onchange="autoFillPoints()">
+                <option value="leve">Leve (L)</option>
+                <option value="media">Média (M)</option>
+                <option value="grave">Grave (G)</option>
+                <option value="gravissima" selected>Gravíssima (GI+)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" id="fDesc" placeholder="Ex: Excesso de velocidade 20%">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pontos *</label>
+              <input type="number" id="fPts" value="7" min="1" max="70">
+            </div>
+            <div class="form-group" style="visibility:hidden"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data da NA <span style="font-size:9px;color:var(--sb-muted)">(Notificação de Autuação)</span></label>
+              <input type="date" id="fNotif" oninput="autoLimiteNA()">
+            </div>
+            <div class="form-group">
+              <label>Limite da NA <span style="font-size:9px;color:var(--sb-muted)">(prazo p/ Defesa)</span></label>
+              <input type="date" id="fLimiteNA">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data da NP <span style="font-size:9px;color:var(--sb-muted)">(Notificação de Penalidade)</span></label>
+              <input type="date" id="fNotifNP" oninput="autoLimiteNP()">
+            </div>
+            <div class="form-group">
+              <label>Limite da NP <span style="font-size:9px;color:var(--sb-muted)">(prazo p/ JARI)</span></label>
+              <input type="date" id="fLimiteNP">
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--sb-muted);line-height:1.6;padding:.4rem .5rem;background:rgba(255,255,255,.04);border-radius:5px;margin-bottom:.5rem">
+            💡 Limites preenchidos automaticamente (+30 dias), mas editáveis.
+          </div>
+          <button class="btn-add" onclick="addOrUpdate()" id="addBtn">+ Adicionar Infração</button>
+          <button class="btn-cancel" onclick="cancelEdit()" id="cancelBtn" style="display:none">✕ Cancelar edição</button>
+        </div>
+
+        <!-- Infraction List -->
+        <div class="sidebar-section">
+          <div class="section-label">
+            <span>Infrações (<span id="infCount">0</span>)</span>
+            <button class="link-btn link-btn-danger" onclick="clearAll()">limpar tudo</button>
+          </div>
+          <div id="sidebarList">
+            <p style="font-size:12px;color:var(--sb-muted);text-align:center;padding:.75rem 0">Nenhuma infração registrada.</p>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ══════════ MAIN ══════════ -->
+    <main class="main-scroll" id="mainArea">
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">⚖</div>
+        <h2>Análise de Prontuário CNH</h2>
+        <p>Preencha os dados do condutor e adicione as infrações na barra lateral para gerar a análise automática completa.</p>
+        <button class="btn-demo" onclick="loadDemo()">▶ Carregar dados de demonstração</button>
+      </div>
+
+      <div id="analysisContent" style="display:none">
+
+        <div class="analysis-header">
+          <div>
+            <div class="driver-name" id="aName">—</div>
+            <div class="driver-plate" id="aPlate">—</div>
+          </div>
+          <div id="aEarBadge" style="margin-left:.5rem"></div>
+          <span class="status-badge" id="statusBadge">—</span>
+        </div>
+
+        <div class="metrics-row" id="metricsRow">
+          <div class="metric-card" id="mCard1">
+            <div class="metric-label">Pontos no ciclo atual</div>
+            <div class="metric-value" id="mPoints">—</div>
+            <div class="prog-wrap"><div class="prog-bar" id="mProg"></div></div>
+            <div class="metric-sub" id="mPointsSub">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Limite aplicável</div>
+            <div class="metric-value" id="mLimit">—</div>
+            <div class="metric-sub" id="mLimitSub">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Gravíssimas válidas</div>
+            <div class="metric-value" id="mGrav">—</div>
+            <div class="metric-sub" id="mGravSub">—</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total de infrações</div>
+            <div class="metric-value" id="mTotal">—</div>
+            <div class="metric-sub" id="mTotalSub">—</div>
+          </div>
+        </div>
+
+        <div class="pap-section" id="papSection" style="display:none">
+          <div class="pap-section-title" id="papSectionTitle">⚡ Processos de Suspensão Identificados</div>
+          <div id="papList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Linha do tempo — Pontuação efetiva p/ PAP (janela de 12 meses)</div>
+          <div style="position:relative;height:220px">
+            <canvas id="timelineChart"></canvas>
+          </div>
+          <div class="legend-row" id="chartLegend" style="margin-top:.75rem;margin-bottom:0;border:none;padding:.5rem 0;background:transparent;box-shadow:none"></div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:.875rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center">
+            <span class="card-title" style="margin:0">Detalhamento por infração</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:auto;font-weight:500">Ordenado por data do AIT</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:28px">#</th>
+                  <th>Data AIT</th>
+                  <th>Nº AIT</th>
+                  <th>Descrição / Código</th>
+                  <th>Gravidade</th>
+                  <th style="text-align:right">Pts</th>
+                  <th style="text-align:right">Acum. PAP</th>
+                  <th style="text-align:right">Limite</th>
+                  <th>Situação</th>
+                  <th>Obs.</th>
+                </tr>
+              </thead>
+              <tbody id="mainTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="legend-row" id="tableLegend">
+          <div class="legend-item"><div class="legend-box" style="background:#FFF5F5;border:1px solid var(--red-border)"></div>Estouro (Suspensão)</div>
+          <div class="legend-item"><div class="legend-box" style="background:#FFFCF0;border:1px solid var(--amber-border)"></div>Nova contagem</div>
+          <div class="legend-item"><div class="legend-box" style="background:#F5F3FF;border:1px solid var(--purple-border)"></div>Infração Autossuspensiva (PAI/Lei Seca)</div>
+          <div class="legend-item"><span class="badge-auto">⛔ Autossuspensiva</span></div>
+          <div class="legend-item"><span class="badge-auto">🍺 Lei Seca</span></div>
+          <div class="legend-item"><span class="badge-adm">📋 Administrativa</span></div>
+          <div class="legend-item"><span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:4px;border:1px solid var(--blue-border)">⏰</span>Autuação fora do prazo (&gt;30d)</div>
+        </div>
+
+        <!-- Commercial Summary -->
+        <div class="commercial-card" id="commercialCard">
+          <div class="commercial-header">
+            <div class="commercial-icon">💼</div>
+            <div>
+              <div class="commercial-title">Resumo Comercial — Só Multas</div>
+              <div class="commercial-sub">Diagnóstico automático · Gerado em <span id="genDate"></span></div>
+            </div>
+            <button class="btn-print" onclick="exportPDF()">📄 Exportar PDF</button>
+          </div>
+
+          <div class="commercial-fields" style="grid-template-columns:1fr">
+            <div>
+              <div class="field-label">Situação do condutor</div>
+              <div class="field-value" id="cSituation">—</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:1.25rem">
+            <div class="field-label" style="margin-bottom:.5rem">📋 Análise técnica detalhada</div>
+            <div class="field-body" id="cJustification">—</div>
+          </div>
+
+          <div style="margin-bottom:.5rem">
+            <div class="field-label" style="margin-bottom:.75rem">💰 Serviços recomendados</div>
+            <div id="cServices"></div>
+            <div class="services-total" id="cServicesTotal" style="display:none">
+              <span class="services-total-label">Total estimado dos serviços</span>
+              <span class="services-total-value" id="cTotalValue">R$ 0</span>
+            </div>
+          </div>
+
+          <div class="annulable-alert" id="cAnnulable" style="display:none">
+            <div style="font-size:16px;flex-shrink:0">🔍</div>
+            <div>
+              <div class="alert-title" style="color:var(--blue)">Oportunidade de Anulação Identificada</div>
+              <div class="alert-body" style="font-size:12px;color:#1E40AF;line-height:1.5" id="cAnnulableText"></div>
+            </div>
+          </div>
+
+          <div class="alert-block alert-cassacao" id="cCassacaoAlert" style="display:none">
+            <div style="font-size:16px;flex-shrink:0">🚫</div>
+            <div>
+              <div class="alert-title">🚨 ALERTA — Risco de Cassação da CNH</div>
+              <div class="alert-body" id="cCassacaoText"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+</div>
+
+<!-- Modal Novo Cliente -->
+<div class="modal-overlay" id="modalNovo">
+  <div class="modal-box">
+    <div class="modal-title">🆕 Novo Cliente</div>
+    <div class="modal-body">Tem certeza que deseja iniciar uma nova análise? Todos os dados do condutor atual e as infrações registradas serão apagados.</div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="modal-btn-confirm" onclick="novoCliente()">Sim, limpar tudo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// BANCO DE DADOS CTB
+// ═══════════════════════════════════════════════════════════════════
+const CTB_DB = {
+  // ── Infrações especiais / toxicológico ──
+  '78200': {d:'Deixar de realizar exame toxicológico (art. 148-A §2º) após 30 dias do vencimento (art. 148-A)',      s:'gravissima', p:7},
+  '78110': {d:'Dirigir veículo tendo obtido resultado positivo no exame toxicológico (art. 165-C)',                   s:'gravissima', p:7, auto:true, leisseca:true},
+  '78030': {d:'Dirigir veículo sem realizar exame toxicológico previsto no §2º do art. 148-A',                       s:'gravissima', p:7, auto:true},
+  '77900': {d:'Dirigir veículo sem realizar exame toxicológico previsto no caput do art. 148-A',                     s:'gravissima', p:7, auto:true},
+  '76410': {d:'Conduzir veículo categoria C, D ou E sem realizar exame toxicológico (art. 165-B)',                   s:'gravissima', p:7, auto:true},
+  '77650': {d:'Fugir o condutor à ação policial (art. 278 parágrafo único)',                                         s:'gravissima', p:7, auto:true},
+  '76332': {d:'Dirigir veículo manuseando telefone celular (art. 252)',                                              s:'gravissima', p:7},
+  '76331': {d:'Dirigir veículo segurando telefone celular (art. 252)',                                               s:'gravissima', p:7},
+  '76252': {d:'Estacionar nas vagas reservadas a idosos sem credencial (art. 181, XX)',                              s:'gravissima', p:7},
+  '76251': {d:'Estacionar nas vagas reservadas a pessoas com deficiência sem credencial (art. 181, XX)',             s:'gravissima', p:7},
+  // ── Art. 50020 ──
+  '50020': {d:'Multa por não identificação do condutor infrator — pessoa jurídica (art. 257, §8º)',                  s:'gravissima', p:7, adm:true},
+  // ── Arts. 162/163/164 — Habilitação ──
+  '50100': {d:'Dirigir veículo sem possuir CNH ou Permissão para Dirigir (art. 162, I)',                             s:'gravissima', p:7},
+  '50291': {d:'Dirigir veículo com CNH ou PPD cassada (art. 162, II)',                                               s:'gravissima', p:7, auto:true},
+  '50292': {d:'Dirigir veículo com CNH ou PPD com suspensão do direito de dirigir (art. 162, II)',                   s:'gravissima', p:7, auto:true},
+  '50371': {d:'Dirigir veículo com CNH de categoria diferente da do veículo (art. 162, III)',                        s:'gravissima', p:7, auto:true},
+  '50450': {d:'Dirigir veículo com validade de CNH/PPD vencida há mais de 30 dias (art. 162, V)',                    s:'gravissima', p:7},
+  '50531': {d:'Dirigir veículo sem lentes corretoras, aparelho auxiliar ou adaptações impostas na habilitação (art. 162, VI)', s:'gravissima', p:7},
+  '50610': {d:'Entregar veículo a pessoa sem CNH ou Permissão para Dirigir (art. 163 c/c 162, I)',                   s:'gravissima', p:7, auto:true},
+  '50701': {d:'Entregar veículo a pessoa com CNH ou PPD cassada ou suspensa (art. 163 c/c 162, II)',                 s:'gravissima', p:7, auto:true},
+  '50881': {d:'Entregar veículo a pessoa com CNH de categoria diferente da do veículo (art. 163 c/c 162, III)',      s:'gravissima', p:7, auto:true},
+  '50960': {d:'Entregar veículo a pessoa com CNH/PPD vencida há mais de 30 dias (art. 163 c/c 162, V)',              s:'gravissima', p:7},
+  '51001': {d:'Entregar veículo a pessoa sem adaptações/auxiliares impostos na habilitação (art. 163 c/c 162, VI)',  s:'gravissima', p:7},
+  '51180': {d:'Permitir posse/condução do veículo a pessoa sem CNH ou PPD (art. 164 c/c 162, I)',                    s:'gravissima', p:7, auto:true},
+  '51261': {d:'Permitir posse/condução do veículo a pessoa com CNH ou PPD cassada ou suspensa (art. 164 c/c 162, II)', s:'gravissima', p:7, auto:true},
+  '51341': {d:'Permitir posse/condução do veículo a pessoa com CNH de categoria diferente (art. 164 c/c 162, III)',  s:'gravissima', p:7, auto:true},
+  '51420': {d:'Permitir posse/condução do veículo a pessoa com CNH/PPD vencida há mais de 30 dias (art. 164 c/c 162, V)', s:'gravissima', p:7},
+  '51501': {d:'Permitir posse/condução do veículo a pessoa sem adaptações/auxiliares impostos (art. 164 c/c 162, VI)', s:'gravissima', p:7},
+  // ── Art. 165 — Álcool / substâncias ──
+  '51691': {d:'Dirigir sob influência de álcool ou substância psicoativa que determine dependência (art. 165)',      s:'gravissima', p:7, auto:true, leisseca:true},
+  '51692': {d:'Dirigir sob influência de qualquer substância psicoativa que determine dependência (art. 165)',       s:'gravissima', p:7, auto:true, leisseca:true},
+  '75790': {d:'Recusar-se a se submeter a procedimento do art. 277 do CTB (art. 277, §3º c/c 165)',                 s:'gravissima', p:7, auto:true, leisseca:true},
+  // ── Art. 166 — Estado físico/psíquico ──
+  '51770': {d:'Confiar/entregar veículo a pessoa em estado físico/psíquico sem condições de dirigir (art. 166)',     s:'gravissima', p:7},
+  // ── Art. 167 — Cinto ──
+  '51851': {d:'Condutor deixar de usar cinto de segurança (art. 167)',                                              s:'grave',      p:5},
+  '51852': {d:'Passageiro deixar de usar cinto de segurança (art. 167)',                                            s:'grave',      p:5},
+  // ── Art. 168 — Criança ──
+  '51930': {d:'Transportar criança sem observância das normas de segurança do CTB (art. 168)',                       s:'gravissima', p:7},
+  '51931': {d:'Transportar criança sem observância das normas de segurança estabelecidas pelo CTB (art. 168)',       s:'gravissima', p:7},
+  // ── Art. 169 — Atenção ──
+  '52070': {d:'Dirigir sem atenção ou sem os cuidados indispensáveis à segurança (art. 169)',                        s:'leve',       p:3},
+  '72070': {d:'Dirigir sem atenção ou sem os cuidados indispensáveis à segurança (art. 169)',                        s:'leve',       p:3},
+  // ── Art. 170 — Ameaça ──
+  '52151': {d:'Dirigir ameaçando pedestres que estejam atravessando a via pública (art. 170)',                       s:'gravissima', p:7, auto:true},
+  '52152': {d:'Dirigir ameaçando os demais veículos (art. 170)',                                                     s:'gravissima', p:7, auto:true},
+  '52231': {d:'Usar veículo para arremessar água ou detritos sobre pedestres ou veículos (art. 171)',                s:'media',      p:4},
+  '52311': {d:'Atirar do veículo objetos ou substâncias / abandonar na via (art. 172)',                              s:'media',      p:4},
+  // ── Art. 173 — Racha ──
+  '52400': {d:'Disputar corrida (racha) na via pública (art. 173)',                                                  s:'gravissima', p:7, auto:true},
+  // ── Art. 174 — Competição/exibição ──
+  '52581': {d:'Promover competição / evento / demonstração de perícia em via sem permissão (art. 174)',              s:'gravissima', p:7, auto:true},
+  '52661': {d:'Participar como condutor em competição / evento / exibição de manobra sem permissão (art. 174)',      s:'gravissima', p:7, auto:true},
+  // ── Art. 175 — Manobra perigosa ──
+  '52741': {d:'Utilizar veículo para exibir manobra perigosa (arrancada brusca/derrapagem/frenagem) (art. 175)',     s:'gravissima', p:7, auto:true},
+  // ── Art. 176 — Acidente c/ vítima ──
+  '52820': {d:'Deixar o condutor envolvido em acidente de prestar ou providenciar socorro à vítima (art. 176, I)',   s:'gravissima', p:7, auto:true},
+  '52822': {d:'Deixar de prestar ou providenciar socorro à vítima de acidente (art. 176, I)',                        s:'gravissima', p:7, auto:true},
+  '52900': {d:'Deixar o condutor de adotar providências para evitar perigo para o trânsito (art. 176, II)',          s:'gravissima', p:7, auto:true},
+  '53040': {d:'Deixar o condutor de preservar o local do acidente para trabalho policial/pericial (art. 176, III)',  s:'gravissima', p:7, auto:true},
+  '53120': {d:'Deixar o condutor de remover o veículo do local quando determinado (art. 176, IV)',                   s:'gravissima', p:7, auto:true},
+  '53200': {d:'Deixar o condutor de se identificar ao policial e prestar informações para o BO (art. 176, V)',       s:'gravissima', p:7, auto:true},
+  // ── Art. 177/178 ──
+  '53390': {d:'Deixar o condutor de prestar socorro à vítima quando solicitado pelo agente (art. 177)',              s:'grave',      p:5},
+  '53470': {d:'Deixar o condutor envolvido em acidente sem vítima de remover o veículo (art. 178)',                  s:'media',      p:4},
+  // ── Art. 179/180 ──
+  '53550': {d:'Fazer reparo em veículo em rodovia ou via de trânsito rápido (art. 179, I)',                          s:'grave',      p:5},
+  '53630': {d:'Fazer reparo em veículo nas demais vias (art. 179, II)',                                              s:'leve',       p:3},
+  '53710': {d:'Ter veículo imobilizado na via por falta de combustível (art. 180)',                                  s:'media',      p:4},
+  // ── Art. 181 — Estacionamento ──
+  '53800': {d:'Estacionar nas esquinas e a menos de 5m do alinhamento da via transversal (art. 181, I)',             s:'media',      p:4},
+  '53980': {d:'Estacionar afastado do meio-fio entre 50cm e 1m (art. 181, II)',                                     s:'leve',       p:3},
+  '54010': {d:'Estacionar afastado do meio-fio a mais de 1m (art. 181, III)',                                        s:'grave',      p:5},
+  '54100': {d:'Estacionar em desacordo com as posições estabelecidas no CTB (art. 181, IV)',                         s:'media',      p:4},
+  '54281': {d:'Estacionar na pista de rolamento de estradas, rodovias ou vias de trânsito rápido (art. 181, V)',     s:'gravissima', p:7},
+  '54360': {d:'Estacionar junto/sobre hidrante de incêndio ou registro de água (art. 181, VI)',                      s:'media',      p:4},
+  '54440': {d:'Estacionar nos acostamentos (art. 181, VII)',                                                         s:'leve',       p:3},
+  '54521': {d:'Estacionar no passeio, faixa de pedestres, ciclovia, ilhas, canteiro central ou gramado (art. 181, VIII)', s:'grave', p:5},
+  '54600': {d:'Estacionar em guia de calçada rebaixada destinada à entrada/saída de veículos (art. 181, IX)',        s:'media',      p:4},
+  '54790': {d:'Estacionar impedindo a movimentação de outro veículo (art. 181, X)',                                  s:'media',      p:4},
+  '54870': {d:'Estacionar ao lado de outro veículo em fila dupla (art. 181, XI)',                                    s:'grave',      p:5},
+  '54950': {d:'Estacionar na área de cruzamento de vias (art. 181, XII)',                                            s:'grave',      p:5},
+  '55090': {d:'Estacionar no ponto de embarque/desembarque de transporte coletivo (art. 181, XIII)',                 s:'media',      p:4},
+  '55171': {d:'Estacionar em viadutos, pontes ou túneis (art. 181, XIV)',                                            s:'grave',      p:5},
+  '55250': {d:'Estacionar na contramão de direção (art. 181, XV)',                                                   s:'media',      p:4},
+  '55330': {d:'Estacionar em aclive/declive sem freio e sem calço, PBT superior a 3500kg (art. 181, XVI)',           s:'grave',      p:5},
+  '55411': {d:'Estacionar em desacordo com a regulamentação especificada pela sinalização (art. 181, XVII)',         s:'grave',      p:5},
+  '55412': {d:'Estacionar em desacordo com regulamentação — estacionamento rotativo (art. 181, XVII)',               s:'grave',      p:5},
+  '55500': {d:'Estacionar em local/horário proibido especificamente pela sinalização (art. 181, XVIII)',              s:'media',      p:4},
+  '55680': {d:'Estacionar em local/horário de estacionamento e parada proibidos pela sinalização (art. 181, XIX)',   s:'grave',      p:5},
+  // ── Art. 182 — Parada ──
+  '55760': {d:'Parar nas esquinas e a menos de 5m do bordo da via transversal (art. 182, I)',                        s:'media',      p:4},
+  '55840': {d:'Parar afastado do meio-fio entre 50cm e 1m (art. 182, II)',                                          s:'leve',       p:3},
+  '55920': {d:'Parar afastado do meio-fio a mais de 1m (art. 182, III)',                                             s:'media',      p:4},
+  '56060': {d:'Parar em desacordo com as posições estabelecidas no CTB (art. 182, IV)',                              s:'leve',       p:3},
+  '56141': {d:'Parar na pista de rolamento de estradas, rodovias ou vias de trânsito rápido (art. 182, V)',          s:'grave',      p:5},
+  '56221': {d:'Parar no passeio, faixa de pedestres, ilhas, canteiros ou marcas de canalização (art. 182, VI)',      s:'leve',       p:3},
+  '56300': {d:'Parar na área de cruzamento de vias (art. 182, VII)',                                                 s:'media',      p:4},
+  '56491': {d:'Parar em viadutos, pontes ou túneis (art. 182, VIII)',                                                s:'media',      p:4},
+  '56570': {d:'Parar na contramão de direção (art. 182, IX)',                                                        s:'media',      p:4},
+  '56650': {d:'Parar em local/horário proibidos especificamente pela sinalização (art. 182, X)',                     s:'media',      p:4},
+  '56731': {d:'Parar sobre faixa de pedestres na mudança de sinal luminoso (art. 183)',                              s:'media',      p:4},
+  // ── Art. 184 — Faixas/pistas exclusivas ──
+  '56810': {d:'Transitar na faixa/pista da direita regulamentada para circulação exclusiva (art. 184, I)',           s:'leve',       p:3},
+  '56900': {d:'Transitar na faixa/pista da esquerda regulamentada para circulação exclusiva (art. 184, II)',         s:'grave',      p:5},
+  '75870': {d:'Transitar na faixa ou via exclusiva regulamentada para transporte público coletivo (art. 184, III)',  s:'gravissima', p:7},
+  // ── Art. 185 ──
+  '57030': {d:'Deixar de conservar o veículo na faixa destinada pela sinalização (art. 185, I)',                     s:'media',      p:4},
+  '57110': {d:'Deixar de conservar nas faixas da direita o veículo lento e de maior porte (art. 185, II)',           s:'media',      p:4},
+  // ── Art. 186 — Contramão ──
+  '57200': {d:'Transitar pela contramão em via com duplo sentido de circulação (art. 186, I)',                       s:'grave',      p:5},
+  '57380': {d:'Transitar pela contramão em via com sinalização de sentido único (art. 186, II)',                     s:'gravissima', p:7},
+  // ── Art. 187 ──
+  '57461': {d:'Transitar em local/horário não permitido pela regulamentação (rodízio/caminhão) (art. 187, I)',       s:'media',      p:4},
+  // ── Art. 188/189 ──
+  '57620': {d:'Transitar ao lado de outro veículo, interrompendo ou perturbando o trânsito (art. 188)',              s:'media',      p:4},
+  '57701': {d:'Deixar de dar passagem a veículo de emergência/batedores/polícia devidamente identificado (art. 189)', s:'gravissima', p:7},
+  '57890': {d:'Seguir veículo em serviço de urgência identificado por alarme sonoro/iluminação vermelha (art. 190)', s:'grave',      p:5},
+  // ── Art. 191/192 ──
+  '57970': {d:'Forçar passagem entre veículos em sentidos opostos na iminência de ultrapassagem (art. 191)',         s:'gravissima', p:7, auto:true},
+  '58000': {d:'Deixar de guardar distância lateral/frontal de segurança entre veículos (art. 192)',                  s:'grave',      p:5},
+  // ── Art. 193/194/195/196/197/198/199/200/201 ──
+  '58191': {d:'Transitar com o veículo em calçadas, ciclovias, canteiros ou acostamentos (art. 193)',                s:'gravissima', p:7, auto:true},
+  '58270': {d:'Transitar em marcha ré além do necessário para pequenas manobras (art. 194)',                         s:'grave',      p:5},
+  '58350': {d:'Desobedecer às ordens da autoridade de trânsito ou de seus agentes (art. 195)',                       s:'grave',      p:5},
+  '58431': {d:'Deixar de indicar com antecedência, por gesto ou luz, início de marcha/parada/manobra (art. 196)',    s:'grave',      p:5},
+  '58511': {d:'Deixar de deslocar o veículo para faixa adequada antes de manobrar (art. 197)',                       s:'media',      p:4},
+  '58600': {d:'Deixar de dar passagem pela esquerda quando solicitado (art. 198)',                                    s:'media',      p:4},
+  '58780': {d:'Ultrapassar pela direita (exceto quando veículo da frente sinalizar para esquerda) (art. 199)',       s:'media',      p:4},
+  '58860': {d:'Ultrapassar pela direita veículo de transporte coletivo/escolar parado para embarque/desembarque (art. 200)', s:'gravissima', p:7},
+  '58940': {d:'Deixar de guardar distância lateral de 1,50m ao passar/ultrapassar bicicleta (art. 201)',             s:'media',      p:4},
+  // ── Art. 202/203 — Ultrapassagem proibida ──
+  '59080': {d:'Ultrapassar pelo acostamento (art. 202, I)',                                                          s:'gravissima', p:7, auto:true},
+  '59161': {d:'Ultrapassar em interseções ou passagem de nível (art. 202, II)',                                      s:'gravissima', p:7, auto:true},
+  '59241': {d:'Ultrapassar pela contramão em curvas ou aclives/declives sem visibilidade suficiente (art. 203, I)',  s:'gravissima', p:7, auto:true},
+  '59320': {d:'Ultrapassar pela contramão nas faixas de pedestre (art. 203, II)',                                    s:'gravissima', p:7, auto:true},
+  '59401': {d:'Ultrapassar pela contramão em pontes, viadutos ou túneis (art. 203, III)',                            s:'gravissima', p:7, auto:true},
+  '59591': {d:'Ultrapassar pela contramão veículo parado em fila junto a sinal luminoso/cancela/cruzamento (art. 203, IV)', s:'gravissima', p:7, auto:true},
+  '59670': {d:'Ultrapassar pela contramão linha de divisão de fluxos opostos contínua amarela (art. 203, V)',        s:'gravissima', p:7, auto:true},
+  // ── Art. 204/205/206 ──
+  '59750': {d:'Deixar de parar no acostamento à direita para cruzar pista ou entrar à esquerda (art. 204)',          s:'grave',      p:5},
+  '59830': {d:'Ultrapassar veículo em movimento que integre cortejo/desfile/formação militar (art. 205)',            s:'leve',       p:3},
+  '59910': {d:'Executar operação de retorno em locais proibidos pela sinalização (art. 206, I)',                     s:'gravissima', p:7},
+  '60091': {d:'Executar operação de retorno em curvas, aclives, pontes, viadutos ou túneis (art. 206, II)',          s:'gravissima', p:7},
+  '60171': {d:'Executar operação de retorno passando por cima de calçada, ilha, faixa de pedestres etc. (art. 206, III)', s:'gravissima', p:7},
+  '60250': {d:'Executar retorno em interseções, entrando na contramão da via transversal (art. 206, IV)',            s:'gravissima', p:7},
+  '60330': {d:'Executar retorno com prejuízo da circulação/segurança ainda que em local permitido (art. 206, V)',    s:'gravissima', p:7},
+  '60411': {d:'Executar operação de conversão à direita ou à esquerda em local proibido (art. 207)',                 s:'grave',      p:5},
+  // ── Art. 208/209/210/211/212/213 ──
+  '60501': {d:'Avançar o sinal vermelho do semáforo (art. 208)',                                                     s:'gravissima', p:7},
+  '60502': {d:'Avançar o sinal de parada obrigatória (art. 208)',                                                    s:'gravissima', p:7},
+  '60503': {d:'Avançar o sinal vermelho do semáforo — fiscalização eletrônica (art. 208)',                           s:'gravissima', p:7},
+  '60681': {d:'Transpor bloqueio viário / evadir-se do pedágio / não adentrar à pesagem (art. 209)',                 s:'grave',      p:5},
+  '60760': {d:'Transpor bloqueio viário policial (art. 210)',                                                        s:'gravissima', p:7, auto:true},
+  '60841': {d:'Ultrapassar veículos motorizados em fila parados por sinal/cancela/obstáculo (art. 211)',             s:'grave',      p:5},
+  '60920': {d:'Deixar de parar o veículo antes de transpor linha férrea (art. 212)',                                 s:'gravissima', p:7},
+  '61060': {d:'Deixar de parar quando a marcha for interceptada por agrupamento de pessoas (art. 213, I)',           s:'gravissima', p:7},
+  '61140': {d:'Deixar de parar quando a marcha for interceptada por agrupamento de veículos (art. 213, II)',         s:'grave',      p:5},
+  // ── Art. 214 — Preferência pedestre ──
+  '61220': {d:'Deixar de dar preferência a pedestre ou veículo não motorizado na faixa destinada (art. 214, I)',     s:'gravissima', p:7},
+  '61300': {d:'Deixar de dar preferência a pedestre ou veículo não motorizado que não concluiu travessia (art. 214, II)', s:'gravissima', p:7},
+  '61490': {d:'Deixar de dar preferência a pedestre com deficiência, criança, idoso ou gestante (art. 214, III)',    s:'gravissima', p:7},
+  '61570': {d:'Deixar de dar preferência a pedestre quando iniciada travessia sem sinalização (art. 214, IV)',       s:'grave',      p:5},
+  '61650': {d:'Deixar de dar preferência a pedestre atravessando a via transversal (art. 214, V)',                   s:'grave',      p:5},
+  // ── Art. 215/216/217 ──
+  '61731': {d:'Deixar de dar preferência em interseção não sinalizada a veículo em rodovia/rotatória/direita (art. 215, I, a)', s:'grave', p:5},
+  '61810': {d:'Deixar de dar preferência em interseção com sinalização de Dê a Preferência (art. 215, II)',          s:'grave',      p:5},
+  '61900': {d:'Entrar/sair de área lindeira sem precaução com pedestres e veículos (art. 216)',                      s:'media',      p:4},
+  '62030': {d:'Entrar/sair de fila de veículos estacionados sem dar preferência a pedestres/veículos (art. 217)',    s:'media',      p:4},
+  // ── Art. 218 — Velocidade ──
+  '74550': {d:'Transitar em velocidade superior à máxima permitida em até 20% (art. 218, I)',                        s:'media',      p:4},
+  '74630': {d:'Transitar em velocidade superior à máxima permitida entre 20% e 50% (art. 218, II)',                  s:'grave',      p:5},
+  '74710': {d:'Transitar em velocidade superior à máxima permitida em mais de 50% (art. 218, III)',                  s:'gravissima', p:7, auto:true},
+  // ── Art. 219 ──
+  '62540': {d:'Transitar em velocidade inferior à metade da máxima da via, salvo faixa direita (art. 219)',          s:'media',      p:4},
+  // ── Art. 220 — Redução de velocidade ──
+  '62620': {d:'Deixar de reduzir a velocidade ao aproximar-se de passeata/aglomeração/desfile (art. 220, I)',        s:'gravissima', p:7},
+  '62700': {d:'Deixar de reduzir a velocidade onde o trânsito está sendo controlado pelo agente (art. 220, II)',     s:'grave',      p:5},
+  '62891': {d:'Deixar de reduzir a velocidade ao aproximar-se da guia da calçada ou do acostamento (art. 220, III)', s:'grave',      p:5},
+  '62970': {d:'Deixar de reduzir a velocidade ao aproximar-se de interseção não sinalizada (art. 220, IV)',          s:'grave',      p:5},
+  '63000': {d:'Deixar de reduzir a velocidade em vias rurais cuja faixa de domínio não esteja cercada (art. 220, V)', s:'grave',     p:5},
+  '63190': {d:'Deixar de reduzir a velocidade nos trechos em curva de pequeno raio (art. 220, VI)',                  s:'grave',      p:5},
+  '63270': {d:'Deixar de reduzir a velocidade ao aproximar de local com obras/trabalhadores sinalizado (art. 220, VII)', s:'grave',  p:5},
+  '63350': {d:'Deixar de reduzir a velocidade sob chuva, neblina, cerração ou ventos fortes (art. 220, VIII)',       s:'grave',      p:5},
+  '63430': {d:'Deixar de reduzir a velocidade quando houver má visibilidade (art. 220, IX)',                         s:'grave',      p:5},
+  '63510': {d:'Deixar de reduzir a velocidade quando o pavimento estiver escorregadio/defeituoso (art. 220, X)',     s:'grave',      p:5},
+  '63600': {d:'Deixar de reduzir a velocidade à aproximação de animais na pista (art. 220, XI)',                     s:'grave',      p:5},
+  '63780': {d:'Deixar de reduzir a velocidade de forma compatível com a segurança em declive (art. 220, XII)',       s:'grave',      p:5},
+  '63860': {d:'Deixar de reduzir a velocidade ao ultrapassar ciclista (art. 220, XIII)',                             s:'grave',      p:5},
+  '63941': {d:'Deixar de reduzir a velocidade nas proximidades de escolas (art. 220, XIV)',                          s:'gravissima', p:7},
+  '63942': {d:'Deixar de reduzir a velocidade nas proximidades de hospitais (art. 220, XIV)',                        s:'gravissima', p:7},
+  // ── Art. 221/222/223/224 ──
+  '64080': {d:'Portar no veículo placa de identificação em desacordo com o Contran (art. 221)',                      s:'media',      p:4, adm:true},
+  '64160': {d:'Confeccionar/distribuir/colocar placa de identificação em desacordo com o Contran (art. 221, §único)', s:'media',    p:4},
+  '64240': {d:'Deixar de manter ligado o sistema de iluminação vermelha intermitente em emergência (art. 222)',      s:'media',      p:4},
+  '64321': {d:'Transitar com farol desregulado ou facho de luz alta perturbando outro condutor (art. 223)',          s:'grave',      p:5},
+  '64400': {d:'Fazer uso do facho de luz alta em vias com iluminação pública (art. 224)',                            s:'leve',       p:3},
+  // ── Art. 225/226/227/228/229 ──
+  '64591': {d:'Deixar de sinalizar a via para tornar visível local de remoção/permanência de veículo (art. 225, I)', s:'grave',      p:5},
+  '64670': {d:'Deixar de sinalizar a via quando a carga for derramada (art. 225, II)',                               s:'grave',      p:5},
+  '64750': {d:'Deixar de retirar objeto utilizado para sinalização temporária da via (art. 226)',                    s:'media',      p:4},
+  '64830': {d:'Usar buzina de forma diferente de toque breve como advertência (art. 227, I)',                        s:'leve',       p:3},
+  '64910': {d:'Usar buzina prolongada e sucessivamente a qualquer pretexto (art. 227, II)',                          s:'leve',       p:3},
+  '65050': {d:'Usar buzina entre as 22h e as 6h (art. 227, III)',                                                    s:'leve',       p:3},
+  '65130': {d:'Usar buzina em locais e horários proibidos pela sinalização (art. 227, IV)',                          s:'leve',       p:3},
+  '65210': {d:'Usar buzina em desacordo com padrões e frequências estabelecidas pelo Contran (art. 227, V)',         s:'leve',       p:3},
+  '65300': {d:'Usar no veículo equipamento com som em volume/frequência não autorizados (art. 228)',                 s:'grave',      p:5},
+  '65480': {d:'Usar no veículo alarme ou aparelho que perturbe o sossego público (art. 229)',                        s:'media',      p:4},
+  // ── Art. 230 — Irregularidades do veículo ──
+  '65561': {d:'Conduzir veículo com lacre, inscrição de chassi, selo, placa ou elemento de identificação violado/falsificado (art. 230, I)', s:'gravissima', p:7},
+  '65640': {d:'Conduzir veículo transportando passageiros em compartimento de carga (art. 230, II)',                 s:'gravissima', p:7},
+  '65720': {d:'Conduzir veículo com dispositivo antirradar (art. 230, III)',                                         s:'gravissima', p:7},
+  '65800': {d:'Conduzir veículo sem qualquer uma das placas de identificação (art. 230, IV)',                        s:'gravissima', p:7, adm:true},
+  '65991': {d:'Conduzir veículo que não esteja registrado (art. 230, V)',                                            s:'gravissima', p:7, adm:true},
+  '65992': {d:'Conduzir veículo registrado que não esteja devidamente licenciado (art. 230, V)',                     s:'gravissima', p:7, adm:true},
+  '66020': {d:'Conduzir veículo com placa sem legibilidade e visibilidade (art. 230, VI)',                           s:'gravissima', p:7, adm:true},
+  '66101': {d:'Conduzir veículo com cor ou característica alterada (art. 230, VII)',                                 s:'grave',      p:5},
+  '66290': {d:'Conduzir veículo sem ter sido submetido à inspeção de segurança veicular obrigatória (art. 230, VIII)', s:'grave',   p:5},
+  '66371': {d:'Conduzir veículo sem equipamento obrigatório ou com equipamento ineficiente/inoperante (art. 230, IX)', s:'grave',   p:5},
+  '66450': {d:'Conduzir veículo com equipamento obrigatório em desacordo com o Contran (art. 230, X)',               s:'grave',      p:5},
+  '66531': {d:'Conduzir veículo com descarga livre ou silenciador defeituoso/deficiente (art. 230, XI)',             s:'grave',      p:5},
+  '66610': {d:'Conduzir veículo com equipamento ou acessório proibido (art. 230, XII)',                              s:'grave',      p:5},
+  '66700': {d:'Conduzir veículo com equipamento do sistema de iluminação e sinalização alterados (art. 230, XIII)',  s:'grave',      p:5},
+  '66880': {d:'Conduzir veículo com registrador de velocidade/tempo viciado ou defeituoso (art. 230, XIV)',          s:'grave',      p:5},
+  '66961': {d:'Conduzir com inscrição/adesivo/legenda/símbolo no para-brisa ou extensão traseira (art. 230, XV)',    s:'grave',      p:5},
+  '67000': {d:'Conduzir veículo com vidro coberto por película, painéis ou pintura (art. 230, XVI)',                 s:'grave',      p:5},
+  '67180': {d:'Conduzir veículo com cortinas ou persianas fechadas (art. 230, XVII)',                                s:'grave',      p:5},
+  '67261': {d:'Conduzir veículo em mau estado de conservação ou reprovado em inspeção (art. 230, XVIII)',            s:'grave',      p:5},
+  '67340': {d:'Conduzir veículo sem acionar o limpador de para-brisa sob chuva (art. 230, XIX)',                     s:'grave',      p:5},
+  '67420': {d:'Conduzir veículo sem portar a autorização para condução de escolares (art. 230, XX)',                 s:'grave',      p:5},
+  '67500': {d:'Conduzir veículo de carga com falta de inscrição da tara (art. 230, XXI)',                            s:'media',      p:4},
+  '67691': {d:'Conduzir veículo com defeito no sistema de iluminação/sinalização — lâmpada queimada (art. 230, XXII)', s:'media',   p:4},
+  '75600': {d:'Conduzir veículo de transporte de passageiros ou carga em desacordo com o art. 67-C do CTB (art. 230, XXIII)', s:'media', p:4},
+  // ── Art. 231 — Trânsito irregular ──
+  '67770': {d:'Transitar com veículo danificando a via, suas instalações e equipamentos (art. 231, I)',              s:'gravissima', p:7},
+  '67851': {d:'Transitar com veículo derramando, lançando ou arrastando a carga transportada (art. 231, II, a)',     s:'gravissima', p:7},
+  '67930': {d:'Transitar com veículo derramando/lançando combustível ou lubrificante (art. 231, II, b)',             s:'gravissima', p:7},
+  '68070': {d:'Transitar com veículo lançando/arrastando objeto que possa acarretar risco de acidente (art. 231, II, c)', s:'gravissima', p:7},
+  '68150': {d:'Transitar com veículo produzindo fumaça, gases ou partículas em desacordo com o Contran (art. 231, III)', s:'grave', p:5},
+  '68231': {d:'Transitar com veículo e/ou carga com dimensões superiores ao limite legal sem autorização (art. 231, IV)', s:'grave', p:5},
+  '68311': {d:'Transitar com veículo com excesso de peso — PBT/PBTC ou por eixo (art. 231, V)',                     s:'media',      p:4},
+  '68401': {d:'Transitar em desacordo com autorização expedida para veículo com dimensões excedentes (art. 231, VI)', s:'grave',    p:5},
+  '68580': {d:'Transitar com veículo com lotação excedente (art. 231, VII)',                                         s:'media',      p:4},
+  '68661': {d:'Transitar efetuando transporte remunerado de pessoas ou bens sem licença (art. 231, VIII)',           s:'media',      p:4},
+  '68741': {d:'Transitar com veículo desligado ou desengrenado em declive (art. 231, IX)',                           s:'media',      p:4},
+  '68820': {d:'Transitar com veículo excedendo a CMT em até 600 kg (art. 231, X)',                                   s:'media',      p:4},
+  '68900': {d:'Transitar com veículo excedendo a CMT entre 601 e 1.000 kg (art. 231, X)',                            s:'grave',      p:5},
+  '69040': {d:'Transitar com veículo excedendo a CMT acima de 1.000 kg (art. 231, X)',                               s:'gravissima', p:7},
+  // ── Art. 232/233/234/235/236/237/238/239/240/241/242 ──
+  '69120': {d:'Conduzir veículo sem os documentos de porte obrigatório referidos no CTB (art. 232)',                 s:'leve',       p:3, adm:true},
+  '69201': {d:'Deixar de efetuar registro do veículo em 30 dias após transferência/alteração/mudança (art. 233)',    s:'grave',      p:5, adm:true},
+  '69391': {d:'Falsificar ou adulterar documento de habilitação ou identificação do veículo (art. 234)',             s:'gravissima', p:7},
+  '69471': {d:'Conduzir pessoas, animais ou carga nas partes externas do veículo (art. 235)',                        s:'grave',      p:5},
+  '69550': {d:'Rebocar outro veículo com cabo flexível ou corda (art. 236)',                                         s:'media',      p:4},
+  '69630': {d:'Transitar com veículo sem inscrição/simbologia necessária para identificação (art. 237)',             s:'grave',      p:5},
+  '69710': {d:'Recusar-se a entregar CNH/CRV/CRLV ou outros documentos (art. 238)',                                  s:'gravissima', p:7},
+  '69800': {d:'Retirar do local veículo legalmente retido para regularização sem permissão (art. 239)',              s:'gravissima', p:7},
+  '69980': {d:'Deixar o responsável de promover baixa do registro de veículo irrecuperável/desmontado (art. 240)',   s:'grave',      p:5, adm:true},
+  '70051': {d:'Deixar de atualizar o cadastro de registro do veículo ou de habilitação do condutor (art. 241)',      s:'leve',       p:3, adm:true},
+  '70131': {d:'Fazer falsa declaração de domicílio para fins de registro/licenciamento/habilitação (art. 242)',      s:'gravissima', p:7},
+  '70210': {d:'Deixar a seguradora de comunicar ocorrência de perda total do veículo e devolver placas/docs (art. 243)', s:'grave',  p:5},
+  // ── Art. 244 — Motocicletas ──
+  '70301': {d:'Conduzir motocicleta/motoneta/ciclomotor sem capacete de segurança (art. 244, I)',                    s:'gravissima', p:7, auto:true},
+  '70481': {d:'Conduzir motocicleta/motoneta/ciclomotor transportando passageiro sem capacete ou fora do assento (art. 244, II)', s:'gravissima', p:7, auto:true},
+  '70561': {d:'Conduzir motocicleta/ciclomotor/ciclo fazendo malabarismo ou equilibrando-se em uma roda (art. 244, III)', s:'gravissima', p:7, auto:true},
+  '70640': {d:'Conduzir motocicleta/motoneta/ciclomotor com os faróis apagados (art. 244, IV)',                      s:'gravissima', p:7, auto:true},
+  '70721': {d:'Conduzir motocicleta transportando criança menor de 7 anos (art. 244, V)',                            s:'gravissima', p:7, auto:true},
+  '70722': {d:'Conduzir motocicleta transportando criança sem condição de cuidar da própria segurança (art. 244, V)', s:'gravissima', p:7, auto:true},
+  '70800': {d:'Conduzir motocicleta/motoneta/ciclomotor rebocando outro veículo (art. 244, VI)',                     s:'grave',      p:5},
+  '70991': {d:'Conduzir motocicleta/motoneta/ciclomotor sem segurar o guidom com ambas as mãos (art. 244, VII)',     s:'grave',      p:5},
+  '71021': {d:'Conduzir motocicleta/motoneta transportando carga incompatível ou em desacordo com o CTB (art. 244, VIII)', s:'grave', p:5},
+  '71100': {d:'Conduzir ciclo transportando passageiro fora da garupa/assento a ele destinado (art. 244, §1º, a)',   s:'media',      p:4},
+  '71291': {d:'Conduzir ciclo/ciclomotor em via de trânsito rápido ou rodovia sem acostamento/faixa própria (art. 244, §1º, b)', s:'media', p:4},
+  '71370': {d:'Conduzir ciclo transportando criança sem condição de cuidar da própria segurança (art. 244, §1º, c)', s:'media',      p:4},
+  '75521': {d:'Conduzir motocicleta/motoneta efetuando transporte remunerado em desacordo com o art. 139-A CTB (art. 244, IX)', s:'grave', p:5},
+  // ── Art. 245/246/247/248/249/250/251/252/253 ──
+  '71450': {d:'Utilizar a via para depósito de mercadorias, materiais ou equipamentos (art. 245)',                   s:'grave',      p:5},
+  '71531': {d:'Deixar de sinalizar obstáculo à circulação/segurança em calçada/pista — sem agravamento (art. 246)', s:'gravissima', p:7},
+  '71611': {d:'Deixar de sinalizar obstáculo / obstaculizar a via — agravamento 2X (art. 246)',                      s:'gravissima', p:7},
+  '71701': {d:'Deixar de sinalizar obstáculo / obstaculizar a via — agravamento 3X (art. 246)',                      s:'gravissima', p:7},
+  '71881': {d:'Deixar de sinalizar obstáculo / obstaculizar a via — agravamento 4X (art. 246)',                      s:'gravissima', p:7},
+  '71962': {d:'Obstaculizar a via indevidamente — agravamento 5X (art. 246)',                                        s:'gravissima', p:7},
+  '72001': {d:'Deixar de conduzir pelo bordo da pista em fila única veículo de tração humana ou animal (art. 247)',  s:'media',      p:4},
+  '72180': {d:'Transportar em veículo de passageiros carga excedente em desacordo com o art. 109 CTB (art. 248)',    s:'grave',      p:5},
+  '72261': {d:'Deixar de manter acesas à noite as luzes de posição quando o veículo estiver parado (art. 249)',      s:'media',      p:4},
+  '72340': {d:'Em movimento, deixar de manter acesa a luz baixa durante a noite (art. 250, I, a)',                   s:'media',      p:4},
+  '72420': {d:'Em movimento de dia, deixar de manter acesa a luz baixa em túnel com iluminação (art. 250, I, b)',    s:'media',      p:4},
+  '72500': {d:'Em movimento, deixar de manter acesa a luz baixa em veículo de transporte coletivo em faixa exclusiva (art. 250, I, c)', s:'media', p:4},
+  '72690': {d:'Em movimento, deixar de manter acesa a luz baixa do ciclomotor (art. 250, I, d)',                     s:'media',      p:4},
+  '72770': {d:'Em movimento, deixar de manter acesas as luzes de posição sob chuva forte/neblina/cerração (art. 250, II)', s:'media', p:4},
+  '72850': {d:'Em movimento, deixar de manter a placa traseira iluminada à noite (art. 250, III)',                   s:'media',      p:4},
+  '72930': {d:'Utilizar o pisca-alerta, exceto em imobilizações ou situações de emergência (art. 251, I)',           s:'media',      p:4},
+  '73070': {d:'Utilizar luz alta e baixa intermitente, exceto quando permitido pelo CTB (art. 251, II)',             s:'media',      p:4},
+  '73150': {d:'Dirigir o veículo com o braço do lado de fora (art. 252, I)',                                         s:'media',      p:4},
+  '73231': {d:'Dirigir transportando pessoas, animais ou volume à sua esquerda ou entre braços e pernas (art. 252, II)', s:'media',  p:4},
+  '73310': {d:'Dirigir o veículo com incapacidade física ou mental temporária (art. 252, III)',                      s:'media',      p:4},
+  '73400': {d:'Dirigir com calçado que não se firme nos pés ou comprometa uso dos pedais (art. 252, IV)',            s:'media',      p:4},
+  '73580': {d:'Dirigir o veículo com apenas uma das mãos (art. 252, V)',                                             s:'media',      p:4},
+  '73661': {d:'Dirigir utilizando fones nos ouvidos conectados a aparelhagem sonora (art. 252, VI)',                 s:'media',      p:4},
+  '73662': {d:'Dirigir veículo utilizando telefone celular (art. 252, VI)',                                          s:'media',      p:4},
+  '75950': {d:'Dirigir veículo realizando cobrança de tarifa com veículo em movimento (art. 252, VII)',              s:'media',      p:4},
+  '73740': {d:'Bloquear a via com veículo (art. 253)',                                                               s:'gravissima', p:7},
+  // ── Art. 253-A ──
+  '76090': {d:'Organizar as condutas previstas no caput do art. 253-A (art. 253-A, §1º)',                            s:'gravissima', p:7, auto:true},
+  '76171': {d:'Usar veículo para deliberadamente interromper a circulação na via (art. 253-A)',                      s:'gravissima', p:7, auto:true},
+  '76172': {d:'Usar veículo para deliberadamente restringir a circulação na via (art. 253-A)',                       s:'gravissima', p:7, auto:true},
+  '76173': {d:'Usar veículo para deliberadamente perturbar a circulação na via (art. 253-A)',                        s:'gravissima', p:7, auto:true},
+  // ── Art. 254 — Pedestre ──
+  '73820': {d:'Pedestre permanecer ou andar na pista, exceto para cruzá-la onde permitido (art. 254, I)',            s:'leve',       p:3},
+  '73901': {d:'Pedestre cruzar a pista de rolamento de viaduto, ponte ou túnel (art. 254, II)',                      s:'leve',       p:3},
+  '74040': {d:'Pedestre atravessar via na área de cruzamento exceto onde permitido pela sinalização (art. 254, III)', s:'leve',      p:3},
+  '74120': {d:'Pedestre utilizar via em agrupamento que perturbe o trânsito ou pratique esporte/desfile (art. 254, IV)', s:'leve',   p:3},
+  '74201': {d:'Pedestre andar fora de faixa própria, passarela, passagem aérea ou subterrânea (art. 254, V)',        s:'leve',       p:3},
+  '74390': {d:'Pedestre desobedecer a sinalização de trânsito específica (art. 254, VI)',                            s:'leve',       p:3},
+  // ── Art. 255 ──
+  '74471': {d:'Conduzir bicicleta em passeios onde não seja permitida ou de forma agressiva (art. 255)',             s:'media',      p:4},
+  // ── Serviço público ──
+  '74801': {d:'Aprovar projeto de edificação polo atrativo de trânsito sem anuência do órgão de trânsito (art. 93 c/c 95, §4º)', s:'gravissima', p:7, adm:true},
+  '74980': {d:'Não sinalizar imediatamente obstáculo à circulação/segurança de veículos ou pedestres (art. 94)',     s:'gravissima', p:7, adm:true},
+  '75010': {d:'Utilizar ondulação transversal/sonorizador fora do padrão estabelecido pelo Contran (art. 94, §único)', s:'gravissima', p:7, adm:true},
+  '75101': {d:'Iniciar obra ou evento que perturbe/interrompa a circulação sem permissão (art. 95)',                 s:'gravissima', p:7, adm:true},
+  '75281': {d:'Não sinalizar a execução ou manutenção de obra ou evento (art. 95, §1º)',                             s:'gravissima', p:7, adm:true},
+  '75360': {d:'Não avisar a comunidade com 48h de antecedência sobre interdição de via (art. 95, §2º)',              s:'gravissima', p:7, adm:true},
+  // ── Art. 330 ──
+  '75441': {d:'Falta, atraso, fraude ou recusa de exibição do livro de registro de placas de experiência (art. 330, §5º)', s:'gravissima', p:7},
+  // ── Art. 277 já tratado acima (75790) ──
+};
+
+const PRECOS = { PAP:0, PAI:0, LEI_SECA:0 };
+
+// ═══════════════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════════════
+function lookupCode(raw){
+  if(!raw) return null;
+  const digits=raw.replace(/\D/g,'');
+  return CTB_DB[digits]||CTB_DB[digits.slice(0,5)]||CTB_DB[digits.slice(0,4)]||null;
+}
+function parseD(s){return s?new Date(s+'T12:00:00'):null}
+function fmtDate(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
+function subtractYear(s){const d=parseD(s);d.setFullYear(d.getFullYear()-1);return d.toISOString().slice(0,10)}
+function daysDiff(s1,s2){return Math.round((parseD(s2)-parseD(s1))/86400000)}
+function fmtMoney(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function today(){return new Date().toISOString().slice(0,10)}
+function addDaysToDate(s,n){const d=parseD(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function getLimiteNA(inf){return inf.limiteNA||(inf.notificationDate?addDaysToDate(inf.notificationDate,30):null)}
+function getLimiteNP(inf){return inf.limiteNP||(inf.notifNP?addDaysToDate(inf.notifNP,30):null)}
+const SEV_DEFAULTS={leve:3,media:4,grave:5,gravissima:7};
+const SEV_LABELS={leve:'Leve',media:'Média',grave:'Grave',gravissima:'Gravíssima'};
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>{t.className='toast'},3000);
+}
+
+function avaliarPrazoRecurso(notifDate){
+  if(!notifDate) return{status:'consultar',label:'Sem data',dataLimite:null};
+  const dataLimite=addDaysToDate(notifDate,30);
+  const diasRestantes=daysDiff(today(),dataLimite);
+  if(diasRestantes>0) return{status:'ok',label:`✓ ${diasRestantes}d restantes`,diasRestantes,dataLimite};
+  if(diasRestantes===0) return{status:'ok',label:'⚠ Último dia',diasRestantes:0,dataLimite};
+  return{status:'vencido',label:`Vencido (${Math.abs(diasRestantes)}d atrás)`,diasRestantes,dataLimite};
+}
+
+// ═══════════════════════════════════════════════
+// MODAL / AÇÕES
+// ═══════════════════════════════════════════════
+function confirmarNovoCliente(){document.getElementById('modalNovo').classList.add('active')}
+function fecharModal(){document.getElementById('modalNovo').classList.remove('active')}
+function novoCliente(){
+  ['dName','dPlate','dRenavam','dChassi'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dEAR').value='nao';
+  infractions=[];clearForm();fecharModal();renderAll();
+  showToast('✓ Novo cliente — dados resetados!');
+}
+document.getElementById('modalNovo').addEventListener('click',function(e){if(e.target===this)fecharModal()});
+
+function exportData(){
+  const payload={
+    version:'3.0',exportedAt:new Date().toISOString(),
+    driver:{
+      name:document.getElementById('dName').value,plate:document.getElementById('dPlate').value,
+      renavam:document.getElementById('dRenavam').value,chassi:document.getElementById('dChassi').value,
+      ear:document.getElementById('dEAR').value,
+    },infractions,
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  const name=(document.getElementById('dName').value||'condutor').replace(/\s+/g,'-').toLowerCase();
+  a.href=url;a.download=`prontuario-${name}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);showToast('✓ Prontuário exportado com sucesso!');
+}
+
+function importData(event){
+  const file=event.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.driver||!Array.isArray(data.infractions)){showToast('Arquivo inválido.','error');return;}
+      document.getElementById('dName').value=data.driver.name||'';
+      document.getElementById('dPlate').value=data.driver.plate||'';
+      document.getElementById('dRenavam').value=data.driver.renavam||'';
+      document.getElementById('dChassi').value=data.driver.chassi||'';
+      document.getElementById('dEAR').value=data.driver.ear||'nao';
+      infractions=data.infractions;clearForm();renderAll();
+      showToast(`✓ Importado: ${infractions.length} infração(ões).`);
+    }catch{showToast('Erro ao ler arquivo JSON.','error');}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+// ═══════════════════════════════════════════════
+// MOTOR DE ANÁLISE
+// ═══════════════════════════════════════════════
+function analyze(infs){
+  if(!infs.length) return null;
+  const sorted=[...infs].sort((a,b)=>a.aitDate.localeCompare(b.aitDate));
+  const withFlags=sorted.map(inf=>{
+    const entry=lookupCode(inf.code||'');
+    // excluiPAP: apenas infrações autossuspensivas (auto:true) não geram pontos no PAP.
+    // Infrações administrativas (adm:true) como 65992 SÃO computadas no total de pontos.
+    return{...inf,excluiPAP:!!(entry?.auto),excluiMotivo:entry?.auto?'auto':entry?.adm?'adm':null,isLeisseca:!!(entry?.leisseca),entryAuto:!!(entry?.auto),entryAdm:!!(entry?.adm)};
+  });
+
+  const papGroups=[];const enriched=[];
+  for(let i=0;i<withFlags.length;i++){
+    const inf=withFlags[i];
+    const groupStart=papGroups.length>0?papGroups[papGroups.length-1].triggerIdx+1:0;
+    const cutoff=subtractYear(inf.aitDate);
+    const windowInfs=withFlags.slice(groupStart,i+1).filter(x=>x.aitDate>=cutoff);
+    const gravCount=windowInfs.filter(x=>x.severity==='gravissima'&&!x.entryAuto&&!x.isLeisseca).length;
+    const autoCount=windowInfs.filter(x=>x.entryAuto&&!x.isLeisseca).length;
+    const gravTotal=gravCount+autoCount;
+    const hasEAR=document.getElementById('dEAR')?.value==='sim';
+    let limit=hasEAR?40:(gravTotal>=2?20:gravTotal===1?30:40);
+    const cumulPts=windowInfs.reduce((s,x)=>s+(x.excluiPAP?0:+x.points),0);
+    let lateNotif=false,diffDays=null,extraDays=null;
+    if(inf.notificationDate&&inf.aitDate){
+      diffDays=daysDiff(inf.aitDate,inf.notificationDate);
+      lateNotif=diffDays>30;if(lateNotif)extraDays=diffDays-30;
+    }
+    const isPapTrigger=cumulPts>=limit&&!papGroups.some(g=>g.triggerIdx===i);
+    if(isPapTrigger)papGroups.push({startIdx:groupStart,triggerIdx:i,cumulAtTrigger:cumulPts,limitAtTrigger:limit,gravAtTrigger:gravCount,date:inf.aitDate});
+    enriched.push({...inf,_i:i,group:papGroups.length,isPapTrigger,cumulPts,gravCount,limit,exceeds:cumulPts>=limit,lateNotif,diffDays,extraDays});
+  }
+
+  for(let i=0;i<enriched.length;i++){
+    const inf=enriched[i];
+    const papsBefore=papGroups.filter(g=>g.triggerIdx<i).length;
+    const papsThroughThis=papGroups.filter(g=>g.triggerIdx<=i).length;
+    enriched[i].group=inf.isPapTrigger?papsBefore+1:papsThroughThis+1;
+  }
+
+  const last=enriched[enriched.length-1];
+  const totalPaps=papGroups.length;
+  let cassacaoRisco=false,cassacaoInfo=null;
+  if(papGroups.length>=2){
+    for(let i=1;i<papGroups.length;i++){
+      const dias=daysDiff(papGroups[i-1].date,papGroups[i].date);
+      if(dias<=365){cassacaoRisco=true;cassacaoInfo={pap1:papGroups[i-1].date,pap2:papGroups[i].date,dias};break;}
+    }
+  }
+
+  const lastGroupStart=totalPaps>0?papGroups[totalPaps-1].triggerIdx+1:0;
+  const lastGroupInfs=enriched.slice(lastGroupStart);
+  const currentPts=lastGroupInfs.length>0?lastGroupInfs[lastGroupInfs.length-1].cumulPts:0;
+  const currentLimit=lastGroupInfs.length>0?lastGroupInfs[lastGroupInfs.length-1].limit:last.limit;
+  const currentGrav=lastGroupInfs.length>0?lastGroupInfs[lastGroupInfs.length-1].gravCount:0;
+  const pct=currentPts/currentLimit;
+
+  const autoInfs=enriched.filter(x=>x.entryAuto&&!x.isLeisseca);
+  const leissecaInfs=enriched.filter(x=>x.isLeisseca);
+  const annulable=enriched.filter(x=>x.lateNotif);
+  const avbCandidates=enriched.filter(x=>!x.entryAuto&&!x.isLeisseca);
+
+  let status,situation,action,justification,commercialClass;
+  const services=[];
+  const lastGroupExceeded=lastGroupInfs.some(x=>x.isPapTrigger);
+
+  if(totalPaps===0){
+    if(pct>=0.75){status='RISCO';commercialClass='commercial-warning';situation=`Em zona de risco: ${currentPts} de ${currentLimit} pontos (${Math.round(pct*100)}% do limite)`;action='Recursos de multa para redução preventiva de pontos';}
+    else{status='SEGURO';commercialClass='commercial-success';situation=`Situação controlada: ${currentPts} de ${currentLimit} pontos (${Math.round(pct*100)}%)`;action=enriched.length>0?'Recursos de multa para redução de pontos e valores':'Monitoramento preventivo';}
+  }else{
+    if(lastGroupExceeded&&lastGroupInfs.length===1&&lastGroupInfs[0].isPapTrigger){status='PRE_PAP';commercialClass='commercial-orange';situation=`Limite de pontos ultrapassado — ${ordinal(totalPaps)} processo de suspensão identificado`;action='Defesa do processo de suspensão — agir IMEDIATAMENTE';}
+    else if(pct>=1){status='ESTOURADO_NOVO';commercialClass='commercial-danger';situation=`${totalPaps} processo(s) de suspensão — nova contagem também ultrapassou o limite`;action=`Defesa de ${totalPaps} processo(s) de suspensão`;}
+    else if(pct>=0.75){status='ESTOURADO_RISCO';commercialClass='commercial-danger';situation=`${totalPaps} processo(s) de suspensão + nova contagem em risco (${Math.round(pct*100)}% do limite)`;action='Defesa dos processos + redução preventiva da nova contagem';}
+    else{status='ESTOURADO';commercialClass='commercial-danger';situation=`${totalPaps} processo(s) de suspensão identificado(s) — nova contagem sob controle (${Math.round(pct*100)}%)`;action='Defesa dos processos de suspensão — nova contagem monitorada';}
+  }
+
+  justification=buildJustificacao({status,currentPts,currentLimit,pct,enriched,totalPaps,papGroups,annulable,autoInfs,leissecaInfs,cassacaoRisco,cassacaoInfo});
+
+  if(totalPaps>0){
+    // Classifica cada PAP em Defesa TE-PAP ou Recurso TE-PAP
+    for(let i=0;i<totalPaps;i++){
+      const pg=papGroups[i];
+      // Infração que disparou o PAP
+      const infPAP=enriched[pg.triggerIdx];
+      const temNA=!!infPAP.notificationDate;
+      const temNP=!!infPAP.notifNP;
+      let tipoServico,nomeServico,descServico;
+
+      if(temNP){
+        // 2.4 — NP emitida
+        tipoServico='RECURSO_TE_PAP';
+        nomeServico=`Recurso de Tratamento Especial — PAP (${ordinal(i+1)})`;
+        descServico=`A Notificação de Penalidade desta infração foi emitida em ${fmtDate(infPAP.notifNP)}. Nossa equipe atua imediatamente no Recurso à JARI e na defesa do processo administrativo de suspensão por pontuação (PAP), buscando afastar ou reduzir os impactos da penalidade e preservar integralmente o direito de dirigir do condutor.`;
+      } else if(temNA){
+        const diasNA=daysDiff(infPAP.notificationDate,today());
+        if(diasNA<=30){
+          // 1.2 — NA dentro do prazo
+          tipoServico='DEFESA_TE_PAP';
+          nomeServico=`Defesa de Tratamento Especial — PAP (${ordinal(i+1)})`;
+          descServico=`A Notificação de Autuação desta infração foi emitida em ${fmtDate(infPAP.notificationDate)}. Atuamos imediatamente na Defesa de Autuação, buscando o cancelamento antes da emissão da Notificação de Penalidade, enquanto conduzimos simultaneamente a estratégia de defesa do processo administrativo de suspensão por pontuação (PAP), com foco na preservação do direito de dirigir do condutor.`;
+        } else {
+          // 1.3 — NA fora do prazo, sem NP
+          tipoServico='DEFESA_TE_PAP';
+          nomeServico=`Defesa de Tratamento Especial — PAP (${ordinal(i+1)})`;
+          descServico=`A Notificação de Autuação desta infração foi emitida em ${fmtDate(infPAP.notificationDate)}. Como o prazo de Defesa de Autuação já se encerrou, nossa equipe realizará o monitoramento ativo da emissão da Notificação de Penalidade para protocolar o Recurso à JARI imediatamente após a liberação, conduzindo simultaneamente a defesa estratégica do processo de suspensão por pontuação (PAP).`;
+        }
+      } else {
+        // 1.1 — Apenas data do AIT
+        tipoServico='DEFESA_TE_PAP';
+        nomeServico=`Defesa de Tratamento Especial — PAP (${ordinal(i+1)})`;
+        descServico=`O Auto de Infração desta infração foi registrado em ${fmtDate(infPAP.aitDate)}. Nossa equipe realizará o acompanhamento ativo da emissão da Notificação de Autuação para atuar imediatamente na Defesa de Autuação, buscando o cancelamento da infração antes da geração de pontos e conduzindo preventivamente a estratégia de proteção da CNH no processo de suspensão por pontuação (PAP).`;
+      }
+
+      services.push({type:'PAP',subtype:tipoServico,name:nomeServico,desc:descServico,price:PRECOS.PAP,priority:true,cls:'s-danger'});
+    }
+
+    if(status==='ESTOURADO_NOVO')services.push({type:'PAP',name:`Defesa — Novo processo de suspensão (${ordinal(totalPaps+1)})`,desc:`A nova contagem após o ${ordinal(totalPaps)} processo de suspensão já ultrapassou o limite de ${currentLimit} pts (${currentPts} pts). Novo processo de suspensão iminente.`,price:PRECOS.PAP,priority:true,cls:'s-danger'});
+  }
+
+  // ── TE-PAP Preventivo: status RISCO com margem ≤ 3 pts ──
+  // A infração mais recente que colocou o condutor a ≤ 3 pts do limite deve receber
+  // oferta de TE-PAP preventivo, pois uma nova infração grave já instauraria o PAP.
+  // As demais continuam elegíveis para AVB normalmente.
+  const margemAtual=currentLimit-currentPts;
+  if(status==='RISCO'&&margemAtual<=3){
+    // Identifica a infração do ciclo atual que, se removida, deixaria margem segura (>3)
+    // Ou seja: aquela cujos pontos são suficientes para causar o risco sozinha
+    const infsRiscoZona=enriched.filter(x=>
+      !x.entryAuto&&!x.isLeisseca&&x.group===1&&
+      (currentPts - x.points) <= (currentLimit - 3 - 1) // sem ela, margem seria segura
+    );
+    // Na prática é a(s) infração(ões) mais recentes que empurraram para a zona de risco.
+    // Usamos a última infração do ciclo como gatilho de risco.
+    const infRisco=infsRiscoZona.length>0
+      ? infsRiscoZona[infsRiscoZona.length-1]
+      : enriched.filter(x=>!x.entryAuto&&!x.isLeisseca).slice(-1)[0];
+
+    if(infRisco){
+      const temNA=!!infRisco.notificationDate;
+      const temNP=!!infRisco.notifNP;
+      let nomeTE,descTE;
+
+      if(temNP){
+          // 2.4 preventivo — NP emitida
+          nomeTE=`Recurso de Tratamento Especial — Risco de PAP (Preventivo)`;
+          descTE=`A Notificação de Penalidade desta infração foi emitida em ${fmtDate(infRisco.notifNP)}. Nossa equipe atua imediatamente no Recurso à JARI e na defesa do processo administrativo de suspensão por pontuação (PAP), buscando afastar ou reduzir os impactos da penalidade e preservar integralmente o direito de dirigir do condutor.`;
+      } else if(temNA){
+        const diasNA=daysDiff(infRisco.notificationDate,today());
+        if(diasNA<=30){
+          // 1.2 preventivo — NA dentro do prazo
+          nomeTE=`Defesa de Tratamento Especial — Risco de PAP (Preventivo)`;
+          descTE=`A Notificação de Autuação desta infração foi emitida em ${fmtDate(infRisco.notificationDate)}. Atuamos imediatamente na Defesa de Autuação, buscando o cancelamento antes da emissão da Notificação de Penalidade, enquanto conduzimos simultaneamente a estratégia de defesa preventiva do processo de suspensão por pontuação (PAP), com foco na preservação do direito de dirigir do condutor.`;
+        } else {
+          // 1.3 preventivo — NA fora do prazo, sem NP
+          nomeTE=`Defesa de Tratamento Especial — Risco de PAP (Preventivo)`;
+          descTE=`A Notificação de Autuação desta infração foi emitida em ${fmtDate(infRisco.notificationDate)}. Como o prazo de Defesa de Autuação já se encerrou, nossa equipe realizará o monitoramento ativo da emissão da Notificação de Penalidade para protocolar o Recurso à JARI imediatamente após a liberação, conduzindo simultaneamente a defesa estratégica do processo de suspensão por pontuação (PAP).`;
+        }
+      } else {
+        // 1.1 preventivo — apenas AIT
+        nomeTE=`Defesa de Tratamento Especial — Risco de PAP (Preventivo)`;
+        descTE=`1 infração: o Auto de Infração foi registrado em ${fmtDate(infRisco.aitDate)}. Nossa equipe realizará o acompanhamento ativo da emissão da Notificação de Autuação para atuar imediatamente na Defesa de Autuação, buscando o cancelamento da infração antes da geração de pontos e conduzindo preventivamente a estratégia de proteção da CNH no processo de suspensão por pontuação (PAP).`;
+      }
+
+      services.push({type:'PAP',subtype:'PREVENTIVO',name:nomeTE,desc:descTE,price:PRECOS.PAP,priority:true,cls:'s-warning',preventivo:true,infRiscoId:infRisco.id});
+    }
+  }
+
+
+
+  // ── Classificação PAI por infração autossuspensiva ──
+  if(autoInfs.length>0){
+    const recursoTEPAI=[]; // NP emitida
+    const defesaTEPAI_naAtiva=[]; // NA dentro do prazo
+    const defesaTEPAI_aguardando=[]; // NA fora do prazo, sem NP
+    const defesaTEPAI_semData=[]; // apenas AIT
+
+    autoInfs.forEach(inf=>{
+      const temNA=!!inf.notificationDate;
+      const temNP=!!inf.notifNP;
+      if(temNP){
+        recursoTEPAI.push(inf);
+      } else if(temNA){
+        const dataLimNA=getLimiteNA(inf);
+        if(dataLimNA>=today()) defesaTEPAI_naAtiva.push(inf);
+        else defesaTEPAI_aguardando.push(inf);
+      } else {
+        defesaTEPAI_semData.push(inf);
+      }
+    });
+
+    // 4.4 — NP emitida → Recurso TE-PAI
+    if(recursoTEPAI.length>0){
+      const qtd=recursoTEPAI.length;
+      const datasParts=recursoTEPAI.map(x=>fmtDate(x.notifNP));
+      services.push({
+        type:'PAI',
+        name:`Recurso de Tratamento Especial — PAI (${qtd}x)`,
+        desc:`A Notificação de Penalidade desta(s) ${qtd} infração(ões) autossuspensiva(s) foi emitida em ${datasParts.join(', ')}. Nossa equipe atua imediatamente no Recurso à JARI e na condução estratégica do Processo Administrativo por Infração (PAI), buscando afastar a penalidade e preservar o direito de dirigir do condutor.`,
+        price:PRECOS.PAI*qtd,priority:true,cls:'s-orange'
+      });
+    }
+    // 3.2 — NA dentro do prazo → Defesa TE-PAI
+    if(defesaTEPAI_naAtiva.length>0){
+      const qtd=defesaTEPAI_naAtiva.length;
+      const datasParts=defesaTEPAI_naAtiva.map(x=>fmtDate(x.notificationDate));
+      services.push({
+        type:'PAI',
+        name:`Defesa de Tratamento Especial — PAI (${qtd}x)`,
+        desc:`A Notificação de Autuação desta(s) ${qtd} infração(ões) autossuspensiva(s) foi emitida em ${datasParts.join(', ')}. Atuamos imediatamente na Defesa de Autuação para buscar o cancelamento da infração antes da emissão da Notificação de Penalidade, reduzindo significativamente o risco de instauração do Processo Administrativo por Infração (PAI).`,
+        price:PRECOS.PAI*qtd,priority:true,cls:'s-orange'
+      });
+    }
+    // 3.3 — NA fora do prazo, sem NP → Defesa TE-PAI aguardando
+    if(defesaTEPAI_aguardando.length>0){
+      const qtd=defesaTEPAI_aguardando.length;
+      const datasParts=defesaTEPAI_aguardando.map(x=>fmtDate(x.notificationDate));
+      services.push({
+        type:'PAI',
+        name:`Defesa de Tratamento Especial — PAI (${qtd}x)`,
+        desc:`A Notificação de Autuação desta(s) ${qtd} infração(ões) autossuspensiva(s) foi emitida em ${datasParts.join(', ')}. Como o prazo de Defesa de Autuação já foi encerrado, nossa equipe realizará o acompanhamento da emissão da Notificação de Penalidade para atuação imediata no Recurso à JARI e na defesa do Processo Administrativo por Infração (PAI).`,
+        price:PRECOS.PAI*qtd,priority:true,cls:'s-orange'
+      });
+    }
+    // 3.1 — Apenas AIT, sem NA
+    if(defesaTEPAI_semData.length>0){
+      const qtd=defesaTEPAI_semData.length;
+      const datasParts=defesaTEPAI_semData.map(x=>fmtDate(x.aitDate));
+      services.push({
+        type:'PAI',
+        name:`Defesa de Tratamento Especial — PAI (${qtd}x)`,
+        desc:`${qtd} infração(ões) autossuspensiva(s): o Auto de Infração foi registrado em ${datasParts.join(', ')}. Nossa equipe acompanhará preventivamente a emissão da Notificação de Autuação para atuar imediatamente na Defesa de Autuação, buscando o cancelamento da infração antes da instauração do Processo Administrativo por Infração (PAI).`,
+        price:PRECOS.PAI*qtd,priority:true,cls:'s-orange'
+      });
+    }
+  }
+
+  // ── Lei Seca ──
+  if(leissecaInfs.length>0){
+    const recursoLS_npEmitida=leissecaInfs.filter(x=>!!x.notifNP);
+    const defesaLS_naAtiva=leissecaInfs.filter(x=>!x.notifNP&&x.notificationDate&&getLimiteNA(x)>=today());
+    const defesaLS_aguardando=leissecaInfs.filter(x=>!x.notifNP&&x.notificationDate&&getLimiteNA(x)<today());
+    const defesaLS_semData=leissecaInfs.filter(x=>!x.notifNP&&!x.notificationDate);
+
+    // 6.4 — NP emitida → Recurso TE-LS
+    if(recursoLS_npEmitida.length>0){
+      const qtd=recursoLS_npEmitida.length;
+      const datasParts=recursoLS_npEmitida.map(x=>fmtDate(x.notifNP));
+      services.push({
+        type:'LEI_SECA',
+        name:`Recurso de Tratamento Especial — Lei Seca (${qtd}x)`,
+        desc:`A Notificação de Penalidade desta(s) ${qtd} infração(ões) de Lei Seca foi emitida em ${datasParts.join(', ')}. Nossa equipe atua imediatamente no Recurso à JARI e na condução técnica da defesa do processo de suspensão da CNH, buscando afastar a penalidade e preservar integralmente o direito de dirigir do condutor.`,
+        price:PRECOS.LEI_SECA*qtd,priority:true,cls:'s-danger'
+      });
+    }
+    // 5.2 — NA dentro do prazo → Defesa TE-LS
+    if(defesaLS_naAtiva.length>0){
+      const qtd=defesaLS_naAtiva.length;
+      const datasParts=defesaLS_naAtiva.map(x=>fmtDate(x.notificationDate));
+      services.push({
+        type:'LEI_SECA',
+        name:`Defesa de Tratamento Especial — Lei Seca (${qtd}x)`,
+        desc:`A Notificação de Autuação desta(s) ${qtd} infração(ões) de Lei Seca foi emitida em ${datasParts.join(', ')}. Nossa equipe atua imediatamente na Defesa de Autuação para buscar o cancelamento da infração antes da emissão da Notificação de Penalidade, reduzindo significativamente os riscos de suspensão da CNH.`,
+        price:PRECOS.LEI_SECA*qtd,priority:true,cls:'s-danger'
+      });
+    }
+    // 5.3 — NA fora do prazo, sem NP → Defesa TE-LS aguardando
+    if(defesaLS_aguardando.length>0){
+      const qtd=defesaLS_aguardando.length;
+      const datasParts=defesaLS_aguardando.map(x=>fmtDate(x.notificationDate));
+      services.push({
+        type:'LEI_SECA',
+        name:`Defesa de Tratamento Especial — Lei Seca (${qtd}x)`,
+        desc:`A Notificação de Autuação desta(s) ${qtd} infração(ões) de Lei Seca foi emitida em ${datasParts.join(', ')}. Como o prazo de Defesa de Autuação já foi encerrado, nossa equipe acompanhará a emissão da Notificação de Penalidade para atuação imediata no Recurso à JARI e na defesa estratégica do processo de suspensão da CNH.`,
+        price:PRECOS.LEI_SECA*qtd,priority:true,cls:'s-danger'
+      });
+    }
+    // 5.1 — Apenas AIT, sem NA
+    if(defesaLS_semData.length>0){
+      const qtd=defesaLS_semData.length;
+      const datasParts=defesaLS_semData.map(x=>fmtDate(x.aitDate));
+      services.push({
+        type:'LEI_SECA',
+        name:`Defesa de Tratamento Especial — Lei Seca (${qtd}x)`,
+        desc:`${qtd} infração(ões) de Lei Seca: o Auto de Infração foi registrado em ${datasParts.join(', ')}. Esta é a fase ideal para atuação preventiva. Nossa equipe acompanhará a emissão da Notificação de Autuação para iniciar imediatamente a Defesa de Autuação, buscando impedir a evolução do processo de suspensão da CNH.`,
+        price:PRECOS.LEI_SECA*qtd,priority:true,cls:'s-danger'
+      });
+    }
+  }
+
+
+  // Inclui infrações de ciclos anteriores ao PAP, pois podem ter NP ainda dentro do prazo
+  // Exclui a infração já ofertada como TE-PAP preventivo (se houver)
+  const svcPreventivo=services.find(s=>s.subtype==='PREVENTIVO');
+  const idInfRiscoPreventivo=svcPreventivo?.infRiscoId??null;
+  const cicloAtualCandidatos=enriched.filter(x=>!x.entryAuto&&!x.isLeisseca&&!x.isPapTrigger&&x.id!==idInfRiscoPreventivo);
+  if(cicloAtualCandidatos.length>0){
+    const defesaMulita=[]; // NA dentro de 30d, sem NP
+    const recursoMulta=[]; // NP emitida, dentro de 30d da NP
+    const foraDoPrazo=[]; // sem prazo válido → não elegível
+    const avbRisco=[];    // margem insuficiente → não elegível
+
+    const hasEAR=document.getElementById('dEAR').value==='sim';
+
+    // Identifica o grupo do ciclo atual (último grupo, após o último PAP)
+    const ultimoGrupo=totalPaps>0?totalPaps+1:1;
+
+    cicloAtualCandidatos.forEach(inf=>{
+      const temNP=!!inf.notifNP;
+      const temNA=!!inf.notificationDate;
+
+      // PRIORIDADE MÁXIMA: NA ativa dentro do prazo (≤30 dias, sem NP emitida).
+      // Independente da análise de margem PAP, o prazo de defesa de autuação
+      // está correndo e o condutor DEVE ser informado dessa oportunidade.
+      if(temNA&&!temNP&&getLimiteNA(inf)>=today()){
+        defesaMulita.push(inf);
+        return;
+      }
+
+      // Verificação de margem hipotética: só faz sentido para infrações do ciclo atual.
+      // Para infrações de ciclos anteriores (grupos < ultimoGrupo), o PAP já ocorreu —
+      // remover essa infração não afeta o ciclo atual, então não há risco de novo PAP.
+      // ptsSemEla usa excluiPAP para não contar pontos de autossuspensivas na hipótese.
+      if(inf.group===ultimoGrupo){
+        const mesmoCiclo=cicloAtualCandidatos.filter(x=>x.group===inf.group&&x.id!==inf.id);
+        const ptsSemEla=mesmoCiclo.reduce((sum,x)=>sum+(x.excluiPAP?0:x.points),0);
+        const gravSemEla=mesmoCiclo.filter(x=>x.severity==='gravissima'&&!x.entryAuto&&!x.isLeisseca).length;
+        const autoSemEla=mesmoCiclo.filter(x=>x.entryAuto&&!x.isLeisseca).length;
+        const gravTotalSemEla=gravSemEla+autoSemEla;
+        const limiteHip=hasEAR?40:(gravTotalSemEla>=2?20:gravTotalSemEla===1?30:40);
+        const margemHip=limiteHip-ptsSemEla;
+        if(margemHip<=3){
+          avbRisco.push(inf);
+          return;
+        }
+      }
+
+      if(temNP){
+        // Tem NP: só elegível se dentro de 30 dias da NP (data limite NP)
+        const limNP=getLimiteNP(inf);
+        if(limNP&&limNP>=today()) recursoMulta.push(inf);
+        else foraDoPrazo.push(inf);
+      } else if(temNA){
+        // NA fora do prazo de defesa, aguardando NP
+        defesaMulita.push(inf);
+      } else {
+        // Sem nenhuma data → NA ainda não emitida, elegível para Defesa de Multa
+        defesaMulita.push(inf);
+      }
+    });
+
+    const temGrave=totalPaps>0||['RISCO','PRE_PAP','ESTOURADO','ESTOURADO_RISCO','ESTOURADO_NOVO'].includes(status);
+    const totalElegiveis=defesaMulita.length+recursoMulta.length;
+
+    if(totalElegiveis>0){
+      // Título: total elegíveis + breakdown por tipo entre parênteses
+      const tituloPartes=[];
+      if(defesaMulita.length>0) tituloPartes.push(`${defesaMulita.length}x Defesa de Autuação`);
+      if(recursoMulta.length>0) tituloPartes.push(`${recursoMulta.length}x Recurso à JARI`);
+
+      let desc=``;
+      if(defesaMulita.length>0){
+        const naAtiva=defesaMulita.filter(x=>x.notificationDate&&getLimiteNA(x)>=today());
+        const aguardandoNP=defesaMulita.filter(x=>x.notificationDate&&getLimiteNA(x)<today());
+        const semData=defesaMulita.filter(x=>!x.notificationDate);
+        const subPartes=[];
+        if(naAtiva.length>0) subPartes.push(`${naAtiva.length} com Defesa de Autuação em andamento`);
+        if(aguardandoNP.length>0) subPartes.push(`${aguardandoNP.length} aguardando emissão da Notificação de Penalidade`);
+        if(semData.length>0) subPartes.push(`${semData.length} ainda não notificada(s)`);
+        desc+=`📋 <strong>Defesa de Autuação (${defesaMulita.length}x)</strong> — ${subPartes.join(', ')}. Nossa equipe elabora defesa técnica individualizada perante o órgão autuador, buscando o cancelamento da autuação — eliminando tanto o valor da multa quanto os pontos na CNH.<br>`;
+      }
+      if(recursoMulta.length>0) desc+=`📋 <strong>Recurso à JARI (${recursoMulta.length}x)</strong> — Notificação de Penalidade emitida. Nossa equipe protocola recurso técnico individualizado perante a JARI/CETRAN, com argumentação específica para cada infração, buscando a redução ou eliminação dos pontos e do valor da multa.<br>`;
+      if(foraDoPrazo.length>0) desc+=`⚠️ <strong>${foraDoPrazo.length}x sem prazo disponível</strong> — prazos de autuação e penalidade encerrados.<br>`;
+      if(avbRisco.length>0) desc+=`⚠️ <strong>${avbRisco.length}x não elegível(is)</strong> — margem de pontos insuficiente para recurso seguro no ciclo atual.<br>`;
+
+      services.push({
+        type:'AVB',
+        name:`Defesa de Autuação / Recurso à JARI (${totalElegiveis}x${tituloPartes.length>0?' — '+tituloPartes.join(', '):''})`,
+        desc:desc.trim(),
+        price:0,priority:false,
+        cls:'s-warning'
+      });
+    } else {
+      const motivos=[];
+      if(foraDoPrazo.length>0) motivos.push(`${foraDoPrazo.length} sem prazo disponível`);
+      if(avbRisco.length>0) motivos.push(`${avbRisco.length} com margem insuficiente`);
+      services.push({
+        type:'AVB',
+        name:'Defesa de Autuação / Recurso à JARI — Sem elegíveis no momento',
+        desc:`Nenhuma infração elegível para AVB no momento: ${motivos.join('; ')}.`,
+        price:0,priority:false,cls:'s-gray'
+      });
+    }
+  }
+  if(annulable.length>0)services.push({type:'ANULACAO',name:`Análise de Anulação — Autuação fora do prazo (${annulable.length}x)`,desc:`${annulable.length} infração(ões) com notificação de autuação enviada após 30 dias do AIT. Há fundamento para pedido de anulação por vício formal.`,price:0,priority:false,cls:'s-blue'});
+
+  return{enriched,papGroups,totalPaps,last,currentPts,currentLimit,currentGrav,pct,status,commercialClass,situation,action,justification,services,annulable,autoInfs,leissecaInfs,cassacaoRisco,cassacaoInfo,avbCandidates};
+}
+
+function ordinal(n){return['1º','2º','3º','4º','5º','6º','7º','8º','9º','10º'][n-1]||`${n}º`}
+
+function buildJustificacao(ctx){
+  const{status,currentPts,currentLimit,pct,enriched,totalPaps,papGroups,annulable,autoInfs,leissecaInfs,cassacaoRisco,cassacaoInfo}=ctx;
+  const parts=[];
+  if(status==='SEGURO'){
+    parts.push(`O condutor acumula ${currentPts} ponto(s) efetivo(s) na janela de 12 meses, representando ${Math.round(pct*100)}% do limite de ${currentLimit} pts. Não há risco imediato de suspensão da CNH.`);
+    if(enriched.length>0){
+      const comPrazo=enriched.filter(x=>{
+        const temNPAtiva=x.notifNP&&getLimiteNP(x)>=today();
+        const temNAAtiva=!x.notifNP&&x.notificationDate&&getLimiteNA(x)>=today();
+        return temNPAtiva||temNAAtiva;
+      });
+      if(comPrazo.length>0){
+        parts.push(`Das ${enriched.length} infração(ões) registradas, ${comPrazo.length} ainda ${comPrazo.length===1?'está':'estão'} dentro do prazo para contestação, o que pode reduzir ou eliminar os pontos e os valores das multas — mesmo sem risco de suspensão, a redução de pontos e custos é estrategicamente recomendada.`);
+      } else {
+        parts.push(`As ${enriched.length} infração(ões) registradas estão sendo analisadas. Recomenda-se verificar se há vícios formais que possam fundamentar pedido de anulação.`);
+      }
+    }
+  }else if(status==='RISCO'){
+    const margemRisco=currentLimit-currentPts;
+    if(margemRisco<=3){
+      parts.push(`Atenção: o condutor acumulou ${currentPts} de ${currentLimit} pontos válidos na janela de 12 meses — a apenas ${margemRisco} ponto(s) do limite. Uma única infração grave já é suficiente para a instauração imediata de um processo de suspensão pelo DETRAN.`);
+      parts.push(`Nesta situação, a infração que colocou o condutor nesta margem crítica deve ser tratada com prioridade via Defesa de Autuação ou Recurso à JARI preventivo. As demais infrações também podem ser contestadas para reduzir a pontuação e criar margem de segurança.`);
+    } else {
+      parts.push(`Atenção: o condutor acumulou ${currentPts} de ${currentLimit} pontos válidos na janela de 12 meses — ${Math.round(pct*100)}% do limite. Ele está na zona de risco: uma nova infração grave pode ser suficiente para a instauração de um processo de suspensão pelo DETRAN.`);
+      parts.push(`A estratégia mais eficaz neste momento é reduzir os pontos existentes por meio de Defesa de Autuação ou Recurso à JARI antes que o limite seja atingido. Agir preventivamente é muito mais barato e rápido do que enfrentar um eventual processo de suspensão.`);
+    }
+  }else if(status==='PRE_PAP'){
+    const pg=papGroups[papGroups.length-1];
+    parts.push(`O condutor ultrapassou o limite de ${pg.limitAtTrigger} pts em ${fmtDate(pg.date)}, acumulando ${pg.cumulAtTrigger} pts efetivos. Isso gerou (ou vai gerar) o ${ordinal(totalPaps)} processo de suspensão por pontos. O DETRAN notificará o condutor para apresentar defesa no processo.`);
+    parts.push(`Este é o momento mais estratégico para agir: uma defesa técnica bem fundamentada pode reduzir significativamente o prazo de suspensão ou até evitá-la por completo. Não aguardar — cada dia conta.`);
+  }else if(status==='ESTOURADO'){
+    parts.push(`O condutor possui ${totalPaps} processo(s) de suspensão por pontos identificado(s). A defesa de cada processo é o serviço prioritário. A nova contagem (após o último processo) está com ${currentPts} de ${currentLimit} pts (${Math.round(pct*100)}%) — monitoramento recomendado.`);
+    parts.push(`Cada processo tem prazo próprio para defesa. É fundamental não deixar passar nenhuma oportunidade de atuação.`);
+  }else if(status==='ESTOURADO_RISCO'){
+    parts.push(`Situação de dupla atenção: o condutor possui ${totalPaps} processo(s) de suspensão por pontos identificado(s) e a nova contagem já acumula ${currentPts} de ${currentLimit} pts (${Math.round(pct*100)}%). Está novamente em zona de risco — um novo estouro resultaria em mais um processo de suspensão.`);
+    parts.push(`É fundamental tratar os processos existentes e simultaneamente reduzir os pontos da nova contagem por meio de Defesa de Autuação ou Recurso à JARI.`);
+  }else if(status==='ESTOURADO_NOVO'){
+    parts.push(`Situação crítica: ${totalPaps} processo(s) de suspensão por pontos identificado(s) e a nova contagem também ultrapassou o limite (${currentPts} de ${currentLimit} pts). Um novo processo de suspensão já está configurado. A CNH do condutor está sob risco imediato e acumulado de múltiplas suspensões.`);
+  }
+  if(autoInfs.length>0)parts.push(`⛔ Infrações Autossuspensivas: foram identificadas ${autoInfs.length} infração(ões) autossuspensiva(s) que geram instauração automática do Processo Administrativo por Infração (PAI), com suspensão da CNH independentemente do total de pontos acumulados. A Defesa de Autuação ou o Recurso à JARI são os caminhos para suspender ou anular a penalidade e preservar a habilitação do condutor.`);
+  if(leissecaInfs.length>0)parts.push(`🍺 Lei Seca: ${leissecaInfs.length} ocorrência(s) identificada(s). Cada infração é autossuspensiva e gera instauração de PAI com suspensão da CNH por 12 meses.`);
+  if(cassacaoRisco&&cassacaoInfo)parts.push(`🚨 Risco de Cassação: foram detectados ${totalPaps} processos de suspensão com apenas ${cassacaoInfo.dias} dias de intervalo entre o ${ordinal(totalPaps-1)} (${fmtDate(cassacaoInfo.pap1)}) e o ${ordinal(totalPaps)} (${fmtDate(cassacaoInfo.pap2)}). Quando dois processos de suspensão ocorrem em menos de 12 meses, o DETRAN pode instaurar processo de cassação definitiva da CNH, sem possibilidade de reabilitação por 2 anos.`);
+  if(annulable.length>0)parts.push(`🔍 Oportunidade de anulação: ${annulable.length} infração(ões) foram notificadas com atraso superior a 30 dias após o AIT. Isso configura vício formal que pode fundamentar pedido de anulação da infração junto ao DETRAN.`);
+  return parts.join('\n\n');
+}
+
+// ═══════════════════════════════════════════════
+// FORM
+// ═══════════════════════════════════════════════
+function autoFillPoints(){document.getElementById('fPts').value=SEV_DEFAULTS[document.getElementById('fSev').value]}
+function autoFillFromCode(){
+  const raw=document.getElementById('fCode').value.trim();
+  const entry=lookupCode(raw);const tag=document.getElementById('codeTag');
+  if(!entry){tag.innerHTML='';return;}
+  document.getElementById('fDesc').value=entry.d;
+  document.getElementById('fSev').value=entry.s;
+  document.getElementById('fPts').value=entry.p||SEV_DEFAULTS[entry.s];
+  if(entry.leisseca)tag.innerHTML='<span class="badge-auto">🍺 Lei Seca / Autossuspensiva</span>';
+  else if(entry.auto)tag.innerHTML='<span class="badge-auto">⛔ Autossuspensiva — pts NÃO contam p/ suspensão por pontos</span>';
+  else if(entry.adm)tag.innerHTML='<span class="badge-adm">📋 Administrativa — pts NÃO contam p/ suspensão por pontos</span>';
+  else tag.innerHTML='';
+}
+function autoLimiteNA(){
+  const na=document.getElementById('fNotif').value;
+  const lim=document.getElementById('fLimiteNA');
+  if(na&&!lim.value) lim.value=addDaysToDate(na,30);
+}
+function autoLimiteNP(){
+  const np=document.getElementById('fNotifNP').value;
+  const lim=document.getElementById('fLimiteNP');
+  if(np&&!lim.value) lim.value=addDaysToDate(np,30);
+}
+
+function addOrUpdate(){
+  const aitDate=document.getElementById('fDate').value;
+  const sev=document.getElementById('fSev').value;
+  if(!aitDate){showToast('Informe a data do AIT.','error');return;}
+  const inf={
+    id:editingId||Date.now(),aitDate,
+    aitNumber:document.getElementById('fNum').value.trim(),
+    code:document.getElementById('fCode').value.trim(),
+    description:document.getElementById('fDesc').value.trim()||'Infração sem descrição',
+    severity:sev,
+    points:+document.getElementById('fPts').value||SEV_DEFAULTS[sev],
+    notificationDate:document.getElementById('fNotif').value||'',
+    notifNP:document.getElementById('fNotifNP').value||'',
+    limiteNA:document.getElementById('fLimiteNA').value||'',
+    limiteNP:document.getElementById('fLimiteNP').value||'',
+  };
+  if(editingId){infractions=infractions.map(x=>x.id===editingId?inf:x);editingId=null;showToast('✓ Infração atualizada.');}
+  else{infractions.push(inf);showToast('✓ Infração adicionada.');}
+  clearForm();renderAll();
+}
+
+function startEdit(id){
+  const inf=infractions.find(x=>x.id===id);if(!inf)return;editingId=id;
+  document.getElementById('fDate').value=inf.aitDate;document.getElementById('fNum').value=inf.aitNumber;
+  document.getElementById('fCode').value=inf.code;document.getElementById('fDesc').value=inf.description;
+  document.getElementById('fSev').value=inf.severity;document.getElementById('fPts').value=inf.points;
+  document.getElementById('fNotif').value=inf.notificationDate;
+  document.getElementById('fNotifNP').value=inf.notifNP||'';
+  document.getElementById('fLimiteNA').value=inf.limiteNA||'';
+  document.getElementById('fLimiteNP').value=inf.limiteNP||'';
+  document.getElementById('addBtn').textContent='✓ Salvar alterações';
+  document.getElementById('cancelBtn').style.display='block';
+  document.getElementById('formTitle').textContent='Editar Infração';
+  autoFillFromCode();
+}
+
+function cancelEdit(){editingId=null;clearForm()}
+function clearForm(){
+  ['fDate','fNum','fCode','fDesc','fNotif','fNotifNP','fLimiteNA','fLimiteNP'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fSev').value='gravissima';document.getElementById('fPts').value='7';
+  document.getElementById('codeTag').innerHTML='';
+  document.getElementById('addBtn').textContent='+ Adicionar Infração';
+  document.getElementById('cancelBtn').style.display='none';
+  document.getElementById('formTitle').textContent='Adicionar Infração';editingId=null;
+}
+function removeInfraction(id){infractions=infractions.filter(x=>x.id!==id);renderAll()}
+function clearAll(){if(infractions.length&&!confirm('Limpar todas as infrações?'))return;infractions=[];clearForm();renderAll()}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let infractions=[],editingId=null,chart=null;
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function renderAll(){const r=analyze(infractions);renderSidebar(r);renderMain(r)}
+
+function renderSidebar(result){
+  document.getElementById('infCount').textContent=infractions.length;
+  const list=document.getElementById('sidebarList');
+  if(!infractions.length){list.innerHTML='<p style="font-size:12px;color:var(--sb-muted);text-align:center;padding:.75rem 0">Nenhuma infração registrada.</p>';return;}
+  const sorted=result?result.enriched:[...infractions].sort((a,b)=>a.aitDate.localeCompare(b.aitDate));
+  list.innerHTML=sorted.map((inf,idx)=>{
+    const isPap=result&&inf.isPapTrigger;const isPost=result&&inf.group>1&&!inf.isPapTrigger;
+    const CYCLE_COLORS=window._cycleColors||['#3A5F8C','#D97706','#059669','#7C3AED','#C2410C','#0e7490','#be185d','#15803d','#b45309','#1d4ed8'];
+    const cycleColor=result?CYCLE_COLORS[(inf.group-1)%CYCLE_COLORS.length]:'#3A5F8C';
+    const cls=isPap?'inf-item pap-item':isPost?'inf-item post-item':'inf-item';
+    const badge=isPap?`<span style="font-size:10px;background:var(--red);color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">PAP${inf.group}</span>`:isPost?`<span style="font-size:10px;background:${cycleColor};color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">C${inf.group}</span>`:'';
+    const excluiBadge=inf.excluiPAP?(inf.isLeisseca?'<span style="font-size:10px;background:#FEF2F2;color:#7F1D1D;padding:1px 5px;border-radius:3px;margin-left:4px;border:1px solid #FECACA">🍺</span>':inf.excluiMotivo==='auto'?'<span style="font-size:10px;background:#FEF2F2;color:#7F1D1D;padding:1px 5px;border-radius:3px;margin-left:4px;border:1px solid #FECACA">⛔</span>':'<span style="font-size:10px;background:#e8eef5;color:#3A5F8C;padding:1px 5px;border-radius:3px;margin-left:4px;border:1px solid #a8c0d6">📋</span>'):'';
+    return`<div class="${cls}" onclick="startEdit(${inf.id})" style="${isPost?`border-left:3px solid ${cycleColor}`:''}">
+      <div class="inf-dot ${inf.severity}"></div>
+      <div class="inf-meta">
+        <div class="inf-desc">${idx+1}. ${inf.description}${badge}${excluiBadge}</div>
+        <div class="inf-detail">${fmtDate(inf.aitDate)} · ${SEV_LABELS[inf.severity]}${inf.lateNotif?` · ⏰ +${inf.extraDays}d`:''}${inf.notifNP?` · <span style="font-weight:700;color:${getLimiteNP(inf)>=today()?'#34D399':'#F87171'}">Lim.JARI: ${fmtDate(getLimiteNP(inf))}</span>`:inf.notificationDate?` · <span style="font-weight:700;color:${getLimiteNA(inf)>=today()?'#34D399':'#F87171'}">Lim.def.: ${fmtDate(getLimiteNA(inf))}</span>`:''}</div>
+      </div>
+      <span class="inf-pts">${inf.points}pts</span>
+      <button class="inf-del" onclick="event.stopPropagation();removeInfraction(${inf.id})" title="Remover">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderMain(result){
+  const empty=document.getElementById('emptyState'),content=document.getElementById('analysisContent');
+  if(!result){empty.style.display='flex';content.style.display='none';return;}
+  empty.style.display='none';content.style.display='block';
+  const dName=document.getElementById('dName').value||'Condutor';
+  const dPlate=document.getElementById('dPlate').value;
+  document.getElementById('aName').textContent=dName;
+  const ear=document.getElementById('dEAR').value==='sim';
+  document.getElementById('aPlate').textContent=dPlate?`Placa: ${dPlate} · RENAVAM: ${document.getElementById('dRenavam').value||'—'}`:'Dados do condutor';
+  document.getElementById('aEarBadge').innerHTML=ear
+    ?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;background:#e8eef5;color:#3A5F8C;border:1px solid #a8c0d6">🚕 Com EAR</span>'
+    :'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;background:#F3F4F6;color:#6B7280;border:1px solid #E2E5EA">Sem EAR</span>';
+  document.getElementById('genDate').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  renderStatus(result);renderMetrics(result);renderPapSection(result);renderChart(result);renderTable(result);renderCommercial(result);
+}
+
+function renderStatus(r){
+  const badge=document.getElementById('statusBadge');
+  const map={SEGURO:{cls:'badge-success',txt:'✓ Situação controlada'},RISCO:{cls:'badge-warning',txt:'⚠ Em zona de risco'},PRE_PAP:{cls:'badge-orange',txt:'🚨 Suspensão — agir imediatamente'},ESTOURADO:{cls:'badge-danger',txt:'🔴 Processo de suspensão identificado'},ESTOURADO_RISCO:{cls:'badge-danger',txt:'🔴 Suspensão + nova contagem em risco'},ESTOURADO_NOVO:{cls:'badge-danger',txt:'🔴 Múltiplos processos de suspensão'}};
+  const s=map[r.status]||map.SEGURO;badge.className='status-badge '+s.cls;badge.textContent=s.txt;
+}
+
+function renderMetrics(r){
+  const{currentPts,currentLimit,currentGrav,pct,enriched,totalPaps}=r;
+  const p=Math.min(currentPts/currentLimit,1);
+  document.getElementById('mPoints').textContent=currentPts;
+  document.getElementById('mPointsSub').textContent=`de ${currentLimit} pts (${Math.round(p*100)}%)`;
+  const prog=document.getElementById('mProg');
+  prog.style.width=Math.round(p*100)+'%';
+  prog.className='prog-bar '+(p>=1?'prog-over':p>=0.75?'prog-warn':'prog-ok');
+  document.getElementById('mCard1').className='metric-card'+(p>=1?' metric-danger':p>=0.75?' metric-warning':'');
+  document.getElementById('mLimit').textContent=currentLimit;
+  document.getElementById('mLimitSub').textContent=currentGrav===0?'Nenhuma grav. no ciclo':currentGrav===1?'1 grav. válida no ciclo':'2+ grav. válidas no ciclo';
+  const totalExcluidas=enriched.filter(x=>x.excluiPAP&&x.severity==='gravissima').length;
+  document.getElementById('mGrav').textContent=currentGrav;
+  document.getElementById('mGravSub').textContent=currentGrav===0?'Nenhuma no ciclo atual':currentGrav===1?'1 infração gravíssima':'Múltiplas gravíssimas'+(totalExcluidas>0?` · ${totalExcluidas} autossusp.`:'');
+  document.getElementById('mGrav').parentElement.className='metric-card'+(currentGrav>=2?' metric-danger':currentGrav===1?' metric-warning':'');
+  document.getElementById('mTotal').textContent=enriched.length;
+  const late=enriched.filter(x=>x.lateNotif).length,excl=enriched.filter(x=>x.excluiPAP).length;
+  const subParts=[];if(totalPaps>0)subParts.push(`${totalPaps} processo(s)`);if(late>0)subParts.push(`${late} notif. atrasada`);if(excl>0)subParts.push(`${excl} excluída(s)`);
+  document.getElementById('mTotalSub').textContent=subParts.length?subParts.join(' · '):'Todas dentro do prazo';
+}
+
+function renderPapSection(r){
+  const sec=document.getElementById('papSection'),list=document.getElementById('papList');
+  const hasAny=r.totalPaps>0||r.autoInfs.length>0||r.leissecaInfs.length>0;
+  if(!hasAny){sec.style.display='none';return;}
+  sec.style.display='block';
+  let html='';
+  // PAP rows
+  html+=r.papGroups.map((pg,i)=>`<div class="${i===0?'pap-row pap-first':'pap-row pap-second'}">
+    <span class="pap-num">${i+1}</span>
+    <div class="pap-info"><strong>${ordinal(i+1)} Processo de Suspensão por Pontos</strong>
+    <small>Estouro em ${fmtDate(pg.date)} · ${pg.cumulAtTrigger} pts efetivos · Limite: ${pg.limitAtTrigger} pts</small></div>
+  </div>`).join('');
+  // PAI rows — autossuspensivas (excluindo Lei Seca)
+  if(r.autoInfs.length>0){
+    html+=r.autoInfs.map((inf,i)=>`<div class="pap-row pap-auto">
+      <span class="pap-num" style="background:var(--purple);color:#fff">⛔</span>
+      <div class="pap-info"><strong>Infração Autossuspensiva — PAI</strong>
+      <small>${inf.description} · AIT: ${fmtDate(inf.aitDate)}${inf.notificationDate?' · Autuação: '+fmtDate(inf.notificationDate):' · Autuação: não informada'}</small></div>
+    </div>`).join('');
+  }
+  // Lei Seca rows
+  if(r.leissecaInfs.length>0){
+    html+=r.leissecaInfs.map((inf,i)=>`<div class="pap-row pap-leisseca">
+      <span class="pap-num" style="background:#E11D48;color:#fff">🍺</span>
+      <div class="pap-info"><strong>Lei Seca — Infração Autossuspensiva (PAI)</strong>
+      <small>${inf.description} · AIT: ${fmtDate(inf.aitDate)}${inf.notificationDate?' · Autuação: '+fmtDate(inf.notificationDate):' · Autuação: não informada'}</small></div>
+    </div>`).join('');
+  }
+  list.innerHTML=html;
+  if(r.totalPaps>0){
+    const{currentPts,currentLimit,pct}=r;const pct2=Math.round(pct*100);
+    const cor=pct>=1?'color:var(--red);font-weight:700':pct>=0.75?'color:var(--amber);font-weight:600':'color:var(--green)';
+    list.innerHTML+=`<div style="padding:.5rem .875rem;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:.4rem">
+      📊 Nova contagem após ${ordinal(r.totalPaps)} processo: <span style="${cor}">${currentPts} de ${currentLimit} pts (${pct2}%)</span>
+      ${pct>=1?' — <strong style="color:var(--red)">NOVO PROCESSO IMINENTE</strong>':pct>=0.75?' — <span style="color:var(--amber)">zona de risco</span>':' — dentro do limite'}
+    </div>`;
+  }
+}
+
+function renderChart(r){
+  const{enriched,papGroups}=r;
+  if(chart){chart.destroy();chart=null;}
+  const labels=enriched.map((_,i)=>`#${i+1}`);
+  const numGroups=Math.max(...enriched.map(x=>x.group),1);
+  const CYCLE_COLORS=['#3A5F8C','#D97706','#059669','#7C3AED','#C2410C','#0e7490','#be185d','#15803d','#b45309','#1d4ed8'];
+  window._cycleColors=CYCLE_COLORS;
+  const datasets=[];
+  for(let g=1;g<=numGroups;g++){
+    const data=enriched.map(x=>x.group===g?x.cumulPts:null);
+    const color=CYCLE_COLORS[(g-1)%CYCLE_COLORS.length];
+    datasets.push({label:g===1?'1ª contagem':`${ordinal(g)} contagem`,data,borderColor:color,backgroundColor:color+'18',fill:true,tension:.25,pointRadius:enriched.map(x=>x.group===g?(x.isPapTrigger?8:4):0),pointBackgroundColor:enriched.map(x=>x.group===g?(x.isPapTrigger?'#DC2626':x.excluiPAP?'#9CA3AF':color):color),pointBorderColor:enriched.map(x=>x.isPapTrigger?'#7F1D1D':color),pointBorderWidth:enriched.map(x=>x.isPapTrigger?2:1),spanGaps:false,borderWidth:2});
+  }
+  datasets.push({label:'Limite',data:enriched.map(x=>x.limit),borderColor:'#DC2626',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,tension:0});
+  chart=new Chart(document.getElementById('timelineChart'),{
+    type:'line',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',titleColor:'#F9FAFB',bodyColor:'#D1D5DB',borderColor:'#1F2937',borderWidth:1,padding:10,
+        callbacks:{
+          title:(items)=>{const i=items[0].dataIndex;const inf=enriched[i];return`#${i+1} — ${fmtDate(inf.aitDate)}`;},
+          label:(item)=>{if(item.datasetIndex>=numGroups)return`Limite: ${item.raw} pts`;const inf=enriched[item.dataIndex];if(item.raw===null)return null;return`${inf.description.slice(0,45)}… | Acum.: ${item.raw}pts`;},
+          afterLabel:(item)=>{if(item.datasetIndex>=numGroups)return null;const inf=enriched[item.dataIndex];const parts=[];if(inf.isPapTrigger)parts.push(`⚡ ESTOURO — ${ordinal(inf.group)} processo de suspensão`);if(inf.isLeisseca)parts.push('🍺 Lei Seca');else if(inf.excluiPAP)parts.push(inf.excluiMotivo==='auto'?'⛔ Autossuspensiva':'📋 Administrativa');if(inf.lateNotif)parts.push(`⏰ Autuação atrasada +${inf.extraDays}d`);return parts.length?parts:null;}
+        }
+      }},
+      scales:{x:{grid:{display:false},ticks:{color:'#9CA3AF',font:{size:11,family:'Titillium Web'}}},y:{min:0,suggestedMax:Math.max(...enriched.map(x=>x.limit))+5,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#9CA3AF',font:{size:11},stepSize:5}}}
+    }
+  });
+  const leg=document.getElementById('chartLegend');
+  let legHtml='';
+  for(let g=1;g<=numGroups;g++)legHtml+=`<div class="legend-item"><div style="width:20px;height:3px;background:${CYCLE_COLORS[(g-1)%CYCLE_COLORS.length]};border-radius:2px"></div>${g===1?'1ª contagem':`${ordinal(g)} contagem`}</div>`;
+  legHtml+=`<div class="legend-item"><div style="width:20px;height:2px;border-top:2px dashed #DC2626"></div>Limite</div>`;
+  if(papGroups.length)legHtml+=`<div class="legend-item"><div style="width:10px;height:10px;border-radius:50%;background:#DC2626;display:inline-block"></div>Estouro (Suspensão)</div>`;
+  leg.innerHTML=legHtml;
+}
+
+function renderTable(r){
+  const{enriched}=r;
+  const CYCLE_COLORS=window._cycleColors||['#3A5F8C','#D97706','#059669','#7C3AED','#C2410C','#0e7490','#be185d','#15803d','#b45309','#1d4ed8'];
+  const tbody=document.getElementById('mainTableBody');
+  tbody.innerHTML=enriched.map((inf,idx)=>{
+    const cycleColor=CYCLE_COLORS[(inf.group-1)%CYCLE_COLORS.length];
+    const cycleColorLight=cycleColor+'18';
+    const cycleColorBorder=cycleColor+'55';
+    let rowStyle='';
+    if(inf.excluiPAP){rowStyle='background:#F5F3FF';}
+    else if(inf.isPapTrigger){rowStyle='background:#FFF5F5';}
+    else if(inf.group>1){rowStyle=`background:${cycleColorLight};`;}
+    const gravTag=`<span class="grav-tag grav-${inf.severity}">${SEV_LABELS[inf.severity]}</span>`;
+    let statusCell='';
+    if(inf.isLeisseca)statusCell=`<span style="font-size:11px;background:var(--purple-bg);color:var(--purple);padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid var(--purple-border)">🍺 Autossuspensiva</span>`;
+    else if(inf.excluiPAP)statusCell=`<span style="font-size:11px;background:var(--purple-bg);color:var(--purple);padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid var(--purple-border)">⛔ Autossuspensiva</span>`;
+    else if(inf.isPapTrigger||inf.exceeds&&!inf.excluiPAP&&inf.group>0)statusCell=`<span style="font-size:11px;background:var(--red-bg);color:var(--red-dark);padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid var(--red-border)">⚡ PAP${inf.group}</span>`;
+    else if(inf.group>1)statusCell=`<span style="font-size:11px;background:${cycleColorLight};color:${cycleColor};padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid ${cycleColorBorder}">Cont.${inf.group}</span>`;
+    else if(inf.exceeds)statusCell=`<span class="tick tick-err">✕</span>`;
+    else statusCell=`<span class="tick tick-ok">✓</span>`;
+    const obs=[];
+    if(inf.excluiPAP){if(inf.isLeisseca)obs.push(`<span class="badge-auto">🍺 Lei Seca</span>`);else if(inf.excluiMotivo==='auto')obs.push(`<span class="badge-auto">⛔ Autossuspensiva</span>`);else obs.push(`<span class="badge-adm">📋 Administrativa</span>`);}
+    if(inf.notificationDate){
+      const limNA=getLimiteNA(inf);
+      const limNAok=limNA>=today();
+      obs.push(`<span style="font-size:11px;color:var(--muted)">NA: ${fmtDate(inf.notificationDate)}</span>`);
+      obs.push(`<span style="font-size:11px;font-weight:700;color:${limNAok?'var(--green)':'var(--red)'}">Limite defesa: ${fmtDate(limNA)}</span>`);
+    }
+    if(inf.notifNP){
+      const limNP=getLimiteNP(inf);
+      const limNPok=limNP>=today();
+      obs.push(`<span style="font-size:11px;color:var(--muted)">NP: ${fmtDate(inf.notifNP)}</span>`);
+      obs.push(`<span style="font-size:11px;font-weight:700;color:${limNPok?'var(--green)':'var(--red)'}">Limite JARI: ${fmtDate(limNP)}</span>`);
+    }
+    if(inf.lateNotif)obs.push(`<span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:2px 6px;border-radius:4px;border:1px solid var(--blue-border)" title="Autuação enviada ${inf.diffDays}d após o AIT">⏰ Aut. +${inf.extraDays}d</span>`);
+    // Prazo de recurso — usa limiteNA/limiteNP preenchidos ou calculados
+    if(inf.isLeisseca||inf.entryAuto){
+      if(inf.notifNP){
+        const lim=getLimiteNP(inf);const ok=lim>=today();const dias=daysDiff(today(),lim);
+        obs.push(`<span class="service-prazo-badge ${ok?'prazo-ok':'prazo-vencido'}" title="Limite JARI: ${fmtDate(lim)}">${ok?`⚖ Recurso à JARI — ${dias}d restantes`:`⚠ Limite JARI vencido`}</span>`);
+      } else if(inf.notificationDate){
+        const lim=getLimiteNA(inf);const ok=lim>=today();const dias=daysDiff(today(),lim);
+        obs.push(ok
+          ?`<span class="service-prazo-badge prazo-ok" title="Limite defesa: ${fmtDate(lim)}">🛡 Defesa disponível — ${dias}d restantes</span>`
+          :`<span class="service-prazo-badge prazo-consultar" title="Limite defesa vencido em ${fmtDate(lim)}">📅 Aguardando Penalidade</span>`);
+      } else obs.push(`<span class="service-prazo-badge prazo-consultar">📅 Aguardando Autuação</span>`);
+    } else {
+      if(inf.notifNP){
+        const lim=getLimiteNP(inf);const ok=lim>=today();const dias=daysDiff(today(),lim);
+        obs.push(`<span class="service-prazo-badge ${ok?'prazo-ok':'prazo-vencido'}" title="Limite JARI: ${fmtDate(lim)}">${ok?`⚖ Recurso à JARI — ${dias}d restantes`:`⚠ Limite JARI vencido`}</span>`);
+      } else if(inf.notificationDate){
+        const lim=getLimiteNA(inf);const ok=lim>=today();const dias=daysDiff(today(),lim);
+        obs.push(ok
+          ?`<span class="service-prazo-badge prazo-ok" title="Limite defesa: ${fmtDate(lim)}">⚖ Defesa disponível — ${dias}d restantes</span>`
+          :`<span class="service-prazo-badge prazo-consultar" title="Limite defesa vencido em ${fmtDate(lim)}">📅 Aguardando Penalidade</span>`);
+      } else obs.push(`<span class="service-prazo-badge prazo-consultar">📅 Aguardando Autuação</span>`);
+    }
+    const numCls='num'+(inf.exceeds&&!inf.excluiPAP?' over':'');
+    const acumCell=inf.excluiPAP?`<span style="color:var(--muted);font-style:italic">${inf.cumulPts}</span><span style="font-size:10px;color:var(--subtle);margin-left:3px">(+${inf.points})</span>`:`<span style="${inf.exceeds?'color:var(--red);font-weight:700':''}">${inf.cumulPts}</span>`;
+    // Left border using cycle color
+    const leftBorder=inf.excluiPAP?'border-left:3px solid #7C3AED':inf.isPapTrigger?'border-left:3px solid var(--red)':`border-left:3px solid ${cycleColor}`;
+    return`<tr style="${rowStyle}">
+      <td style="color:var(--muted);font-size:12px;${leftBorder}">${idx+1}</td>
+      <td style="white-space:nowrap;font-family:'Courier New',monospace;font-size:12px">${fmtDate(inf.aitDate)}</td>
+      <td style="font-family:'Courier New',monospace;font-size:11px;color:var(--muted)">${inf.aitNumber||'—'}</td>
+      <td>${inf.description}<br><span style="font-size:11px;color:var(--subtle)">${inf.code||''}</span></td>
+      <td>${gravTag}</td>
+      <td class="${numCls}">${inf.points}</td>
+      <td class="num">${acumCell}</td>
+      <td class="num" style="color:var(--muted)">${inf.limit}</td>
+      <td>${statusCell}</td>
+      <td style="min-width:160px">${obs.join('<br>')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCommercial(r){
+  const{status,commercialClass,justification,services,annulable,cassacaoRisco,cassacaoInfo}=r;
+  document.getElementById('commercialCard').className=`commercial-card ${commercialClass}`;
+
+  // Build situação completa com todos os processos
+  let situacaoHtml='';
+  const parts=[];
+  // Status base
+  if(status==='SEGURO')parts.push(`<span style="color:var(--green);font-weight:700">✓ Situação controlada</span> — ${r.currentPts} de ${r.currentLimit} pts (${Math.round(r.pct*100)}%)`);
+  else if(status==='RISCO')parts.push(`<span style="color:var(--amber);font-weight:700">⚠ Zona de risco</span> — ${r.currentPts} de ${r.currentLimit} pts (${Math.round(r.pct*100)}% do limite)`);
+  else if(status==='PRE_PAP')parts.push(`<span style="color:var(--orange);font-weight:700">🚨 ${r.totalPaps}º processo de suspensão identificado</span> — limite de pontos ultrapassado`);
+  else if(status==='ESTOURADO')parts.push(`<span style="color:var(--red);font-weight:700">🔴 ${r.totalPaps} processo(s) de suspensão identificado(s)</span> — nova contagem: ${r.currentPts}/${r.currentLimit} pts`);
+  else if(status==='ESTOURADO_RISCO')parts.push(`<span style="color:var(--red);font-weight:700">🔴 ${r.totalPaps} processo(s) de suspensão</span> + nova contagem em risco (${Math.round(r.pct*100)}%)`);
+  else if(status==='ESTOURADO_NOVO')parts.push(`<span style="color:var(--red);font-weight:700">🔴 Situação crítica: ${r.totalPaps} processo(s) de suspensão</span> + novo limite ultrapassado`);
+  // Autossuspensivas
+  if(r.autoInfs.length>0)parts.push(`<span style="color:var(--purple);font-weight:700">⛔ ${r.autoInfs.length} infração(ões) autossuspensiva(s) — PAI</span>`);
+  // Lei Seca
+  if(r.leissecaInfs.length>0)parts.push(`<span style="color:var(--purple);font-weight:700">🍺 ${r.leissecaInfs.length} Lei Seca — Autossuspensiva (PAI)</span>`);
+  // Cassação
+  if(cassacaoRisco&&cassacaoInfo)parts.push(`<span style="color:var(--purple);font-weight:700">🚫 Risco de Cassação</span> — ${cassacaoInfo.dias} dias entre PAPs`);
+  situacaoHtml=parts.join('<br>');
+  document.getElementById('cSituation').innerHTML=situacaoHtml;
+  const jDiv=document.getElementById('cJustification');
+  jDiv.innerHTML=justification.split('\n\n').map(p=>`<p style="margin-bottom:.75rem">${p}</p>`).join('');
+  const svcDiv=document.getElementById('cServices');let totalPreco=0;
+  svcDiv.innerHTML=services.map(s=>{
+    const isPAI=s.type==='PAI'||s.type==='LEI_SECA';
+    const cardCls=isPAI?'service-card s-purple':('service-card '+s.cls);
+    return`<div class="${cardCls}">
+      <div><div class="service-name">${s.name}${s.priority?'<span class="service-priority-badge">PRIORITÁRIO</span>':''}</div><div class="service-desc">${s.desc}</div></div>
+    </div>`;
+  }).join('');
+  const totalDiv=document.getElementById('cServicesTotal');
+  totalDiv.style.display='none';
+  const annDiv=document.getElementById('cAnnulable'),annText=document.getElementById('cAnnulableText');
+  if(annulable.length>0){annDiv.style.display='flex';annText.textContent=`${annulable.length} infração(ões) com notificação enviada mais de 30 dias após o AIT: ${annulable.map(x=>`${fmtDate(x.aitDate)} (+${x.extraDays}d)`).join(', ')}. Há potencial para anulação por vício formal.`;}
+  else annDiv.style.display='none';
+  const cassDiv=document.getElementById('cCassacaoAlert'),cassText=document.getElementById('cCassacaoText');
+  if(cassacaoRisco&&cassacaoInfo){cassDiv.style.display='flex';cassText.textContent=`Foram identificados ${r.totalPaps} processos de suspensão, sendo que o ${ordinal(r.totalPaps)} ocorreu apenas ${cassacaoInfo.dias} dias após o anterior (${fmtDate(cassacaoInfo.pap1)} → ${fmtDate(cassacaoInfo.pap2)}). O DETRAN pode instaurar processo de cassação definitiva da CNH.`;}
+  else cassDiv.style.display='none';
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT PDF
+// ═══════════════════════════════════════════════
+async function exportPDF(){
+  const content=document.getElementById('analysisContent');
+  if(!content||content.style.display==='none'){showToast('Gere uma análise antes de exportar.','error');return;}
+  const btn=document.querySelector('.btn-print');
+  if(btn){btn.textContent='⏳ Gerando PDF...';}
+  showToast('⏳ Gerando PDF, aguarde...');
+
+  const mainScroll=document.getElementById('mainArea');
+  const layout=document.querySelector('.layout');
+
+  // ── 1. Snapshot do gráfico AGORA, antes de qualquer alteração de layout ──
+  // Isso evita o erro "addColorStop non-finite" do Chart.js causado por resize
+  const chartCanvas=document.getElementById('timelineChart');
+  let chartImgEl=null;
+  let chartParent=null;
+  let chartNextSibling=null;
+  if(chartCanvas){
+    const chartDataUrl=chartCanvas.toDataURL('image/png');
+    chartImgEl=document.createElement('img');
+    chartImgEl.src=chartDataUrl;
+    chartImgEl.style.width=chartCanvas.offsetWidth+'px';
+    chartImgEl.style.height=chartCanvas.offsetHeight+'px';
+    chartImgEl.style.display='block';
+    chartParent=chartCanvas.parentElement;
+    chartNextSibling=chartCanvas.nextSibling;
+    // Substitui o canvas pelo img estático
+    chartParent.replaceChild(chartImgEl,chartCanvas);
+  }
+
+  // ── 2. Oculta botão de exportar no PDF ──
+  if(btn) btn.style.visibility='hidden';
+
+  // Salva estados de overflow
+  const origBodyOverflow=document.body.style.overflow;
+  const origBodyHeight=document.body.style.height;
+  const origMainOverflow=mainScroll.style.overflow;
+  const origMainHeight=mainScroll.style.height;
+  const origLayoutOverflow=layout?layout.style.overflow:'';
+  const origLayoutHeight=layout?layout.style.height:'';
+
+  try{
+    // ── 3. Expande layout para captura total ──
+    document.body.style.overflow='visible';
+    document.body.style.height='auto';
+    mainScroll.style.overflow='visible';
+    mainScroll.style.height='auto';
+    if(layout){layout.style.overflow='visible';layout.style.height='auto';}
+
+    await new Promise(r=>setTimeout(r,200));
+
+    // ── 4. Captura ──
+    const captured=await html2canvas(content,{
+      scale:2,
+      useCORS:true,
+      allowTaint:true,
+      logging:false,
+      backgroundColor:'#F2F4F7',
+      scrollX:0,
+      scrollY:0,
+      width:content.scrollWidth,
+      height:content.scrollHeight,
+    });
+
+    // ── 5. Gera PDF paginado ──
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'a3'});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const margin=24;
+    const usableW=pageW-margin*2;
+    const usableH=pageH-margin*2;
+    const scaleFactor=captured.width/usableW;
+    const pxPerPage=Math.floor(usableH*scaleFactor);
+    let yOffset=0,pageNum=0;
+    while(yOffset<captured.height){
+      if(pageNum>0) pdf.addPage();
+      const sliceH=Math.min(pxPerPage,captured.height-yOffset);
+      const sc=document.createElement('canvas');
+      sc.width=captured.width; sc.height=sliceH;
+      const ctx=sc.getContext('2d');
+      ctx.fillStyle='#F2F4F7';
+      ctx.fillRect(0,0,sc.width,sc.height);
+      ctx.drawImage(captured,0,-yOffset);
+      pdf.addImage(sc.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,sliceH/scaleFactor);
+      yOffset+=sliceH; pageNum++;
+    }
+    const name=(document.getElementById('dName').value||'condutor').replace(/\s+/g,'-').toLowerCase();
+    pdf.save(`prontuario-${name}-${new Date().toISOString().slice(0,10)}.pdf`);
+    showToast('✓ PDF exportado com sucesso!');
+
+  }catch(e){
+    console.error('exportPDF error:',e);
+    showToast('Erro ao gerar PDF: '+e.message,'error');
+  }finally{
+    // ── 6. Restaura TUDO ──
+    document.body.style.overflow=origBodyOverflow;
+    document.body.style.height=origBodyHeight;
+    mainScroll.style.overflow=origMainOverflow;
+    mainScroll.style.height=origMainHeight;
+    if(layout){layout.style.overflow=origLayoutOverflow;layout.style.height=origLayoutHeight;}
+    // Restaura o canvas do gráfico no lugar do img estático
+    if(chartImgEl&&chartParent&&chartCanvas){
+      if(chartNextSibling) chartParent.insertBefore(chartCanvas,chartNextSibling);
+      else chartParent.appendChild(chartCanvas);
+      chartParent.removeChild(chartImgEl);
+    }
+    if(btn){btn.style.visibility='';btn.textContent='📄 Exportar PDF';}
+    // Recria o gráfico no canvas restaurado
+    try{const r=analyze(infractions);if(r)renderChart(r);}catch(_){}
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DEMO
+// ═══════════════════════════════════════════════
+function loadDemo(){
+  document.getElementById('dName').value='José Carlos Mendonça';
+  document.getElementById('dPlate').value='ERT-4521';
+  document.getElementById('dRenavam').value='00123456789';
+  document.getElementById('dEAR').value='nao';
+  function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)}
+  infractions=[
+    {id:1,aitDate:daysAgo(150),aitNumber:'AA123456789',code:'74630',description:'Excesso de velocidade entre 20% e 50%',severity:'grave',points:5,notificationDate:daysAgo(135),notifNP:daysAgo(110)},
+    {id:2,aitDate:daysAgo(120),aitNumber:'BB987654321',code:'60501',description:'Avanço de sinal vermelho',severity:'gravissima',points:7,notificationDate:daysAgo(90),notifNP:daysAgo(75)},
+    {id:3,aitDate:daysAgo(90),aitNumber:'CC456123789',code:'51851',description:'Não uso de cinto de segurança',severity:'grave',points:5,notificationDate:daysAgo(70),notifNP:daysAgo(20)},
+    {id:4,aitDate:daysAgo(60),aitNumber:'DD789012345',code:'74710',description:'Excesso de velocidade acima de 50% (autossuspensiva)',severity:'gravissima',points:7,notificationDate:daysAgo(40),notifNP:''},
+    {id:5,aitDate:daysAgo(45),aitNumber:'EE321654987',code:'59670',description:'Ultrapassagem contramão — faixa contínua',severity:'gravissima',points:7,notificationDate:daysAgo(25),notifNP:''},
+    {id:6,aitDate:daysAgo(20),aitNumber:'FF654987321',code:'60501',description:'Avanço de sinal vermelho (reincidência)',severity:'gravissima',points:7,notificationDate:daysAgo(5),notifNP:''},
+    {id:7,aitDate:daysAgo(10),aitNumber:'GG111222333',code:'76332',description:'Uso de celular ao volante',severity:'gravissima',points:7,notificationDate:'',notifNP:''},
+  ];
+  clearForm();renderAll();setMobileTab('main');
+}
+
+// ═══════════════════════════════════════════════
+// MOBILE TABS
+// ═══════════════════════════════════════════════
+function setMobileTab(tab){
+  const sidebar=document.querySelector('.sidebar');
+  const main=document.getElementById('mainArea');
+  const btnSidebar=document.getElementById('tabSidebar');
+  const btnMain=document.getElementById('tabMain');
+  if(tab==='sidebar'){
+    sidebar.classList.add('mobile-visible');
+    main.classList.add('mobile-hidden');
+    btnSidebar.classList.add('active');
+    btnMain.classList.remove('active');
+  }else{
+    sidebar.classList.remove('mobile-visible');
+    main.classList.remove('mobile-hidden');
+    btnMain.classList.add('active');
+    btnSidebar.classList.remove('active');
+  }
+}
+
+renderAll();
+// Inicia mostrando painel de dados no mobile
+setMobileTab('sidebar');
+
+// ═══════════════════════════════════════════════
+// PWA — Service Worker
+// ═══════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(()=>console.log('✓ Service Worker registrado'))
+    .catch(e=>console.warn('SW erro:',e));
+}
+</script>
+</body>
+</html>
