@@ -4,18 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Radar CNH — Só Multas</title>
-
-<!-- PWA -->
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#0d1f3c">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Radar CNH">
-<link rel="apple-touch-icon" href="./icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,300;1,400;1,600&display=swap" rel="stylesheet">
@@ -103,20 +91,20 @@ body{font-size:14px;background:var(--main-bg);color:var(--text);height:100%}
 .topbar-name{font-size:14px;font-weight:700;color:var(--sb-text);letter-spacing:-.2px}
 .topbar-sub{font-size:10px;color:var(--sb-muted);margin-top:1px}
 
-.topbar-actions{display:flex;align-items:center;gap:.5rem;padding:0 1rem;flex:1}
+.topbar-actions{display:flex;align-items:center;gap:.5rem;padding:0 1rem;flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;min-width:0}.topbar-actions::-webkit-scrollbar{display:none}
 
 .tb-btn{
   display:inline-flex;align-items:center;gap:6px;
   border:none;border-radius:var(--radius-sm);padding:7px 13px;
   font-size:12px;font-weight:600;cursor:pointer;font-family:'Titillium Web',sans-serif;
-  transition:all .15s;white-space:nowrap;letter-spacing:.1px;
+  transition:all .15s;white-space:nowrap;letter-spacing:.1px;flex-shrink:0;
 }
 .tb-btn-ghost{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1)}
 .tb-btn-ghost:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.18)}
 .tb-btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(58,95,140,.3)}
 .tb-btn-primary:hover{background:var(--primary-hover)}
 
-.topbar-sep{width:1px;height:24px;background:var(--sb-border);margin:0 .25rem}
+.topbar-sep{width:1px;height:24px;background:var(--sb-border);margin:0 .25rem;flex-shrink:0}
 
 /* ══════════════════════════════════════════════
    LAYOUT
@@ -2869,48 +2857,71 @@ async function exportarOrcamentoImagem(){
   if(orcServicos.length===0){showToast('Adicione pelo menos um servico antes de exportar.','error');return;}
   btn.textContent = 'Gerando...';
   btn.disabled = true;
+
+  // Guarda estilos originais para restaurar depois
+  const origWidth     = doc.style.width;
+  const origMinWidth  = doc.style.minWidth;
+  const origTransform = doc.style.transform;
+  const origPosition  = doc.style.position;
+  const origLeft      = doc.style.left;
+  const origTop       = doc.style.top;
+
+  // Força 794px fixo (A4) independente do dispositivo
+  doc.style.width     = '794px';
+  doc.style.minWidth  = '794px';
+  doc.style.transform = 'none';
+  // Tira do fluxo para não afetar layout da página
+  doc.style.position  = 'fixed';
+  doc.style.left      = '-9999px';
+  doc.style.top       = '0';
+
+  // Força reflow
+  doc.getBoundingClientRect();
+
   try{
     const canvas = await html2canvas(doc, {
       scale: 2.5, useCORS: true, allowTaint: true, logging: false,
       backgroundColor: '#ffffff', scrollX: 0, scrollY: 0,
-      width: doc.scrollWidth, height: doc.scrollHeight,
+      width: 794, height: doc.scrollHeight,
     });
+
     const A4_W = 2480, A4_H = 3508;
-    const sc = Math.min(A4_W/canvas.width, A4_H/canvas.height);
-    const finalW = Math.round(canvas.width*sc), finalH = Math.round(canvas.height*sc);
+    const sc = Math.min(A4_W / canvas.width, A4_H / canvas.height);
+    const finalW = Math.round(canvas.width * sc);
+    const finalH = Math.round(canvas.height * sc);
     const final = document.createElement('canvas');
-    final.width = A4_W; final.height = A4_H;
+    final.width  = A4_W;
+    final.height = A4_H;
     const ctx = final.getContext('2d');
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,A4_W,A4_H);
-    ctx.drawImage(canvas, Math.round((A4_W-finalW)/2), Math.round((A4_H-finalH)/2), finalW, finalH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, A4_W, A4_H);
+    ctx.drawImage(canvas, Math.round((A4_W - finalW) / 2), Math.round((A4_H - finalH) / 2), finalW, finalH);
+
     const link = document.createElement('a');
     const nomeArq = (document.getElementById('orcNome').value||'orcamento').replace(/\s+/g,'-').toLowerCase();
-    const numArq = (document.getElementById('orcNumero').value||'').replace(/[^a-zA-Z0-9-]/g,'-');
+    const numArq  = (document.getElementById('orcNumero').value||'').replace(/[^a-zA-Z0-9-]/g,'-');
     link.download = 'orcamento-'+nomeArq+'-'+(numArq||new Date().toISOString().slice(0,10))+'.png';
     link.href = final.toDataURL('image/png');
     link.click();
-    showToast('Orcamento exportado como imagem A4!','success');
+    showToast('Orçamento exportado como imagem A4!','success');
   }catch(e){
     console.error(e); showToast('Erro ao exportar: '+e.message,'error');
   }finally{
-    btn.textContent='Exportar como Imagem'; btn.disabled=false;
+    // Restaura estilos originais
+    doc.style.width     = origWidth;
+    doc.style.minWidth  = origMinWidth;
+    doc.style.transform = origTransform;
+    doc.style.position  = origPosition;
+    doc.style.left      = origLeft;
+    doc.style.top       = origTop;
+    btn.textContent = 'Exportar como Imagem';
+    btn.disabled = false;
   }
 }
 
 renderAll();
 // Inicia mostrando painel de dados no mobile
 setMobileTab('sidebar');
-</script>
-
-<!-- Registro do Service Worker (PWA) -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('SW registrado:', reg.scope))
-      .catch(err => console.warn('SW falhou:', err));
-  });
-}
 </script>
 </body>
 </html>
