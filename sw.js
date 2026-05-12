@@ -2,7 +2,7 @@
 // Radar CNH — Service Worker
 // Versão do cache: incrementar ao atualizar o app
 // ═══════════════════════════════════════════════
-const CACHE = 'radar-cnh-v4';
+const CACHE = 'radar-cnh-v5';
 
 // Recursos locais sempre em cache
 const LOCAL_ASSETS = [
