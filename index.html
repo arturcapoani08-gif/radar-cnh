@@ -594,6 +594,159 @@ td.over{color:var(--red);font-weight:700}
   .tb-btn{padding:6px 8px;font-size:11px}
 }
 
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE — Completo
+   ══════════════════════════════════════════════ */
+
+/* Home Screen Mobile */
+@media(max-width:700px){
+  #homeScreen{padding:1.25rem 1rem}
+  .home-brand{margin-bottom:1.75rem}
+  .home-logo{width:56px;height:56px;font-size:24px;border-radius:14px}
+  .home-title{font-size:1.6rem}
+  .home-sub{font-size:.78rem}
+  .home-cards{grid-template-columns:1fr;gap:.875rem;max-width:100%}
+  .home-card{padding:1.25rem 1rem;border-radius:14px}
+  .home-card-icon{width:50px;height:50px;font-size:22px;border-radius:12px}
+  .home-card-title{font-size:.95rem}
+  .home-card-desc{font-size:.72rem}
+  .home-card-badge{font-size:.65rem;padding:3px 10px}
+  .home-footer{margin-top:1.5rem;font-size:.65rem}
+}
+
+/* Radar Topbar Mobile */
+@media(max-width:900px){
+  .topbar{flex-wrap:wrap;height:auto;min-height:var(--topbar-h);padding:.25rem .5rem}
+  .tb-btn span.tb-label{display:none}
+  .topbar-sep{display:none}
+}
+@media(max-width:480px){
+  .topbar-actions{padding:0 .25rem;gap:.2rem}
+  .tb-btn{padding:6px 7px;font-size:10px}
+}
+
+/* Sidebar Mobile */
+@media(max-width:900px){
+  .sidebar-scroll{padding-bottom:80px}
+  .sidebar-section{padding:.75rem 1rem}
+  .form-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .form-row{grid-template-columns:1fr}
+  .form-group input,.form-group select{font-size:12px;padding:6px 8px}
+  .btn-add{padding:9px;font-size:12px}
+}
+
+/* Main Area Mobile */
+@media(max-width:900px){
+  .main-scroll{padding:1rem}
+  .metrics-row{grid-template-columns:1fr 1fr;gap:.625rem}
+}
+@media(max-width:480px){
+  .main-scroll{padding:.625rem .5rem}
+  .metric-card{padding:.625rem .75rem}
+}
+
+/* CRM Module Mobile */
+@media(max-width:900px){
+  .crm-module header{padding:10px 14px;flex-wrap:wrap;gap:8px}
+  .crm-module header h1{font-size:1rem}
+  .crm-module header>div:last-child{gap:5px;flex-wrap:wrap}
+  .crm-guia-hint{padding:5px 10px;font-size:11px}
+  .home-nav-btn{padding:5px 10px;font-size:11px}
+  .nav{padding:0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{padding:9px 12px;font-size:.75rem;white-space:nowrap}
+  .page{padding:12px 12px 80px}
+  .charts{grid-template-columns:1fr}
+  .tables{grid-template-columns:1fr}
+  .leads-toolbar{flex-wrap:wrap;gap:6px}
+  .leads-toolbar input[type=text]{min-width:100%;order:-1}
+  .leads-toolbar select{flex:1;min-width:120px}
+  .leads-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .leads-wrap table{min-width:600px}
+  .sel-controls{flex-wrap:wrap;gap:5px}
+}
+@media(max-width:560px){
+  .crm-module header{padding:8px 10px}
+  .crm-module header h1{font-size:.88rem}
+  .crm-module header .sub{display:none}
+  .ts{display:none}
+  .kpi{grid-template-columns:repeat(2,1fr);gap:6px}
+  .card{padding:9px 7px;border-radius:9px}
+  .import-stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  #leadModal .modal-box{max-height:100dvh;border-radius:0;position:fixed;inset:0;margin:0;width:100%}
+  #leadModal .fields.cols3{grid-template-columns:1fr 1fr}
+  #newLeadModal .modal-box{max-height:100dvh;border-radius:0;position:fixed;inset:0;margin:0;width:100%}
+  #newLeadModal .nl-grid.g3{grid-template-columns:1fr 1fr}
+  #newLeadModal .nl-grid.g2{grid-template-columns:1fr 1fr}
+  .page{padding:10px 8px 80px}
+  .sel-controls .btn-sel{font-size:.68rem;padding:4px 7px}
+  #clearModal .modal-box{width:95vw;padding:18px}
+}
+@media(max-width:380px){
+  .kpi{grid-template-columns:1fr 1fr}
+  .nav button{padding:8px 9px;font-size:.68rem}
+  #newLeadModal .nl-grid.g3{grid-template-columns:1fr}
+  #newLeadModal .nl-grid.g2{grid-template-columns:1fr}
+  .crm-module header>div:last-child{display:none}
+}
+
+/* Global Nav Mobile */
+@media(max-width:560px){
+  #globalNav{bottom:10px;padding:5px 8px;gap:2px}
+  .gnav-btn{padding:6px 10px;font-size:11px;gap:4px}
+  .gnav-sep{display:none}
+}
+@media(max-width:380px){
+  #globalNav{width:calc(100% - 20px);border-radius:14px;justify-content:space-around}
+  .gnav-btn{flex:1;justify-content:center;padding:8px 4px;font-size:10px}
+  .gnav-btn span.gnav-label{display:none}
+}
+
+/* CRM Guia Drawer Mobile */
+@media(max-width:560px){
+  #crmGuiaDrawer{width:100%;left:0;transform:translateY(110%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+  #crmGuiaDrawer.open{transform:translateY(0)}
+  .cgd-header{padding:10px 12px}
+}
+
+/* Sync Modal Mobile */
+@media(max-width:560px){
+  #syncModal{align-items:flex-end}
+  #syncPanel{border-radius:16px 16px 0 0;max-height:88vh;width:100vw}
+  .sync-head{padding:.875rem 1rem}
+  .sync-body{padding:1rem}
+  .sync-tab{font-size:11px;padding:7px 4px}
+}
+
+/* Orçamento Mobile */
+@media(max-width:900px){
+  .orc-body{grid-template-columns:1fr;overflow:auto}
+  .orc-panel{overflow:visible;max-height:none}
+  .orc-preview-area{padding:.75rem}
+  #orcDocumento{width:100%;min-width:0;transform-origin:top left}
+}
+
+/* Guia Page Mobile */
+@media(max-width:560px){
+  .guia-topbar{padding:0 .625rem;gap:.375rem}
+  .guia-topbar-title{font-size:12px}
+  .guia-tab-btn{padding:5px 8px;font-size:11px}
+}
+
+/* Touch device improvements */
+@media(hover:none) and (pointer:coarse){
+  .inf-item{padding:.55rem .75rem}
+  .btn-add,.btn-cancel{padding:11px}
+  .nav button{padding:12px 14px}
+  .tb-btn{padding:9px 10px;min-height:40px}
+  .gnav-btn{padding:9px 14px;min-height:40px}
+  .crm-guia-hint{padding:9px 14px;min-height:40px}
+  .home-nav-btn{padding:9px 14px;min-height:40px}
+  input,select,textarea{font-size:16px!important} /* prevent iOS zoom */
+}
+
 /* ═══════════════════════════════════════
    OVERLAY DO GUIA SÓ MULTAS
    ═══════════════════════════════════════ */
@@ -1341,8 +1494,9 @@ body {
 }
 
 @media (max-width: 700px) {
-  .home-cards { grid-template-columns: 1fr; max-width: 380px; }
+  .home-cards { grid-template-columns: 1fr; max-width: 100%; }
   .home-title { font-size: 1.5rem; }
+  .home-card { padding: 1.25rem 1rem; }
 }
 
 </style>
@@ -8248,8 +8402,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- TAB CONFIG -->
       <div class="sync-pane active" id="sync-pane-config">
-        <div class="sync-alert sync-alert-info">
-          Faça isso <strong>uma única vez</strong> em cada dispositivo. O token fica salvo localmente.
+        <div id="sync-autosync-status" class="sync-alert sync-alert-success" style="display:none">
+          🤖 <strong>Auto-sync ativo</strong> — enviando automaticamente ao salvar, verificando nuvem a cada 2 min.
+        </div>
+        <div id="sync-autosync-inactive" class="sync-alert sync-alert-info">
+          Configure o token e o Gist abaixo para ativar a <strong>sincronização automática</strong>.
         </div>
         <div class="sync-field">
           <label class="sync-label">GitHub Personal Access Token</label>
@@ -8376,6 +8533,14 @@ function abrirSyncModal() {
   syncLoadConfig();
   syncUpdateExportInfo();
   syncUpdateImportInfo();
+  // Show/hide auto-sync status
+  const active = autoSyncGetEnabled();
+  const el1 = document.getElementById('sync-autosync-status');
+  const el2 = document.getElementById('sync-autosync-inactive');
+  if (el1) el1.style.display = active ? '' : 'none';
+  if (el2) el2.style.display = active ? 'none' : '';
+  const lbl = document.getElementById('syncNavLabel');
+  if (lbl) lbl.textContent = active ? 'Auto-Sync ON' : 'Sincronizar';
 }
 
 function fecharSyncModal() {
@@ -8647,13 +8812,219 @@ function crmReadData() {
   try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):{leads:{},meta:{}}; } catch(e){ return {leads:{},meta:{}}; }
 }
 
+// ══════════════════════════════════════════════════════════════
+// AUTO-SYNC — Envia automaticamente ao salvar, recebe a cada 2min
+// ══════════════════════════════════════════════════════════════
+const AUTO_SYNC_INTERVAL = 2 * 60 * 1000; // 2 minutos
+let _autoSyncTimer = null;
+let _autoSyncEnabled = false;
+let _lastAutoSyncTs = 0;
+let _syncInProgress = false;
+
+function autoSyncGetEnabled() {
+  const cfg = syncGetConfig();
+  return !!(cfg.token && cfg.gistId);
+}
+
+// Silently export — no UI feedback except the nav button
+async function autoSyncExport() {
+  if (_syncInProgress) return;
+  const cfg = syncGetConfig();
+  if (!cfg.token || !cfg.gistId) return;
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch(e) { return; }
+  _syncInProgress = true;
+  syncUpdateNavDot('busy');
+  try {
+    const leadsCount = Object.keys(parsed.leads||{}).length;
+    const payload = JSON.stringify({
+      ...parsed,
+      _sync:{
+        exportedAt:new Date().toISOString(),
+        leadsCount,
+        device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'
+      }
+    },null,2);
+    await gistUpdate(cfg.token, cfg.gistId, payload);
+    const now = new Date().toISOString();
+    localStorage.setItem('somultas_last_export', now);
+    _lastAutoSyncTs = Date.now();
+    syncUpdateNavBtn(now);
+    syncUpdateNavDot('ok');
+    syncLog('Auto-sync enviado: '+leadsCount+' leads ✓','success');
+  } catch(e) {
+    syncUpdateNavDot('warn');
+    syncLog('Auto-sync erro envio: '+e.message,'err');
+  }
+  _syncInProgress = false;
+}
+
+// Silently import — only overwrites if cloud is newer
+async function autoSyncImport() {
+  if (_syncInProgress) return;
+  const cfg = syncGetConfig();
+  if (!cfg.token || !cfg.gistId) return;
+  _syncInProgress = true;
+  syncUpdateNavDot('busy');
+  try {
+    const content = await gistRead(cfg.token, cfg.gistId);
+    const cloud = JSON.parse(content);
+    const cloudTs = cloud._sync && cloud._sync.exportedAt ? new Date(cloud._sync.exportedAt).getTime() : 0;
+    const lastExport = localStorage.getItem('somultas_last_export');
+    const localTs = lastExport ? new Date(lastExport).getTime() : 0;
+    // Only import if cloud has newer data than what we last exported
+    if (cloudTs > localTs + 5000) { // 5s tolerance
+      const { _sync, ...crmData } = cloud;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(crmData));
+      const now = new Date().toISOString();
+      localStorage.setItem('somultas_last_import', now);
+      localStorage.setItem('somultas_last_import_src', JSON.stringify(_sync||{}));
+      _lastAutoSyncTs = Date.now();
+      syncUpdateNavBtn(now);
+      syncUpdateNavDot('ok');
+      const n = Object.keys(crmData.leads||{}).length;
+      syncLog('Auto-sync recebido: '+n+' leads (nuvem mais recente) ✓','success');
+      // Refresh CRM UI silently
+      try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
+      try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
+      try { if(typeof refreshHeader==='function') refreshHeader(crmData); } catch(e){}
+      // Show subtle toast
+      try { if(typeof crmShowToast==='function') crmShowToast('☁️ Leads atualizados automaticamente'); } catch(e){}
+    } else {
+      syncUpdateNavDot('ok');
+    }
+  } catch(e) {
+    syncUpdateNavDot('warn');
+    syncLog('Auto-sync erro recebimento: '+e.message,'err');
+  }
+  _syncInProgress = false;
+}
+
+function syncUpdateNavDot(state) {
+  const btn = document.getElementById('syncNavBtn');
+  if (!btn) return;
+  const colors = {ok:'rgba(74,222,128,.9)',busy:'rgba(90,171,255,.9)',warn:'rgba(251,191,36,.9)',off:'rgba(255,255,255,.3)'};
+  btn.style.setProperty('--sync-dot-color', colors[state]||colors.off);
+}
+
+function autoSyncStart() {
+  if (_autoSyncTimer) clearInterval(_autoSyncTimer);
+  if (!autoSyncGetEnabled()) return;
+  _autoSyncEnabled = true;
+  syncLog('Auto-sync ativado · intervalo: 2min','success');
+  // First check on start
+  setTimeout(autoSyncImport, 3000);
+  _autoSyncTimer = setInterval(autoSyncImport, AUTO_SYNC_INTERVAL);
+  // Update button style
+  const btn = document.getElementById('syncNavBtn');
+  if (btn) btn.title = 'Sincronização automática ativa · clique para opções';
+}
+
+function autoSyncStop() {
+  if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+  _autoSyncEnabled = false;
+}
+
+// Hook into existing CRM save functions — called after any data mutation
+function autoSyncOnDataChange() {
+  if (!autoSyncGetEnabled()) return;
+  // Debounce: wait 1.5s after last change to avoid spamming
+  if (window._autoSyncDebounce) clearTimeout(window._autoSyncDebounce);
+  window._autoSyncDebounce = setTimeout(autoSyncExport, 1500);
+}
+
+// ── Patch CRM save functions to trigger auto-sync ─────────────────
+function patchCrmFunctionsForAutoSync() {
+  // Patch saveData (CRM storage function)
+  const origSaveData = window.saveData;
+  if (origSaveData) {
+    window.saveData = function() {
+      const result = origSaveData.apply(this, arguments);
+      autoSyncOnDataChange();
+      return result;
+    };
+  }
+  // Patch importLeads if exists
+  const origImportLeads = window.importLeads;
+  if (origImportLeads) {
+    window.importLeads = function() {
+      const result = origImportLeads.apply(this, arguments);
+      autoSyncOnDataChange();
+      return result;
+    };
+  }
+  // Patch saveNewLead
+  const origSaveNewLead = window.saveNewLead;
+  if (origSaveNewLead) {
+    window.saveNewLead = function() {
+      const result = origSaveNewLead.apply(this, arguments);
+      autoSyncOnDataChange();
+      return result;
+    };
+  }
+  // Also patch localStorage.setItem to detect CRM saves
+  const origSetItem = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function(key, value) {
+    origSetItem(key, value);
+    if (key === STORAGE_KEY) autoSyncOnDataChange();
+  };
+}
+
+// Add dot indicator to sync button via CSS
+function syncAddDotStyle() {
+  const style = document.createElement('style');
+  style.textContent = `
+    #syncNavBtn{position:relative}
+    #syncNavBtn::after{
+      content:'';position:absolute;top:4px;right:4px;
+      width:7px;height:7px;border-radius:50%;
+      background:var(--sync-dot-color,rgba(255,255,255,.3));
+      box-shadow:0 0 0 1.5px rgba(13,31,60,.8);
+      transition:background .3s;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 function syncInit() {
-  const cfg = syncGetConfig();
   const lastSync = localStorage.getItem('somultas_last_export') || localStorage.getItem('somultas_last_import');
   if (lastSync) syncUpdateNavBtn(lastSync);
-  syncLog('Sync module iniciado · chave CRM: '+STORAGE_KEY, 'info');
+  syncLog('Sync module iniciado · chave CRM: '+STORAGE_KEY,'info');
+  syncAddDotStyle();
+  // Patch CRM functions for auto-sync
+  setTimeout(patchCrmFunctionsForAutoSync, 500);
+  // Start auto-sync if configured
+  if (autoSyncGetEnabled()) {
+    syncUpdateNavDot('ok');
+    autoSyncStart();
+    syncLog('Configuração encontrada · auto-sync ativado ✓','success');
+    const lbl = document.getElementById('syncNavLabel');
+    if (lbl) lbl.textContent = 'Auto-Sync ON';
+  } else {
+    syncUpdateNavDot('off');
+  }
 }
+
+// Override syncSaveConfig to start auto-sync after config
+const _origSyncSaveConfig = window.syncSaveConfig;
+document.addEventListener('DOMContentLoaded', () => {
+  const origFn = syncSaveConfig;
+  window.syncSaveConfig = function() {
+    origFn();
+    setTimeout(()=>{
+      if(autoSyncGetEnabled()){
+        autoSyncStart();
+        syncUpdateNavDot('ok');
+        const lbl=document.getElementById('syncNavLabel');
+        if(lbl) lbl.textContent='Auto-Sync ON';
+        syncLog('Auto-sync iniciado após configuração ✓','success');
+      }
+    },300);
+  };
+});
 </script>
 </body>
 </html>
