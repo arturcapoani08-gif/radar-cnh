@@ -2,17 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Só Multas — Central</title>
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d1f3c">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Só Multas">
-<link rel="apple-touch-icon" href="icon-192.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1544,9 +1538,6 @@ body {
   </div>
 
   <div class="home-footer">Só Multas — Franchisee Unit · Bauru, SP</div>
-  <button id="pwaInstallBtn" onclick="pwaInstall()" style="display:none;margin-top:1rem;position:relative;z-index:2;background:linear-gradient(135deg,#0072ff,#009fd7);color:#fff;border:none;border-radius:25px;padding:10px 22px;font-size:13px;font-weight:700;font-family:'Titillium Web',sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(0,114,255,.4);align-items:center;gap:8px;animation:fadeInUp .5s ease .5s both">
-    📲 Instalar como App
-  </button>
 </div>
 
 
@@ -3870,60 +3861,6 @@ tr:last-child td{border-bottom:none}
   </div>
 
 </div>
-<script>
-// ── PWA Service Worker Registration ──────────────────────────
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => {
-        console.log('[PWA] Service Worker registrado:', reg.scope);
-        // Detecta atualização disponível
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nova versão disponível — mostra toast discreto
-              try {
-                if (typeof crmShowToast === 'function') {
-                  crmShowToast('🔄 Nova versão disponível — recarregue o app');
-                }
-              } catch(e) {}
-            }
-          });
-        });
-      })
-      .catch(err => console.warn('[PWA] SW erro:', err));
-  });
-}
-
-// ── PWA Install Prompt ────────────────────────────────────────
-let _pwaInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  _pwaInstallPrompt = e;
-  // Mostra botão de instalar na home se disponível
-  const btn = document.getElementById('pwaInstallBtn');
-  if (btn) btn.style.display = 'inline-flex';
-});
-
-function pwaInstall() {
-  if (!_pwaInstallPrompt) return;
-  _pwaInstallPrompt.prompt();
-  _pwaInstallPrompt.userChoice.then(result => {
-    if (result.outcome === 'accepted') {
-      const btn = document.getElementById('pwaInstallBtn');
-      if (btn) btn.style.display = 'none';
-    }
-    _pwaInstallPrompt = null;
-  });
-}
-
-window.addEventListener('appinstalled', () => {
-  const btn = document.getElementById('pwaInstallBtn');
-  if (btn) btn.style.display = 'none';
-  _pwaInstallPrompt = null;
-});
-</script>
 </body>
 </html>`;
 
