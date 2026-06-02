@@ -12,8 +12,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,300;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -684,7 +682,7 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .page.active{display:block}
 
 /* KPI CARDS */
-.kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
 .card{background:#fff;border-radius:11px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.07);border-top:4px solid #ccc;transition:all .15s;cursor:pointer;position:relative}
 .card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .card.active-card{box-shadow:0 0 0 3px #1a2980,0 4px 14px rgba(0,0,0,.15)}
@@ -790,6 +788,9 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .btn-copy{background:#fff;border:1.5px solid #26d0ce;color:#1a6060;border-radius:7px;padding:4px 8px;cursor:pointer;font-size:.7rem;white-space:nowrap;transition:all .15s;font-weight:700}
 .btn-copy:hover{background:#26d0ce;color:#fff}
 .btn-copy.copied{background:#4a8a20;border-color:#4a8a20;color:#fff}
+#md-copybtn1:hover{filter:brightness(1.1);transform:translateY(-1px)}
+#md-copybtn2:hover{filter:brightness(1.1);transform:translateY(-1px)}
+#md-copybtn1.copied,#md-copybtn2.copied{filter:brightness(.9)}
 
 /* VIEW BUTTON */
 .btn-view{background:#fff;border:1.5px solid #a0a0d0;color:#555;border-radius:7px;padding:4px 7px;cursor:pointer;font-size:.7rem;white-space:nowrap;transition:all .12s}
@@ -878,6 +879,15 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 
 /* STALE DOT */
 .stale{display:inline-block;width:7px;height:7px;border-radius:50%;background:#FFB3B3;margin-right:4px;vertical-align:middle;title:"Sem ação há mais de 3 dias"}
+
+/* PERDIDO CARD */
+.card-perdido{border-top:2px solid #9333ea !important}
+
+/* MEU NÚMERO WA */
+.meunr-inp{border:1px solid #d8b4fe;border-radius:6px;padding:3px 6px;width:120px;font-size:.69rem;font-family:inherit;background:#faf5ff;color:#6b21a8;font-weight:600}
+.meunr-inp:focus{outline:none;border-color:#9333ea;background:#fff}
+.meunr-inp::placeholder{color:#c4b5fd;font-weight:400}
+.meunr-badge{display:inline-flex;align-items:center;gap:3px;background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe;border-radius:5px;padding:2px 7px;font-size:.68rem;font-weight:700;white-space:nowrap}
 
 @media(max-width:900px){.kpi{grid-template-columns:repeat(3,1fr)}.charts,.tables{grid-template-columns:1fr}#leadModal .fields{grid-template-columns:1fr}#leadModal .fields.cols3{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.kpi{grid-template-columns:repeat(2,1fr)}}
@@ -1107,6 +1117,185 @@ body {
   animation: fadeInUp .5s ease .4s both;
 }
 
+/* ══════════════════════════════════════════════
+   BARRA DE NAVEGAÇÃO GLOBAL (flutuante, todos os módulos)
+   ══════════════════════════════════════════════ */
+#globalNav {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: none; /* shown via JS when not on home */
+  background: rgba(13,31,60,.96);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 40px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  user-select: none;
+}
+.gnav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  border: none;
+  background: transparent;
+  color: rgba(240,246,255,.6);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Titillium Web', sans-serif;
+  transition: all .18s;
+  white-space: nowrap;
+  letter-spacing: .1px;
+}
+.gnav-btn:hover {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+}
+.gnav-btn.gnav-active {
+  background: rgba(58,95,140,.45);
+  color: #fff;
+  border: 1px solid rgba(58,95,140,.55);
+}
+.gnav-btn.gnav-guia-active {
+  background: rgba(9,122,82,.4);
+  color: #34d399;
+  border: 1px solid rgba(9,122,82,.5);
+}
+.gnav-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,.12);
+  margin: 0 2px;
+}
+/* Botão Guia no CRM — destaque especial */
+.gnav-btn-guia-crm {
+  background: linear-gradient(135deg, rgba(9,122,82,.35), rgba(7,90,60,.25)) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(9,122,82,.4) !important;
+  animation: gnav-pulse 2.5s ease-in-out infinite;
+}
+@keyframes gnav-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(9,122,82,0); }
+  50% { box-shadow: 0 0 0 4px rgba(9,122,82,.25); }
+}
+
+/* ══════════════════════════════════════════════
+   DRAWER DO GUIA — abre dentro do CRM
+   ══════════════════════════════════════════════ */
+#crmGuiaDrawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 480px;
+  max-width: 96vw;
+  background: #fff;
+  z-index: 8000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.28);
+  transform: translateX(110%);
+  transition: transform .32s cubic-bezier(.4,0,.2,1);
+}
+#crmGuiaDrawer.open {
+  transform: translateX(0);
+}
+.cgd-header {
+  background: #0d1f3c;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #1e3a5f;
+  flex-shrink: 0;
+}
+.cgd-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F0F6FF;
+  flex: 1;
+}
+.cgd-close {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.7);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Titillium Web', sans-serif;
+  transition: all .15s;
+}
+.cgd-close:hover { background: rgba(255,255,255,.18); color: #fff; }
+.cgd-tabs {
+  display: flex;
+  border-bottom: 2px solid #e5e7eb;
+  background: #f8f9fb;
+  flex-shrink: 0;
+}
+.cgd-tab {
+  flex: 1;
+  padding: 9px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Titillium Web', sans-serif;
+  transition: all .15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+.cgd-tab:hover { color: #1d1d1f; }
+.cgd-tab.active { color: #097A52; border-bottom-color: #097A52; background: #fff; }
+#crmGuiaFrame {
+  flex: 1;
+  border: none;
+  overflow: hidden;
+}
+/* Overlay escuro atrás do drawer */
+#crmGuiaOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 7999;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+#crmGuiaOverlay.open { display: block; }
+
+/* Badge flutuante no CRM para chamar atenção */
+.crm-guia-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0a5c3d, #097A52);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Titillium Web', sans-serif;
+  box-shadow: 0 3px 10px rgba(9,122,82,.35);
+  transition: all .18s;
+  white-space: nowrap;
+}
+.crm-guia-hint:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(9,122,82,.45);
+}
+
 /* CRM additional styles */
 .crm-module .btn-radar-sm {
   background: #e8eef5;
@@ -1224,7 +1413,7 @@ body {
         ↑ Importar
       </button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-      <button class="tb-btn tb-btn-ghost" onclick="exportPDF()">📄 Exportar PDF</button>
+      <button class="tb-btn tb-btn-ghost" onclick="exportHTML()">🌐 Exportar HTML</button>
       <div class="topbar-sep"></div>
       <button class="tb-btn tb-btn-ghost" onclick="abrirGuia()" style="color:#91d8f5;border-color:rgba(145,216,245,.3);flex-shrink:0">
         📖 Guia Só Multas
@@ -1466,7 +1655,7 @@ body {
               <div class="commercial-title">Resumo Comercial — Só Multas</div>
               <div class="commercial-sub">Diagnóstico automático · Gerado em <span id="genDate"></span></div>
             </div>
-            <button class="btn-print" onclick="exportPDF()">📄 Exportar PDF</button>
+            <button class="btn-print" onclick="exportHTML()">🌐 Exportar Relatório HTML</button>
           </div>
 
           <div class="commercial-fields" style="grid-template-columns:1fr">
@@ -1944,6 +2133,7 @@ const CTB_DB = {
   '57380': {d:'Transitar pela contramão em via com sinalização de sentido único (art. 186, II)',                     s:'gravissima', p:7},
   // ── Art. 187 ──
   '57461': {d:'Transitar em local/horário não permitido pela regulamentação (rodízio/caminhão) (art. 187, I)',       s:'media',      p:4},
+  '57462': {d:'Transitar em local/horário não permitido pela regulamentação — rodízio (art. 187, I)',                s:'media',      p:4},
   // ── Art. 188/189 ──
   '57620': {d:'Transitar ao lado de outro veículo, interrompendo ou perturbando o trânsito (art. 188)',              s:'media',      p:4},
   '57701': {d:'Deixar de dar passagem a veículo de emergência/batedores/polícia devidamente identificado (art. 189)', s:'gravissima', p:7},
@@ -2648,46 +2838,69 @@ function ordinal(n){return['1º','2º','3º','4º','5º','6º','7º','8º','9º'
 function buildJustificacao(ctx){
   const{status,currentPts,currentLimit,pct,enriched,totalPaps,papGroups,annulable,autoInfs,leissecaInfs,cassacaoRisco,cassacaoInfo}=ctx;
   const parts=[];
+  const margem=currentLimit-currentPts;
+  const pctRound=Math.round(pct*100);
+
+  // ── Situação base ──
   if(status==='SEGURO'){
-    parts.push(`O condutor acumula ${currentPts} ponto(s) efetivo(s) na janela de 12 meses, representando ${Math.round(pct*100)}% do limite de ${currentLimit} pts. Não há risco imediato de suspensão da CNH.`);
-    if(enriched.length>0){
+    if(enriched.length===0){
+      parts.push(`Nenhuma infração foi registrada para análise. Quando houver infrações a verificar, o sistema calculará automaticamente os pontos acumulados e o risco de suspensão da CNH.`);
+    } else {
+      parts.push(`Com base nas infrações analisadas, a CNH encontra-se em situação regular. O total de ${currentPts} ponto${currentPts!==1?'s':''} acumulado${currentPts!==1?'s':''} nos últimos 12 meses representa ${pctRound}% do limite de ${currentLimit} pontos, sem risco de suspensão no momento.`);
       const comPrazo=enriched.filter(x=>{
         const temNPAtiva=x.notifNP&&getLimiteNP(x)>=today();
         const temNAAtiva=!x.notifNP&&x.notificationDate&&getLimiteNA(x)>=today();
         return temNPAtiva||temNAAtiva;
       });
       if(comPrazo.length>0){
-        parts.push(`Das ${enriched.length} infração(ões) registradas, ${comPrazo.length} ainda ${comPrazo.length===1?'está':'estão'} dentro do prazo para contestação, o que pode reduzir ou eliminar os pontos e os valores das multas — mesmo sem risco de suspensão, a redução de pontos e custos é estrategicamente recomendada.`);
+        parts.push(`Há ${comPrazo.length} infração${comPrazo.length!==1?'ões':''} com prazo de contestação ainda em aberto. Contestar essas autuações pode eliminar os pontos correspondentes da CNH e reduzir o valor das multas — mesmo numa situação tranquila, reduzir a pontuação cria uma margem de segurança importante para o futuro.`);
       } else {
-        parts.push(`As ${enriched.length} infração(ões) registradas estão sendo analisadas. Recomenda-se verificar se há vícios formais que possam fundamentar pedido de anulação.`);
+        const semPrazo=enriched.filter(x=>!x.notifNP&&!x.notificationDate);
+        if(semPrazo.length>0){
+          parts.push(`Há ${semPrazo.length} infração${semPrazo.length!==1?'ões':''} que ainda não possuem data de notificação registrada. Assim que a autuação for recebida, o prazo para contestação começa a correr — é importante acompanhar de perto o andamento dessas infrações.`);
+        }
       }
     }
-  }else if(status==='RISCO'){
-    const margemRisco=currentLimit-currentPts;
-    if(margemRisco<=3){
-      parts.push(`Atenção: o condutor acumulou ${currentPts} de ${currentLimit} pontos válidos na janela de 12 meses — a apenas ${margemRisco} ponto(s) do limite. Uma única infração grave já é suficiente para a instauração imediata de um processo de suspensão pelo DETRAN.`);
-      parts.push(`Nesta situação, a infração que colocou o condutor nesta margem crítica deve ser tratada com prioridade via Defesa de Autuação ou Recurso à JARI preventivo. As demais infrações também podem ser contestadas para reduzir a pontuação e criar margem de segurança.`);
+  } else if(status==='RISCO'){
+    if(margem<=3){
+      parts.push(`A CNH está em situação crítica de risco. Com ${currentPts} pontos acumulados nos últimos 12 meses, faltam apenas ${margem} ponto${margem!==1?'s':''} para atingir o limite de ${currentLimit}. Qualquer nova infração de natureza grave é suficiente para abertura imediata de processo administrativo de suspensão pelo DETRAN.`);
+      parts.push(`Neste cenário, contestar as infrações existentes deixou de ser apenas uma opção estratégica — passou a ser a medida mais eficaz disponível para proteger a habilitação. Eliminar ou reduzir os pontos de uma única autuação já pode ser o suficiente para sair da zona de risco.`);
     } else {
-      parts.push(`Atenção: o condutor acumulou ${currentPts} de ${currentLimit} pontos válidos na janela de 12 meses — ${Math.round(pct*100)}% do limite. Ele está na zona de risco: uma nova infração grave pode ser suficiente para a instauração de um processo de suspensão pelo DETRAN.`);
-      parts.push(`A estratégia mais eficaz neste momento é reduzir os pontos existentes por meio de Defesa de Autuação ou Recurso à JARI antes que o limite seja atingido. Agir preventivamente é muito mais barato e rápido do que enfrentar um eventual processo de suspensão.`);
+      parts.push(`A CNH está na zona de atenção. Com ${currentPts} de ${currentLimit} pontos acumulados nos últimos 12 meses (${pctRound}% do limite), ainda há margem — mas ela está sendo consumida. Uma ou duas novas infrações podem ser suficientes para que o DETRAN instaure processo de suspensão.`);
+      parts.push(`O caminho mais seguro neste momento é reduzir os pontos das infrações atuais antes que o limite seja atingido. Agir agora, enquanto a CNH ainda está regular, é muito mais simples e rápido do que enfrentar um processo depois.`);
     }
-  }else if(status==='PRE_PAP'){
+  } else if(status==='PRE_PAP'){
     const pg=papGroups[papGroups.length-1];
-    parts.push(`O condutor ultrapassou o limite de ${pg.limitAtTrigger} pts em ${fmtDate(pg.date)}, acumulando ${pg.cumulAtTrigger} pts efetivos. Isso gerou (ou vai gerar) o ${ordinal(totalPaps)} processo de suspensão por pontos. O DETRAN notificará o condutor para apresentar defesa no processo.`);
-    parts.push(`Este é o momento mais estratégico para agir: uma defesa técnica bem fundamentada pode reduzir significativamente o prazo de suspensão ou até evitá-la por completo. Não aguardar — cada dia conta.`);
-  }else if(status==='ESTOURADO'){
-    parts.push(`O condutor possui ${totalPaps} processo(s) de suspensão por pontos identificado(s). A defesa de cada processo é o serviço prioritário. A nova contagem (após o último processo) está com ${currentPts} de ${currentLimit} pts (${Math.round(pct*100)}%) — monitoramento recomendado.`);
-    parts.push(`Cada processo tem prazo próprio para defesa. É fundamental não deixar passar nenhuma oportunidade de atuação.`);
-  }else if(status==='ESTOURADO_RISCO'){
-    parts.push(`Situação de dupla atenção: o condutor possui ${totalPaps} processo(s) de suspensão por pontos identificado(s) e a nova contagem já acumula ${currentPts} de ${currentLimit} pts (${Math.round(pct*100)}%). Está novamente em zona de risco — um novo estouro resultaria em mais um processo de suspensão.`);
-    parts.push(`É fundamental tratar os processos existentes e simultaneamente reduzir os pontos da nova contagem por meio de Defesa de Autuação ou Recurso à JARI.`);
-  }else if(status==='ESTOURADO_NOVO'){
-    parts.push(`Situação crítica: ${totalPaps} processo(s) de suspensão por pontos identificado(s) e a nova contagem também ultrapassou o limite (${currentPts} de ${currentLimit} pts). Um novo processo de suspensão já está configurado. A CNH do condutor está sob risco imediato e acumulado de múltiplas suspensões.`);
+    parts.push(`O limite de pontos foi ultrapassado. Com ${pg.cumulAtTrigger} pontos acumulados nos últimos 12 meses frente ao limite de ${pg.limitAtTrigger}, foi configurado o ${ordinal(totalPaps)} processo administrativo de suspensão da CNH por pontuação (PAP). A partir daqui, o DETRAN notificará o condutor para que apresente sua defesa no processo.`);
+    parts.push(`Este é o momento decisivo para agir. Uma defesa técnica bem elaborada pode suspender o processo, reduzir o período de suspensão ou até eliminar a penalidade por completo — dependendo das infrações e dos prazos envolvidos. Cada dia sem atuação reduz as possibilidades disponíveis.`);
+  } else if(status==='ESTOURADO'){
+    parts.push(`Foram identificados ${totalPaps} processo${totalPaps!==1?'s':''} administrativo${totalPaps!==1?'s':''} de suspensão da CNH por pontuação. A nova contagem iniciada após o último processo registra ${currentPts} de ${currentLimit} pontos (${pctRound}%) — está controlada no momento, mas precisa ser monitorada.`);
+    parts.push(`Cada processo tem prazo próprio para apresentação de defesa, e esses prazos não se prorrogam. É fundamental verificar a situação de cada um e agir dentro das janelas disponíveis para tentar reverter ou reduzir as penalidades.`);
+  } else if(status==='ESTOURADO_RISCO'){
+    parts.push(`A situação exige atenção dupla: existem ${totalPaps} processo${totalPaps!==1?'s':''} administrativo${totalPaps!==1?'s':''} de suspensão em aberto e, ao mesmo tempo, a nova contagem já acumula ${currentPts} de ${currentLimit} pontos (${pctRound}%). Com essa pontuação, uma nova infração pode configurar mais um processo de suspensão.`);
+    parts.push(`A estratégia adequada passa por defender os processos existentes e, em paralelo, contestar as infrações da nova contagem para reduzir a pontuação e criar margem de segurança antes que o limite seja atingido novamente.`);
+  } else if(status==='ESTOURADO_NOVO'){
+    parts.push(`A CNH encontra-se em situação de risco acumulado. Foram identificados ${totalPaps} processo${totalPaps!==1?'s':''} administrativo${totalPaps!==1?'s':''} de suspensão, e a nova contagem também já ultrapassou o limite — com ${currentPts} de ${currentLimit} pontos, um novo processo já está configurado. O acúmulo de suspensões exige atuação imediata e coordenada.`);
   }
-  if(autoInfs.length>0)parts.push(`⛔ Infrações Autossuspensivas: foram identificadas ${autoInfs.length} infração(ões) autossuspensiva(s) que geram instauração automática do Processo Administrativo por Infração (PAI), com suspensão da CNH independentemente do total de pontos acumulados. A Defesa de Autuação ou o Recurso à JARI são os caminhos para suspender ou anular a penalidade e preservar a habilitação do condutor.`);
-  if(leissecaInfs.length>0)parts.push(`🍺 Lei Seca: ${leissecaInfs.length} ocorrência(s) identificada(s). Cada infração é autossuspensiva e gera instauração de PAI com suspensão da CNH por 12 meses.`);
-  if(cassacaoRisco&&cassacaoInfo)parts.push(`🚨 Risco de Cassação: foram detectados ${totalPaps} processos de suspensão com apenas ${cassacaoInfo.dias} dias de intervalo entre o ${ordinal(totalPaps-1)} (${fmtDate(cassacaoInfo.pap1)}) e o ${ordinal(totalPaps)} (${fmtDate(cassacaoInfo.pap2)}). Quando dois processos de suspensão ocorrem em menos de 12 meses, o DETRAN pode instaurar processo de cassação definitiva da CNH, sem possibilidade de reabilitação por 2 anos.`);
-  if(annulable.length>0)parts.push(`🔍 Oportunidade de anulação: ${annulable.length} infração(ões) foram notificadas com atraso superior a 30 dias após o AIT. Isso configura vício formal que pode fundamentar pedido de anulação da infração junto ao DETRAN.`);
+
+  // ── Autossuspensivas (PAI) ──
+  if(autoInfs.length>0){
+    const plural=autoInfs.length!==1;
+    parts.push(`Além da questão dos pontos, ${plural?`foram identificadas ${autoInfs.length} infrações que são`:`foi identificada 1 infração que é`} classificada${plural?'s':''} como autossuspensiva${plural?'s':''}. Isso significa que, independentemente do total de pontos acumulados, cada uma dessas infrações pode resultar na suspensão automática da CNH por meio de processo administrativo específico (PAI). A contestação dentro do prazo é a única forma de suspender ou cancelar essa penalidade.`);
+  }
+
+  // ── Lei Seca ──
+  if(leissecaInfs.length>0){
+    const plural=leissecaInfs.length!==1;
+    parts.push(`${plural?`Foram identificadas ${leissecaInfs.length} infrações relacionadas à Lei Seca`:`Foi identificada 1 infração relacionada à Lei Seca`}. Trata-se de infração gravíssima e autossuspensiva, que gera suspensão da CNH pelo prazo de 12 meses independentemente da pontuação acumulada. A contestação oportuna é essencial para tentar afastar essa penalidade.`);
+  }
+
+  // ── Anulação por prazo ──
+  if(annulable.length>0){
+    const plural=annulable.length!==1;
+    parts.push(`Foram detectadas ${annulable.length} infração${plural?'ões':''} em que a notificação de autuação foi enviada com mais de 30 dias de atraso em relação à data do AIT. Esse tipo de irregularidade formal pode ser usado como fundamento para solicitar a anulação da infração junto ao DETRAN — o que eliminaria tanto os pontos quanto o valor da multa, sem depender do mérito da autuação.`);
+  }
+
   return parts.join('\n\n');
 }
 
@@ -3011,8 +3224,7 @@ function renderCommercial(r){
   if(r.autoInfs.length>0)parts.push(`<span style="color:var(--purple);font-weight:700">⛔ ${r.autoInfs.length} infração(ões) autossuspensiva(s) — PAI</span>`);
   // Lei Seca
   if(r.leissecaInfs.length>0)parts.push(`<span style="color:var(--purple);font-weight:700">🍺 ${r.leissecaInfs.length} Lei Seca — Autossuspensiva (PAI)</span>`);
-  // Cassação
-  if(cassacaoRisco&&cassacaoInfo)parts.push(`<span style="color:var(--purple);font-weight:700">🚫 Risco de Cassação</span> — ${cassacaoInfo.dias} dias entre PAPs`);
+  // Cassação: alerta removido — não exibir para clientes
   situacaoHtml=parts.join('<br>');
   document.getElementById('cSituation').innerHTML=situacaoHtml;
   const jDiv=document.getElementById('cJustification');
@@ -3030,124 +3242,480 @@ function renderCommercial(r){
   const annDiv=document.getElementById('cAnnulable'),annText=document.getElementById('cAnnulableText');
   if(annulable.length>0){annDiv.style.display='flex';annText.textContent=`${annulable.length} infração(ões) com notificação enviada mais de 30 dias após o AIT: ${annulable.map(x=>`${fmtDate(x.aitDate)} (+${x.extraDays}d)`).join(', ')}. Há potencial para anulação por vício formal.`;}
   else annDiv.style.display='none';
-  const cassDiv=document.getElementById('cCassacaoAlert'),cassText=document.getElementById('cCassacaoText');
-  if(cassacaoRisco&&cassacaoInfo){cassDiv.style.display='flex';cassText.textContent=`Foram identificados ${r.totalPaps} processos de suspensão, sendo que o ${ordinal(r.totalPaps)} ocorreu apenas ${cassacaoInfo.dias} dias após o anterior (${fmtDate(cassacaoInfo.pap1)} → ${fmtDate(cassacaoInfo.pap2)}). O DETRAN pode instaurar processo de cassação definitiva da CNH.`;}
-  else cassDiv.style.display='none';
+  // Cassação alert removido — não exibir para clientes
+  const cassDiv=document.getElementById('cCassacaoAlert');
+  if(cassDiv) cassDiv.style.display='none';
 }
 
 // ═══════════════════════════════════════════════
-// EXPORT PDF
+// EXPORT HTML — Relatório premium para cliente
 // ═══════════════════════════════════════════════
-async function exportPDF(){
-  const content=document.getElementById('analysisContent');
-  if(!content||content.style.display==='none'){showToast('Gere uma análise antes de exportar.','error');return;}
-  const btn=document.querySelector('.btn-print');
-  if(btn){btn.textContent='⏳ Gerando PDF...';}
-  showToast('⏳ Gerando PDF, aguarde...');
+// ═══════════════════════════════════════════════
+// PROPOSTA COMERCIAL — bloco do relatório HTML
+// ═══════════════════════════════════════════════
+function buildProposta(r,nome){
+  const {status,totalPaps,papGroups,autoInfs,leissecaInfs,annulable,enriched,avbCandidates,currentPts,currentLimit}=r;
+  const temPAP=totalPaps>0||status==='PRE_PAP';
+  const temPAI=autoInfs.length>0;
+  const temLeiseca=leissecaInfs.length>0;
+  const temSuspensao=temPAP||temPAI||temLeiseca;
+  const temEstourado=['ESTOURADO','ESTOURADO_RISCO','ESTOURADO_NOVO'].includes(status);
+  const primeiro=nome?nome.split(' ')[0]:'';
 
-  const mainScroll=document.getElementById('mainArea');
-  const layout=document.querySelector('.layout');
+  // ── AVBs com prazo disponível (Defesa NA ou Recurso NP) — excluindo autossuspensivas e lei seca ──
+  const avbDefesaNA=(avbCandidates||[]).filter(x=>
+    x.notificationDate&&!x.notifNP&&getLimiteNA(x)>=today()
+  );
+  const avbRecursoNP=(avbCandidates||[]).filter(x=>
+    x.notifNP&&getLimiteNP(x)>=today()
+  );
+  const totalAvb=avbDefesaNA.length+avbRecursoNP.length;
+  const temAVB=totalAvb>0;
 
-  // ── 1. Snapshot do gráfico AGORA, antes de qualquer alteração de layout ──
-  // Isso evita o erro "addColorStop non-finite" do Chart.js causado por resize
-  const chartCanvas=document.getElementById('timelineChart');
-  let chartImgEl=null;
-  let chartParent=null;
-  let chartNextSibling=null;
-  if(chartCanvas){
-    const chartDataUrl=chartCanvas.toDataURL('image/png');
-    chartImgEl=document.createElement('img');
-    chartImgEl.src=chartDataUrl;
-    chartImgEl.style.width=chartCanvas.offsetWidth+'px';
-    chartImgEl.style.height=chartCanvas.offsetHeight+'px';
-    chartImgEl.style.display='block';
-    chartParent=chartCanvas.parentElement;
-    chartNextSibling=chartCanvas.nextSibling;
-    // Substitui o canvas pelo img estático
-    chartParent.replaceChild(chartImgEl,chartCanvas);
+  // ── Grau de prioridade determina cor da faixa ──
+  let corBarra='#097A52'; // verde padrão
+  if(temLeiseca) corBarra='#7C3AED';
+  else if(temPAI) corBarra='#7C3AED';
+  else if(temPAP) corBarra='#A32532';
+  else if(status==='RISCO') corBarra='#C47D0A';
+
+  // ── Título: lista os principais serviços do caso ──
+  const tituloPartes=[];
+  if(temLeiseca) tituloPartes.push('LEI SECA');
+  if(temPAI) tituloPartes.push(`PAI — INFRAÇÃO AUTOSSUSPENSIVA`);
+  if(temPAP) tituloPartes.push(`PAP — PROCESSO${totalPaps>1?'S':''} DE SUSPENSÃO`);
+  if(temAVB) tituloPartes.push(`AVB — DEFESA DE MULTA${totalAvb>1?'S':''}`);
+  if(!tituloPartes.length) tituloPartes.push('PROTEÇÃO DO PRONTUÁRIO');
+  const titulo=`PROPOSTA — DEFESA COMPLETA | ${tituloPartes.join(' + ')}`;
+
+  // ── Abertura: descreve o conjunto de riscos do caso ──
+  const aberturaPartes=[];
+  if(temLeiseca){
+    const n=leissecaInfs.length;
+    aberturaPartes.push(`${n>1?`${n} infrações relacionadas à Lei Seca`:'uma infração de Lei Seca'} — cada uma autossuspensiva, com potencial de suspensão da CNH por 12 meses independentemente dos pontos acumulados`);
+  }
+  if(temPAI){
+    const n=autoInfs.length;
+    aberturaPartes.push(`${n>1?`${n} infrações autossuspensivas (PAI)`:'1 infração autossuspensiva (PAI)'} que geram suspensão automática da CNH sem depender de pontuação`);
+  }
+  if(temPAP){
+    const n=totalPaps||1;
+    aberturaPartes.push(`${n>1?`${n} processos de suspensão por pontuação (PAP)`:'1 processo de suspensão por pontuação (PAP)'} em andamento`);
+  }
+  if(temAVB){
+    aberturaPartes.push(`${totalAvb} infração${totalAvb>1?'ões':''} com prazo de contestação em aberto — tanto pela multa quanto pelos pontos na CNH`);
   }
 
-  // ── 2. Oculta botão de exportar no PDF ──
-  if(btn) btn.style.visibility='hidden';
+  let aberturaLista='';
+  if(aberturaPartes.length>0){
+    aberturaLista=`<ul style="margin:.75rem 0 0;padding-left:1.1rem;font-size:13px;line-height:1.9;opacity:.95">${aberturaPartes.map(p=>`<li>${p}.</li>`).join('')}</ul>`;
+  }
 
-  // Salva estados de overflow
-  const origBodyOverflow=document.body.style.overflow;
-  const origBodyHeight=document.body.style.height;
-  const origMainOverflow=mainScroll.style.overflow;
-  const origMainHeight=mainScroll.style.height;
-  const origLayoutOverflow=layout?layout.style.overflow:'';
-  const origLayoutHeight=layout?layout.style.height:'';
+  const aberturaIntro= primeiro
+    ? `${primeiro}, a análise do seu prontuário identificou um conjunto de situações que exigem atenção e atuação técnica:`
+    : `A análise do prontuário identificou um conjunto de situações que exigem atenção e atuação técnica:`;
 
-  try{
-    // ── 3. Expande layout para captura total ──
-    document.body.style.overflow='visible';
-    document.body.style.height='auto';
-    mainScroll.style.overflow='visible';
-    mainScroll.style.height='auto';
-    if(layout){layout.style.overflow='visible';layout.style.height='auto';}
+  const abertura=`<p style="font-size:13px;line-height:1.75;opacity:.95;margin:0">${aberturaIntro}${aberturaLista}<br>Pensando nisso, estruturamos um acompanhamento completo para proteger seu direito de dirigir do início ao fim.</p>`;
 
-    await new Promise(r=>setTimeout(r,200));
+  // ── Blocos de serviço — um por tipo identificado ──
+  const blocos=[];
 
-    // ── 4. Captura ──
-    const captured=await html2canvas(content,{
-      scale:2,
-      useCORS:true,
-      allowTaint:true,
-      logging:false,
-      backgroundColor:'#F2F4F7',
-      scrollX:0,
-      scrollY:0,
-      width:content.scrollWidth,
-      height:content.scrollHeight,
+  // Sempre: análise e estratégia
+  blocos.push({
+    icone:'🔍',
+    titulo:'Análise técnica individualizada',
+    desc:'Revisão completa de cada infração — datas, notificações, prazos e fundamentos. Identificamos erros processuais, falhas formais e oportunidades de defesa que normalmente passam despercebidos.'
+  });
+  blocos.push({
+    icone:'📝',
+    titulo:'Defesa personalizada, sem modelos genéricos',
+    desc:'Cada caso é único. A argumentação é construída especificamente para o seu prontuário — não usamos peças prontas. Seu processo recebe atenção exclusiva em cada etapa.'
+  });
+
+  // PAP
+  if(temPAP){
+    const n=totalPaps||1;
+    // Verifica se alguma das infrações que geraram PAP ainda tem prazo de multa em aberto
+    const infsPAP=papGroups.map(pg=>enriched[pg.triggerIdx]).filter(Boolean);
+    const temPrazoMultaAberto=infsPAP.some(inf=>{
+      if(inf.notifNP) return getLimiteNP(inf)>=today(); // NP emitida — checa prazo JARI
+      if(inf.notificationDate) return getLimiteNA(inf)>=today(); // NA emitida — checa prazo defesa
+      return true; // Sem notificação ainda — AIT recente, presume-se que prazo está em aberto
     });
-
-    // ── 5. Gera PDF paginado ──
-    const{jsPDF}=window.jspdf;
-    const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'a3'});
-    const pageW=pdf.internal.pageSize.getWidth();
-    const pageH=pdf.internal.pageSize.getHeight();
-    const margin=24;
-    const usableW=pageW-margin*2;
-    const usableH=pageH-margin*2;
-    const scaleFactor=captured.width/usableW;
-    const pxPerPage=Math.floor(usableH*scaleFactor);
-    let yOffset=0,pageNum=0;
-    while(yOffset<captured.height){
-      if(pageNum>0) pdf.addPage();
-      const sliceH=Math.min(pxPerPage,captured.height-yOffset);
-      const sc=document.createElement('canvas');
-      sc.width=captured.width; sc.height=sliceH;
-      const ctx=sc.getContext('2d');
-      ctx.fillStyle='#F2F4F7';
-      ctx.fillRect(0,0,sc.width,sc.height);
-      ctx.drawImage(captured,0,-yOffset);
-      pdf.addImage(sc.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,sliceH/scaleFactor);
-      yOffset+=sliceH; pageNum++;
+    let descPAP;
+    if(temPrazoMultaAberto){
+      descPAP=`Atuação completa nas fases de Defesa de Autuação, Recurso à JARI e CETRAN — tanto na esfera da multa quanto no processo administrativo de suspensão. <strong>Durante todo o período de recurso a penalidade fica suspensa</strong>, ou seja, você continua dirigindo normalmente até o julgamento final, que pode levar até 5 anos. Solicitaremos também o efeito suspensivo da multa para que não seja necessário efetuar o pagamento enquanto o recurso estiver em andamento.`;
+    } else {
+      // Prazos de defesa e JARI já encerrados para todas as infrações que geraram PAP
+      descPAP=`Como o prazo de Defesa de Autuação e de Recurso à JARI já se encerrou para as infrações que geraram o processo de suspensão, nossa atuação se concentra integralmente na esfera do processo administrativo de suspensão por pontuação (PAP) junto ao DETRAN/CETRAN. <strong>Durante todo o período de recurso a penalidade fica suspensa</strong>, ou seja, você continua dirigindo normalmente até o julgamento final, que pode levar até 5 anos.`;
     }
-    const name=(document.getElementById('dName').value||'condutor').replace(/\s+/g,'-').toLowerCase();
-    pdf.save(`prontuario-${name}-${new Date().toISOString().slice(0,10)}.pdf`);
-    showToast('✓ PDF exportado com sucesso!');
-
-  }catch(e){
-    console.error('exportPDF error:',e);
-    showToast('Erro ao gerar PDF: '+e.message,'error');
-  }finally{
-    // ── 6. Restaura TUDO ──
-    document.body.style.overflow=origBodyOverflow;
-    document.body.style.height=origBodyHeight;
-    mainScroll.style.overflow=origMainOverflow;
-    mainScroll.style.height=origMainHeight;
-    if(layout){layout.style.overflow=origLayoutOverflow;layout.style.height=origLayoutHeight;}
-    // Restaura o canvas do gráfico no lugar do img estático
-    if(chartImgEl&&chartParent&&chartCanvas){
-      if(chartNextSibling) chartParent.insertBefore(chartCanvas,chartNextSibling);
-      else chartParent.appendChild(chartCanvas);
-      chartParent.removeChild(chartImgEl);
-    }
-    if(btn){btn.style.visibility='';btn.textContent='📄 Exportar PDF';}
-    // Recria o gráfico no canvas restaurado
-    try{const r=analyze(infractions);if(r)renderChart(r);}catch(_){}
+    blocos.push({
+      icone:'⚡',
+      titulo:`Defesa do${n>1?' '+n:''}${n>1?' processos':' processo'} de suspensão por pontuação (PAP)`,
+      desc:descPAP
+    });
   }
+
+  // PAI
+  if(temPAI){
+    const n=autoInfs.length;
+    blocos.push({
+      icone:'⛔',
+      titulo:`Defesa de infração${n>1?'ões':''} autossuspensiva${n>1?'s':''} (PAI)`,
+      desc:`${n>1?`As ${n} infrações autossuspensivas geram`:'A infração autossuspensiva gera'} processo${n>1?'s':''} de suspensão da CNH de forma automática, independentemente da pontuação acumulada. Atuamos em Defesa de Autuação, JARI e CETRAN para suspender ou cancelar a penalidade. <strong>A penalidade fica suspensa durante o recurso</strong> — você não perde a habilitação enquanto o processo estiver em andamento.`
+    });
+  }
+
+  // Lei Seca
+  if(temLeiseca){
+    const n=leissecaInfs.length;
+    blocos.push({
+      icone:'🍺',
+      titulo:`Defesa — Lei Seca (${n} ocorrência${n>1?'s':''})`,
+      desc:`A Lei Seca é uma das infrações mais graves do CTB: autossuspensiva, com suspensão de 12 meses da CNH por ocorrência. Atuamos em todas as instâncias — Defesa de Autuação, JARI e CETRAN — para afastar a penalidade. <strong>Enquanto o recurso estiver em andamento, a suspensão fica suspensa</strong> e você segue dirigindo normalmente.`
+    });
+  }
+
+  // AVB — Defesa de Autuação (NA em aberto)
+  if(avbDefesaNA.length>0){
+    blocos.push({
+      icone:'🛡️',
+      titulo:`Defesa de Autuação — ${avbDefesaNA.length} infração${avbDefesaNA.length>1?'ões':''} com prazo em aberto`,
+      desc:`${avbDefesaNA.length>1?`Essas ${avbDefesaNA.length} infrações ainda`:'Essa infração ainda'} ${avbDefesaNA.length>1?'estão':'está'} na fase de Notificação de Autuação, dentro do prazo legal para contestação. Elaboramos a Defesa de Autuação perante o órgão autuador com o objetivo de cancelar a infração antes da emissão da penalidade — eliminando tanto o valor da multa quanto os pontos na CNH. <strong>Caso a defesa não seja acolhida, protocolamos o Recurso à JARI sem custo adicional.</strong>`
+    });
+  }
+
+  // AVB — Recurso à JARI (NP emitida, prazo em aberto)
+  if(avbRecursoNP.length>0){
+    blocos.push({
+      icone:'⚖️',
+      titulo:`Recurso à JARI — ${avbRecursoNP.length} infração${avbRecursoNP.length>1?'ões':''} com Notificação de Penalidade`,
+      desc:`${avbRecursoNP.length>1?`Essas ${avbRecursoNP.length} infrações já`:'Essa infração já'} ${avbRecursoNP.length>1?'tiveram a Notificação de Penalidade emitida':'teve a Notificação de Penalidade emitida'} e ainda ${avbRecursoNP.length>1?'estão':'está'} dentro do prazo para recurso. Protocolamos o Recurso à JARI com argumentação técnica individualizada para cada autuação, buscando a redução ou eliminação dos pontos e do valor da multa.`
+    });
+  }
+
+  // Anulação por prazo
+  if(annulable.length>0){
+    blocos.push({
+      icone:'📋',
+      titulo:`Pedido de anulação — ${annulable.length} infração${annulable.length>1?'ões':''} com vício formal`,
+      desc:`${annulable.length>1?`Essas ${annulable.length} infrações foram`:'Essa infração foi'} notificada${annulable.length>1?'s':''} com mais de 30 dias de atraso em relação à data do AIT — o que configura irregularidade formal. Isso abre a possibilidade de pedir a anulação da infração junto ao DETRAN independentemente do mérito, eliminando os pontos e o valor da multa sem precisar discutir o conteúdo da autuação.`
+    });
+  }
+
+  // Sistema de acompanhamento — sempre por último
+  blocos.push({
+    icone:'📱',
+    titulo:'Acompanhamento em tempo real',
+    desc:'Acesso ao sistema exclusivo da Só Multas para consultar o andamento do seu processo a qualquer momento, com atualizações a cada etapa do recurso.'
+  });
+
+  const blocosHtml=blocos.map(b=>`
+    <div style="display:flex;align-items:flex-start;gap:13px;padding:.75rem 0;border-bottom:1px solid rgba(58,95,140,.07)">
+      <span style="font-size:18px;flex-shrink:0;margin-top:2px;min-width:24px;text-align:center">${b.icone}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#0d1f3c;margin-bottom:.2rem">${b.titulo}</div>
+        <div style="font-size:13px;color:#374151;line-height:1.75">${b.desc}</div>
+      </div>
+    </div>`).join('');
+
+  // ── Objetivo final: composto conforme tudo que existe no caso ──
+  const objPartes=[];
+  if(temLeiseca||temPAI||temPAP) objPartes.push('afastar a suspensão da CNH');
+  if(temAVB||temLeiseca||temPAI||temPAP) objPartes.push('cancelar ou reduzir as multas envolvidas');
+  if(annulable.length>0) objPartes.push('anular as infrações com vício formal');
+  if(status==='RISCO') objPartes.push('criar margem de segurança na pontuação');
+  if(!objPartes.length) objPartes.push('reduzir os pontos e proteger o prontuário');
+
+  const objetivo=`Nosso objetivo é ${objPartes.join(', ')} — tratando todos os pontos do seu caso em uma única atuação coordenada, do início ao fim.`;
+
+  return `
+  <div style="background:#fff;border-radius:14px;border:1px solid #E2E5EA;box-shadow:0 2px 12px rgba(13,31,60,.08);overflow:hidden;margin-bottom:1.25rem">
+    <div style="background:linear-gradient(135deg,${corBarra},${corBarra}cc);padding:1.5rem 1.75rem;color:#fff">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.8;margin-bottom:.375rem">Só Multas — Proteção da CNH</div>
+      <div style="font-size:16px;font-weight:900;letter-spacing:-.2px;line-height:1.3;margin-bottom:1rem">${titulo}</div>
+      ${abertura}
+    </div>
+    <div style="padding:1.5rem 1.75rem">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${corBarra};margin-bottom:.5rem">🎯 O que está incluso no serviço</div>
+      <div style="margin-bottom:1.25rem">${blocosHtml}</div>
+      <div style="background:${corBarra}0d;border-left:4px solid ${corBarra};border-radius:0 8px 8px 0;padding:.875rem 1.125rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:${corBarra};margin-bottom:.375rem">🛡️ Nosso compromisso com você</div>
+        <p style="font-size:13px;line-height:1.7;color:#1f2937;margin:0">${objetivo}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function exportHTML(){
+  const r=analyze(infractions);
+  if(!r){showToast('Gere uma análise antes de exportar.','error');return;}
+
+  const nome=document.getElementById('dName').value||'Condutor';
+  const placa=document.getElementById('dPlate').value||'';
+  const renavam=document.getElementById('dRenavam').value||'';
+  const chassi=document.getElementById('dChassi').value||'';
+  const ear=document.getElementById('dEAR').value==='sim';
+  const dataGeracao=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const nomeArquivo=(nome||'condutor').replace(/\s+/g,'-').toLowerCase();
+
+  // ── Captura imagem do gráfico ──
+  const chartCanvas=document.getElementById('timelineChart');
+  const chartImg=chartCanvas?chartCanvas.toDataURL('image/png'):'';
+
+  // ── Status badge info ──
+  const statusMap={
+    SEGURO:{cor:'#097A52',bg:'#EAF7F1',brd:'#9FD9BF',txt:'✓ Situação Controlada'},
+    RISCO:{cor:'#C47D0A',bg:'#FEF9EB',brd:'#F9D98A',txt:'⚠ Zona de Risco'},
+    PRE_PAP:{cor:'#B83F10',bg:'#FEF2EC',brd:'#F9C9B0',txt:'🚨 Processo de Suspensão — Agir Imediatamente'},
+    ESTOURADO:{cor:'#A32532',bg:'#f8eaec',brd:'#e0adb4',txt:'🔴 Processo(s) de Suspensão Identificado(s)'},
+    ESTOURADO_RISCO:{cor:'#A32532',bg:'#f8eaec',brd:'#e0adb4',txt:'🔴 Suspensão + Nova Contagem em Risco'},
+    ESTOURADO_NOVO:{cor:'#A32532',bg:'#f8eaec',brd:'#e0adb4',txt:'🔴 Múltiplos Processos de Suspensão'},
+  };
+  const statusInfo=statusMap[r.status]||statusMap.SEGURO;
+  const pctBar=Math.min(Math.round(r.pct*100),100);
+  const barCor=r.pct>=1?'#A32532':r.pct>=0.75?'#C47D0A':'#097A52';
+
+  // ── Monta tabela de infrações ──
+  const CYCLE_COLORS=['#3A5F8C','#D97706','#059669','#7C3AED','#C2410C','#0e7490','#be185d','#15803d'];
+  const SEV_LABELS2={leve:'Leve',media:'Média',grave:'Grave',gravissima:'Gravíssima'};
+  const SEV_COLORS={leve:{bg:'#EAF7F1',c:'#097A52'},media:{bg:'#FEF9EB',c:'#C47D0A'},grave:{bg:'#FEF2EC',c:'#B83F10'},gravissima:{bg:'#f8eaec',c:'#A32532'}};
+
+  const tableRows=r.enriched.map((inf,idx)=>{
+    const sc=SEV_COLORS[inf.severity]||SEV_COLORS.gravissima;
+    const cc=CYCLE_COLORS[(inf.group-1)%CYCLE_COLORS.length];
+    let rowBg=inf.excluiPAP?'#F5F3FF':inf.isPapTrigger?'#FFF5F5':inf.group>1?cc+'11':'#ffffff';
+    let leftBorder=inf.excluiPAP?'#7C3AED':inf.isPapTrigger?'#A32532':cc;
+    let statusTd='';
+    if(inf.isLeisseca||inf.excluiPAP)statusTd=`<span style="font-size:11px;background:#F3F0FC;color:#6D35C7;padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid #CFC0F0">${inf.isLeisseca?'🍺 Lei Seca':'⛔ Autossuspensiva'}</span>`;
+    else if(inf.isPapTrigger)statusTd=`<span style="font-size:11px;background:#f8eaec;color:#6b0f1a;padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid #e0adb4">⚡ PAP${inf.group}</span>`;
+    else if(inf.group>1)statusTd=`<span style="font-size:11px;background:${cc}18;color:${cc};padding:2px 8px;border-radius:5px;font-weight:700;border:1px solid ${cc}55">Cont.${inf.group}</span>`;
+    else statusTd=`<span style="color:${r.pct>=1?'#A32532':'#097A52'};font-weight:700">${inf.exceeds?'✕':'✓'}</span>`;
+    const limNA=inf.notificationDate?(inf.limiteNA||addDaysToDate(inf.notificationDate,30)):null;
+    const limNP=inf.notifNP?(inf.limiteNP||addDaysToDate(inf.notifNP,30)):null;
+    let prazoHtml='';
+    if(limNP){const ok=limNP>=today();prazoHtml=`<div style="margin-top:3px;font-size:11px;font-weight:700;color:${ok?'#097A52':'#A32532'}">${ok?'⚖ Prazo JARI: ':'⚠ JARI vencido: '}${fmtDate(limNP)}</div>`;}
+    else if(limNA){const ok=limNA>=today();prazoHtml=`<div style="margin-top:3px;font-size:11px;font-weight:700;color:${ok?'#097A52':'#A32532'}">${ok?'🛡 Prazo defesa: ':'📅 Aguardando NP: '}${fmtDate(limNA)}</div>`;}
+    return `<tr style="background:${rowBg}">
+      <td style="border-left:3px solid ${leftBorder};color:#6B7280;font-size:12px;padding:8px 10px">${idx+1}</td>
+      <td style="padding:8px 10px;white-space:nowrap;font-family:'Courier New',monospace;font-size:12px">${fmtDate(inf.aitDate)}</td>
+      <td style="padding:8px 10px;font-size:12px">${inf.description}<br><span style="font-size:10px;color:#9CA3AF">${inf.code||''}</span></td>
+      <td style="padding:8px 10px"><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:${sc.bg};color:${sc.c}">${SEV_LABELS2[inf.severity]}</span></td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;font-family:'Courier New',monospace;color:${inf.exceeds&&!inf.excluiPAP?'#A32532':'inherit'}">${inf.points}</td>
+      <td style="padding:8px 10px;text-align:right;font-family:'Courier New',monospace;font-weight:600;color:${inf.exceeds&&!inf.excluiPAP?'#A32532':'inherit'}">${inf.cumulPts}</td>
+      <td style="padding:8px 10px;text-align:center">${statusTd}</td>
+      <td style="padding:8px 10px;font-size:12px">${prazoHtml}</td>
+    </tr>`;
+  }).join('');
+
+  // Serviços não incluídos no relatório do cliente — uso interno apenas
+
+  // ── Monta PAP section ──
+  let papHtml='';
+  r.papGroups.forEach((pg,i)=>{
+    papHtml+=`<div style="display:flex;align-items:center;gap:.75rem;padding:.625rem .875rem;border-radius:8px;margin-bottom:.4rem;background:#f8eaec;border:1px solid #e0adb4">
+      <span style="width:24px;height:24px;border-radius:50%;background:#A32532;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+      <div><strong style="font-size:13px">${ordinal(i+1)} Processo de Suspensão por Pontos</strong>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px">Estouro em ${fmtDate(pg.date)} · ${pg.cumulAtTrigger} pts efetivos · Limite: ${pg.limitAtTrigger} pts</div></div>
+    </div>`;
+  });
+  r.autoInfs.forEach(inf=>{
+    papHtml+=`<div style="display:flex;align-items:center;gap:.75rem;padding:.625rem .875rem;border-radius:8px;margin-bottom:.4rem;background:#F3F0FC;border:1px solid #CFC0F0">
+      <span style="width:24px;height:24px;border-radius:50%;background:#6D35C7;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">⛔</span>
+      <div><strong style="font-size:13px">Infração Autossuspensiva — PAI</strong>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px">${inf.description} · AIT: ${fmtDate(inf.aitDate)}</div></div>
+    </div>`;
+  });
+  r.leissecaInfs.forEach(inf=>{
+    papHtml+=`<div style="display:flex;align-items:center;gap:.75rem;padding:.625rem .875rem;border-radius:8px;margin-bottom:.4rem;background:#FFF0F3;border:1px solid #FECDD5">
+      <span style="width:24px;height:24px;border-radius:50%;background:#E11D48;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">🍺</span>
+      <div><strong style="font-size:13px">Lei Seca — Infração Autossuspensiva (PAI)</strong>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px">${inf.description} · AIT: ${fmtDate(inf.aitDate)}</div></div>
+    </div>`;
+  });
+  const papSection=(r.totalPaps>0||r.autoInfs.length>0||r.leissecaInfs.length>0)?`
+    <div style="background:#fff;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;border:1px solid #E2E5EA;box-shadow:0 1px 4px rgba(13,31,60,.06)">
+      <div style="font-size:14px;font-weight:700;color:#0d1f3c;margin-bottom:.875rem;display:flex;align-items:center;gap:.5rem">⚡ Processos Identificados</div>
+      ${papHtml}
+    </div>`:'';
+
+  // ── Justificativa formatada ──
+  const justParas=r.justification.split('\n\n').map(p=>`<p style="margin:0 0 .875rem">${p}</p>`).join('');
+
+  // ── Proposta comercial adaptada ao cenário ──
+  const propostaHTML=buildProposta(r,nome);
+
+  // ── HTML do relatório ──
+  const html=`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Análise CNH — ${nome} — Só Multas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Titillium Web',system-ui,sans-serif;background:#F0F3F8;color:#0d1f3c;font-size:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media print{body{background:#fff}.no-print{display:none!important}.page-break{page-break-before:always}}
+.wrapper{max-width:960px;margin:0 auto;padding:2rem 1.25rem 4rem}
+/* HEADER */
+.report-header{background:linear-gradient(135deg,#0d1f3c 0%,#1a3a6e 100%);border-radius:16px;padding:2rem 2.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden;color:#fff}
+.report-header::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(58,95,140,.25)}
+.report-header::after{content:'';position:absolute;bottom:-40px;left:40%;width:160px;height:160px;border-radius:50%;background:rgba(0,114,255,.12)}
+.brand-row{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.brand-logo{width:40px;height:40px;background:linear-gradient(135deg,#0072ff,#009fd7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;box-shadow:0 4px 12px rgba(0,114,255,.4)}
+.brand-name{font-size:20px;font-weight:900;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.driver-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.driver-name-big{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1.1}
+.driver-meta{font-size:12px;color:rgba(255,255,255,.65);margin-top:.4rem;line-height:1.8}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;background:${statusInfo.bg};color:${statusInfo.cor};border:1px solid ${statusInfo.brd};align-self:flex-start;flex-shrink:0;margin-top:.25rem}
+/* SECTION */
+.section{background:#fff;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;border:1px solid #E2E5EA;box-shadow:0 1px 4px rgba(13,31,60,.06)}
+.section-title{font-size:13px;font-weight:700;color:#0d1f3c;margin-bottom:1rem;padding-bottom:.625rem;border-bottom:2px solid #F0F3F8;letter-spacing:-.1px}
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:.875rem;margin-bottom:1.25rem}
+@media(max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:#fff;border:1px solid #E2E5EA;border-radius:12px;padding:.875rem 1rem;box-shadow:0 1px 4px rgba(13,31,60,.06)}
+.metric-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6B7280;margin-bottom:.35rem}
+.metric-value{font-size:28px;font-weight:900;line-height:1;letter-spacing:-1px}
+.metric-sub{font-size:11px;color:#6B7280;margin-top:.3rem}
+.prog{height:5px;background:#F3F4F6;border-radius:3px;margin-top:.4rem;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:${barCor};width:${pctBar}%}
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6B7280;border-bottom:2px solid #F0F3F8;white-space:nowrap;background:#FAFBFC}
+td{padding:8px 10px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+/* CHART */
+.chart-wrap{border-radius:10px;overflow:hidden;margin-bottom:.5rem}
+.chart-wrap img{width:100%;display:block}
+/* FOOTER */
+.footer{text-align:center;font-size:11px;color:#9CA3AF;padding-top:2rem;border-top:1px solid #E2E5EA;margin-top:2rem;line-height:1.8}
+.footer strong{color:#3A5F8C}
+/* CTA */
+.cta-box{background:linear-gradient(135deg,#0d1f3c,#1a3a6e);border-radius:12px;padding:1.75rem 2rem;text-align:center;color:#fff;margin-bottom:1.25rem}
+.cta-box h3{font-size:18px;font-weight:700;margin-bottom:.5rem}
+.cta-box p{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:1.25rem}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,#0072ff,#009fd7);color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:25px;text-decoration:none;box-shadow:0 4px 16px rgba(0,114,255,.4);letter-spacing:.3px}
+/* ANNULABLE */
+.annulable-box{background:#e8eef5;border-left:4px solid #3A5F8C;border-radius:8px;padding:.875rem 1rem;font-size:13px;color:#0d1f3c;margin-bottom:1rem}
+/* BADGE EAR */
+.ear-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);margin-top:.5rem}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="report-header">
+    <div class="brand-row">
+      <div class="brand-logo">SM</div>
+      <div>
+        <div class="brand-name">Só Multas</div>
+        <div class="brand-sub">Análise de Prontuário CNH · Relatório Confidencial</div>
+      </div>
+    </div>
+    <div class="driver-row">
+      <div>
+        <div class="driver-name-big">${nome}</div>
+        <div class="driver-meta">
+          ${placa?`Placa: <strong>${placa}</strong> &nbsp;·&nbsp; `:''}${renavam?`RENAVAM: ${renavam} &nbsp;·&nbsp; `:''}${chassi?`Chassi: ${chassi} &nbsp;·&nbsp; `:''}
+          Gerado em: ${dataGeracao}
+        </div>
+        ${ear?`<span class="ear-badge">🚕 Atividade Remunerada (EAR)</span>`:''}
+      </div>
+      <span class="status-pill">${statusInfo.txt}</span>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric ${r.pct>=1?'':''}">
+      <div class="metric-label">Pontos no ciclo</div>
+      <div class="metric-value" style="color:${barCor}">${r.currentPts}</div>
+      <div class="prog"><div class="prog-fill"></div></div>
+      <div class="metric-sub">de ${r.currentLimit} pts (${pctBar}%)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Limite aplicável</div>
+      <div class="metric-value" style="color:#3A5F8C">${r.currentLimit}</div>
+      <div class="metric-sub">${r.currentGrav===0?'Nenhuma grav. no ciclo':r.currentGrav===1?'1 grav. no ciclo':'2+ grav. no ciclo'}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Gravíssimas válidas</div>
+      <div class="metric-value" style="color:${r.currentGrav>=2?'#A32532':r.currentGrav===1?'#C47D0A':'#097A52'}">${r.currentGrav}</div>
+      <div class="metric-sub">${r.currentGrav===0?'Nenhuma no ciclo':r.currentGrav===1?'1 infração':'Múltiplas'}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total de infrações</div>
+      <div class="metric-value" style="color:#3A5F8C">${r.enriched.length}</div>
+      <div class="metric-sub">${r.totalPaps>0?r.totalPaps+' processo(s) de susp.':'Sem processo de susp.'}</div>
+    </div>
+  </div>
+
+  ${papSection}
+
+  <!-- GRÁFICO -->
+  ${chartImg?`<div class="section">
+    <div class="section-title">Linha do tempo — Pontuação efetiva p/ PAP (janela de 12 meses)</div>
+    <div class="chart-wrap"><img src="${chartImg}" alt="Gráfico de pontuação"></div>
+  </div>`:''}
+
+  <!-- TABELA DE INFRAÇÕES -->
+  <div class="section">
+    <div class="section-title">Detalhamento por infração</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Data AIT</th>
+            <th>Descrição / Código</th>
+            <th>Gravidade</th>
+            <th style="text-align:right">Pts</th>
+            <th style="text-align:right">Acum.</th>
+            <th>Situação</th>
+            <th>Prazos</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALERTAS DE ANULAÇÃO -->
+  ${r.annulable.length>0?`<div class="annulable-box">🔍 <strong>Oportunidade de anulação:</strong> ${r.annulable.length} infração(ões) notificada(s) com atraso superior a 30 dias do AIT — potencial vício formal para pedido de anulação.</div>`:''}
+
+  <!-- PROPOSTA COMERCIAL -->
+  ${propostaHTML}
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>Proteja sua habilitação agora</h3>
+    <p>Nossa equipe especializada está pronta para atuar no seu caso. Quanto antes agirmos, maiores são as chances de sucesso.</p>
+    <a class="cta-btn" href="https://wa.me/55?text=Ol%C3%A1%2C+quero+contratar+os+servi%C3%A7os+da+S%C3%B3+Multas+para+minha+CNH">📱 Falar com especialista no WhatsApp</a>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>Só Multas</strong> — Especialistas em Defesa de Autuações e Recursos de CNH<br>
+    Este relatório é de uso exclusivo do cliente identificado e foi gerado automaticamente pela plataforma Só Multas.<br>
+    Validade: 30 dias a partir de ${dataGeracao}
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`relatorio-cnh-${nomeArquivo}-${new Date().toISOString().slice(0,10)}.html`;
+  a.click();URL.revokeObjectURL(url);
+  showToast('✓ Relatório HTML exportado com sucesso!');
 }
 
 // ═══════════════════════════════════════════════
@@ -5864,6 +6432,35 @@ function cp(id,btn){
 </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     BARRA DE NAVEGAÇÃO GLOBAL FLUTUANTE
+     ══════════════════════════════════════════ -->
+<div id="globalNav">
+  <button class="gnav-btn" id="gnavHome" onclick="switchModule('home')" title="Início">🏠 Central</button>
+  <div class="gnav-sep"></div>
+  <button class="gnav-btn" id="gnavRadar" onclick="switchModule('radar')" title="Radar CNH">📡 Radar</button>
+  <button class="gnav-btn" id="gnavGuia" onclick="gnavAbrirGuia()" title="Guia Só Multas">📖 Guia</button>
+  <button class="gnav-btn" id="gnavCrm" onclick="switchModule('crm')" title="CRM">👥 CRM</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DRAWER DO GUIA (abre dentro de qualquer módulo)
+     ══════════════════════════════════════════ -->
+<div id="crmGuiaOverlay" onclick="fecharCrmGuiaDrawer()"></div>
+<div id="crmGuiaDrawer">
+  <div class="cgd-header">
+    <span style="font-size:18px">📖</span>
+    <div class="cgd-title">Guia Só Multas — Scripts &amp; Mensagens</div>
+    <button class="cgd-close" onclick="fecharCrmGuiaDrawer()">✕ Fechar</button>
+  </div>
+  <div class="cgd-tabs">
+    <button class="cgd-tab active" id="cgdTabProsp" onclick="cgdSetTab('prosp',this)">📋 Prospecção</button>
+    <button class="cgd-tab" id="cgdTabOrc" onclick="cgdSetTab('orc',this)">💸 Orçamento</button>
+    <button class="cgd-tab" id="cgdTabObj" onclick="cgdSetTab('obj',this)">🛡️ Objeções</button>
+  </div>
+  <iframe id="crmGuiaFrame" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#9ca3af;font-size:13px'>Carregando Guia...</body></html>"></iframe>
+</div>
+
 <!-- ══ MODULE: CRM ══ -->
 <div id="moduleCrm" class="crm-module" style="display:none">
 <header>
@@ -5871,13 +6468,20 @@ function cp(id,btn){
     <h1>🚗 CRM — SÓ Multas</h1>
     <div class="sub">Gestão de leads · Funil de vendas · Análise por Estado e Edital</div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center"><div class="ts" id="lastUpdate">Nenhum dado</div><div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div><button class="home-nav-btn" onclick="switchModule('home')" title="Voltar à Central">🏠 Central</button></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="crm-guia-hint" onclick="abrirCrmGuiaDrawer('prosp')" title="Abrir Guia sem sair do CRM">📖 Guia de Mensagens</button>
+    <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
+    <div class="ts" id="lastUpdate">Nenhum dado</div>
+    <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
+    <button class="home-nav-btn" onclick="switchModule('home')" title="Voltar à Central">🏠 Central</button>
+  </div>
 </header>
 
 <div class="nav">
   <button class="active" onclick="goPage('dashboard',this)">📊 Dashboard</button>
   <button onclick="goPage('leads',this)">👥 Leads</button>
   <button onclick="goPage('importar',this)">📥 Importar</button>
+  <button onclick="abrirCrmGuiaDrawer('prosp')" style="margin-left:auto;background:linear-gradient(135deg,rgba(9,122,82,.2),rgba(9,122,82,.1));color:#34d399;border-color:rgba(9,122,82,.35)" title="Abrir scripts e mensagens do Guia sem sair do CRM">📖 Guia de Mensagens ↗</button>
 </div>
 
 <!-- ═══════ DASHBOARD ═══════ -->
@@ -5954,7 +6558,7 @@ function cp(id,btn){
           <tr>
             <th style="width:26px"><input type="checkbox" id="checkAll" onchange="toggleAll(this)" title="Selecionar/desselecionar visíveis"></th>
             <th>Data</th><th>Nome / CPF</th><th>Cidade / UF</th>
-            <th>Telefones</th><th>Placa</th><th>Edital</th>
+            <th>Telefones</th><th>Meu WA</th><th>Placa</th><th>Edital</th>
             <th>Status</th><th>Ações</th><th>Obs.</th>
           </tr>
         </thead>
@@ -6058,16 +6662,48 @@ function cp(id,btn){
           <div class="field"><div class="fl">Status atual</div><div class="fv" id="md-status-badge">—</div></div>
           <div class="field"><div class="fl">Data primeiro contato</div><div class="fv" id="md-dtctt">—</div></div>
         </div>
+        <div class="fields" style="margin-top:8px">
+          <div class="field" style="border-left:3px solid #d8b4fe">
+            <div class="fl">📱 Meu número WA (Só Multas)</div>
+            <div class="fv" id="md-meunumero">—</div>
+          </div>
+          <div class="field"></div>
+        </div>
         <div class="fields cols1" style="margin-top:8px">
           <div class="field"><div class="fl">Observações</div><div class="fv" id="md-obs">—</div></div>
         </div>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-primary" id="md-copybtn" onclick="copyMsgFromModal()">📋 Copiar mensagem</button>
-      <a id="md-walink" href="#" target="_blank" class="btn btn-success">💬 WhatsApp</a>
-      <button class="btn btn-outline" onclick="closeLeadModal()">Fechar</button>
-      <button class="btn btn-primary" style="background:#3A5F8C;margin-left:auto" onclick="analisarNoRadarModal()" title="Importar dados do lead para o Radar CNH">📡 Analisar no Radar</button>
+    <div class="modal-foot" style="flex-direction:column;gap:10px;align-items:stretch">
+      <!-- Bloco de mensagens rápidas -->
+      <div style="background:#f0f4f8;border:1px solid #dde3ea;border-radius:10px;padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#6b7280;margin-bottom:8px">💬 Mensagens rápidas</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn" id="md-copybtn1" onclick="copyMsg1FromModal()" style="background:linear-gradient(135deg,#1a2980,#26d0ce);color:#fff;border:none;text-align:left;display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-family:'Titillium Web',sans-serif;transition:all .15s">
+            <span style="font-size:15px;flex-shrink:0">1️⃣</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:700;margin-bottom:2px">Abordagem inicial — confirmar posse do veículo</div>
+              <div style="font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bom dia/tarde/noite, [Nome]! … O veículo de placa [PLACA] ainda está em sua posse?</div>
+            </div>
+            <span style="font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:5px;white-space:nowrap;flex-shrink:0;align-self:center">📋 Copiar</span>
+          </button>
+          <button class="btn" id="md-copybtn2" onclick="copyMsg2FromModal()" style="background:linear-gradient(135deg,#097A52,#0fa870);color:#fff;border:none;text-align:left;display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:8px;cursor:pointer;font-family:'Titillium Web',sans-serif;transition:all .15s">
+            <span style="font-size:15px;flex-shrink:0">2️⃣</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:700;margin-bottom:2px">Seguimento — pedir para explicar por áudio</div>
+              <div style="font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Perfeito. Como muitas pessoas acabam não acompanhando… Posso te explicar por áudio?</div>
+            </div>
+            <span style="font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:5px;white-space:nowrap;flex-shrink:0;align-self:center">📋 Copiar</span>
+          </button>
+        </div>
+      </div>
+      <!-- Ações secundárias -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <a id="md-walink" href="#" target="_blank" class="btn btn-success" style="text-decoration:none">💬 WhatsApp</a>
+        <button class="btn btn-outline" onclick="closeLeadModal()">Fechar</button>
+        <button class="btn" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none" onclick="closeLeadModal();abrirCrmGuiaDrawer('prosp')" title="Abrir Guia de scripts sem sair do CRM">📖 Guia</button>
+        <button class="btn btn-primary" style="background:#3A5F8C;margin-left:auto" onclick="analisarNoRadarModal()" title="Importar dados do lead para o Radar CNH">📡 Analisar no Radar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6253,6 +6889,7 @@ function cp(id,btn){
               <option value="Confirmado">Confirmado</option>
               <option value="Em Conversa/Negociação">Em Conversa/Negociação</option>
               <option value="Venda Realizada">Venda Realizada</option>
+              <option value="Perdido">Perdido</option>
               <option value="Sem Retorno">Sem Retorno</option>
               <option value="Não Pertence">Não Pertence</option>
             </select>
@@ -6260,6 +6897,12 @@ function cp(id,btn){
           <div class="nl-field">
             <label>Data de contato</label>
             <input type="text" id="nl-dtctt" placeholder="DD/MM/AAAA" maxlength="10">
+          </div>
+        </div>
+        <div class="nl-grid g1" style="margin-top:8px">
+          <div class="nl-field">
+            <label>📱 Meu número WA (Só Multas usado)</label>
+            <input type="text" id="nl-meunumero" placeholder="Ex: (14) 99999-0000 · Chip 1" style="border-color:#d8b4fe">
           </div>
         </div>
         <div class="nl-grid g1" style="margin-top:8px">
@@ -6289,7 +6932,7 @@ function cp(id,btn){
 
 const STATUS_OPTIONS = [
   "Novo Lead","Contactado","Confirmado",
-  "Em Conversa/Negociação","Venda Realizada","Sem Retorno","Não Pertence"
+  "Em Conversa/Negociação","Venda Realizada","Perdido","Sem Retorno","Não Pertence"
 ];
 
 const SC = {
@@ -6298,11 +6941,12 @@ const SC = {
   "Confirmado":             {bg:"#FFFF00",tc:"#8B6500"},
   "Em Conversa/Negociação": {bg:"#FFC000",tc:"#7a3800"},
   "Venda Realizada":        {bg:"#70AD47",tc:"#2d5a12"},
+  "Perdido":                {bg:"#E8D5F5",tc:"#6B21A8"},
   "Sem Retorno":            {bg:"#FFB3B3",tc:"#8B0000"},
   "Não Pertence":           {bg:"#D9D9D9",tc:"#555"},
 };
 
-const FUNNEL_BG = ["#e0e0e0","#BDD7EE","#FFFF00","#FFC000","#70AD47","#FFB3B3","#D9D9D9"];
+const FUNNEL_BG = ["#e0e0e0","#BDD7EE","#FFFF00","#FFC000","#70AD47","#C084FC","#FFB3B3","#D9D9D9"];
 const STORAGE_KEY = "crm_somultas_v3";
 
 // ══════════════════════════════════════════════
@@ -6471,20 +7115,22 @@ function renderDashboard() {
   const gc    = s => leads.filter(l=>l.status===s).length;
   const pct   = (n,d) => d>0 ? (n/d*100).toFixed(1) : '0.0';
 
-  const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
+  const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido");
   const conf   = gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
   const neg    = gc("Em Conversa/Negociação")+gc("Venda Realizada");
   const vendas = gc("Venda Realizada");
+  const perdidos = gc("Perdido");
 
   document.getElementById('kpiCards').innerHTML = [
-    {lbl:"Total Leads",   n:total,  rt:"base do período",           s:"_all"},
-    {lbl:"Contactados",   n:cont,   rt:`${pct(cont,total)}% da base`, s:"Contactado"},
-    {lbl:"Confirmados",   n:conf,   rt:`${pct(conf,total)}% da base`, s:"Confirmado"},
-    {lbl:"Em Negociação", n:neg,    rt:`${pct(neg,total)}% da base`,  s:"Em Conversa/Negociação"},
-    {lbl:"Vendas",        n:vendas, rt:`${pct(vendas,total)}% conv.`, s:"Venda Realizada"},
-  ].map(c => `<div class="card${S.spotStatus===c.s?' active-card':''}" data-status="${c.s}"
+    {lbl:"Total Leads",   n:total,   rt:"base do período",              s:"_all"},
+    {lbl:"Contactados",   n:cont,    rt:`${pct(cont,total)}% da base`,  s:"Contactado"},
+    {lbl:"Confirmados",   n:conf,    rt:`${pct(conf,total)}% da base`,  s:"Confirmado"},
+    {lbl:"Em Negociação", n:neg,     rt:`${pct(neg,total)}% da base`,   s:"Em Conversa/Negociação"},
+    {lbl:"Vendas",        n:vendas,  rt:`${pct(vendas,total)}% conv.`,  s:"Venda Realizada"},
+    {lbl:"Perdidos",      n:perdidos,rt:`${pct(perdidos,cont||1)}% dos contactados`, s:"Perdido", extra:'perdido'},
+  ].map(c => `<div class="card${S.spotStatus===c.s?' active-card':''}${c.extra?' card-perdido':''}" data-status="${c.s}"
     onclick="toggleSpotlight('${c.s}')" title="Ver leads desta etapa">
-    <div class="lbl">${c.lbl}</div><div class="n">${c.n}</div>
+    <div class="lbl">${c.lbl}</div><div class="n" style="${c.extra?'color:#6B21A8':''}">${c.n}</div>
     <div class="rt">${c.rt}</div><div class="hint">🔍 clique para ver leads</div>
   </div>`).join('');
 
@@ -6621,6 +7267,11 @@ function renderLeads() {
       </td>
       <td style="white-space:nowrap">${esc(l.cidade)} <b>${l.uf}</b></td>
       <td>${tels}</td>
+      <td>
+        <input class="meunr-inp" type="text" value="${esc(l.meuNumero||'')}" placeholder="Meu nº..."
+          title="Número da Só Multas que você usou para contatar este lead"
+          onchange="updateMeuNumero('${escAttr(l.key)}',this.value)">
+      </td>
       <td><b style="font-size:.78rem;letter-spacing:1px">${l.placa}</b></td>
       <td style="max-width:130px;font-size:.69rem;color:#777" title="${esc(l.edital)}">${esc(ed)}</td>
       <td>
@@ -6628,7 +7279,8 @@ function renderLeads() {
           onchange="updateStatus('${escAttr(l.key)}',this.value,this)">${opts}</select>
       </td>
       <td style="white-space:nowrap;display:flex;gap:4px;align-items:center">
-        <button class="btn-copy" data-idx="${idx}" onclick="copyMsg(${idx})" title="Copiar mensagem">📋 Copiar</button>
+        <button class="btn-copy" data-idx="${idx}" onclick="copyMsg(${idx})" title="Msg 1 — Abordagem inicial (confirmar posse)">1️⃣ Copiar</button>
+        <button class="btn-copy btn-copy2" data-idx="${idx}" onclick="copyMsg2FromTable(${idx})" title="Msg 2 — Seguimento (pedir áudio)" style="border-color:#0fa870;color:#097A52">2️⃣ Copiar</button>
         <button class="btn-radar-sm" onclick="analisarNoRadarFromTable(${idx})" title="Analisar no Radar CNH">📡</button>
       </td>
       <td>
@@ -6761,38 +7413,74 @@ function updateObs(key, val) {
   if (data.leads[key]) { data.leads[key].obs = val; saveData(data); }
 }
 
+function updateMeuNumero(key, val) {
+  const data = loadData();
+  if (data.leads[key]) { data.leads[key].meuNumero = val.trim(); saveData(data); }
+}
+
 // ══════════════════════════════════════════════
 // COPY MESSAGE
 // ══════════════════════════════════════════════
 
-function buildMsg(l) {
-  const edital = l.edital || 'edital não identificado';
+function getSaudacao() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'Bom dia';
+  if (h >= 12 && h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+function buildMsg1(l) {
+  const saud   = getSaudacao();
+  const nome   = (l.nome || '').split(' ')[0] || 'tudo bem';
+  const orgao  = l.edital || 'órgão de trânsito';
   const placa  = l.placa  || 'XXXXX';
-  return `E foi através desse monitoramento que identifiquei que no edital publicado pelo ${edital} consta a placa de um veículo registrada em seu nome. Essa placa está atrelada a uma infração de trânsito que merece uma atenção especial. Mas antes de seguir preciso confirmar se o veículo com a placa ${placa} ainda esta sob sua posse?`;
+  return `${saud}, ${nome}! Que bom conseguir falar com você. Meu nome é Artur e trabalho com monitoramento de publicações de trânsito. Durante uma análise de um edital publicado pelo ${orgao}, identifiquei uma publicação vinculada a uma placa registrada em seu nome. Antes de te explicar melhor, preciso apenas confirmar uma informação: O veículo de placa ${placa} ainda está em sua posse?`;
+}
+
+function buildMsg2() {
+  return `Perfeito. Como muitas pessoas acabam não acompanhando esse tipo de publicação oficial, costumo fazer essa confirmação antes de entrar em mais detalhes. Posso te explicar rapidamente por áudio o que identifiquei?`;
 }
 
 function copyMsg(idx) {
   const l = filteredLeads[idx];
   if (!l) return;
-  const msg = buildMsg(l);
+  const msg = buildMsg1(l);
   const btn = document.querySelector(`.btn-copy[data-idx="${idx}"]`);
   doCopy(msg, btn);
 }
 
-function copyMsgFromModal() {
-  if (!S.modalLead) return;
-  const msg = buildMsg(S.modalLead);
-  const btn = document.getElementById('md-copybtn');
-  doCopy(msg, btn);
+function copyMsg2FromTable(idx) {
+  const btn = document.querySelector(`.btn-copy2[data-idx="${idx}"]`);
+  doCopy(buildMsg2(), btn);
 }
+
+function copyMsg1FromModal() {
+  if (!S.modalLead) return;
+  doCopy(buildMsg1(S.modalLead), document.getElementById('md-copybtn1'));
+}
+
+function copyMsg2FromModal() {
+  doCopy(buildMsg2(), document.getElementById('md-copybtn2'));
+}
+
+// mantém compat com chamadas antigas
+function copyMsgFromModal() { copyMsg1FromModal(); }
 
 function doCopy(text, btn) {
   const do_flash = () => {
     if (!btn) return;
-    const orig = btn.innerHTML;
     btn.classList.add('copied');
-    btn.innerHTML = '✅ Copiado!';
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2200);
+    // Para os botões do modal (têm estrutura interna), apenas muda a cor de fundo
+    const isModalBtn = btn.id && (btn.id === 'md-copybtn1' || btn.id === 'md-copybtn2');
+    if (!isModalBtn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copiado!';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2200);
+    } else {
+      // Atualiza só o badge "Copiar" → "Copiado!"
+      const badge = btn.querySelector('span:last-child');
+      if (badge) { const ot = badge.textContent; badge.textContent = '✅ Copiado!'; setTimeout(()=>{ badge.textContent = ot; btn.classList.remove('copied'); }, 2200); }
+    }
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => { do_flash(); crmShowToast('📋 Mensagem copiada!'); })
@@ -6875,6 +7563,13 @@ function openLeadModal(idx) {
   document.getElementById('md-status-badge').innerHTML =
     `<span class="status-badge-large" style="background:${sc.bg};color:${sc.tc}">${l.status}</span>`;
   document.getElementById('md-dtctt').innerHTML = fv(l.dtContato);
+  // Meu número WA
+  const mnEl = document.getElementById('md-meunumero');
+  if (l.meuNumero && l.meuNumero.trim()) {
+    mnEl.innerHTML = `<span class="meunr-badge">📱 ${esc(l.meuNumero)}</span>`;
+  } else {
+    mnEl.innerHTML = `<span class="placeholder" style="color:#c4b5fd;font-style:italic;font-size:.8rem">Não definido</span>`;
+  }
   document.getElementById('md-obs').innerHTML   = fv(l.obs);
 
   // WhatsApp link (primeiro telefone com número válido)
@@ -6936,6 +7631,7 @@ function importFile(file) {
         // → atualiza apenas campos CRM (status, dtContato, obs) se a planilha tiver esses dados
         const rowStatus   = (row['STATUS']       ||'').toString().trim();
         const rowDtCtt    = (row['DATA CONTATO']  ||'').toString().trim();
+        const rowMeuNr    = (row['MEU NÚMERO WA']||row['MEU NUMERO WA']||'').toString().trim();
         const rowObs      = (row['OBSERVAÇÕES']||row['OBSERVACOES']||'').toString().trim();
 
         if (data.leads[key]) {
@@ -6943,6 +7639,7 @@ function importFile(file) {
           if (rowStatus && STATUS_OPTIONS.includes(rowStatus)) {
             data.leads[key].status    = rowStatus;
             data.leads[key].dtContato = rowDtCtt || data.leads[key].dtContato;
+            data.leads[key].meuNumero = rowMeuNr  || data.leads[key].meuNumero;
             data.leads[key].obs       = rowObs   || data.leads[key].obs;
             skipped++; // conta como "já existia", mas agora atualiza CRM data
           } else {
@@ -6977,7 +7674,7 @@ function importFile(file) {
           uf_vei:  (row['UF VEÍCULO']||row['UF VEICULO']||'').toString(),
           infracao:(row['CODIGO INFRAÇÃO']||row['CODIGO INFRACAO']||'').toString(),
           tels,
-          status: initStatus, dtContato: rowDtCtt, obs: rowObs,
+          status: initStatus, dtContato: rowDtCtt, meuNumero: rowMeuNr, obs: rowObs,
           manual: false,
         };
         added++;
@@ -7029,7 +7726,7 @@ function exportXLSX() {
   if (!leads.length) { crmShowToast('Nenhum lead para exportar.'); return; }
   const rows = leads.map(l => ({
     'DATA PLANILHA': l.data, 'STATUS': l.status,
-    'DATA CONTATO':  l.dtContato||'', 'OBSERVAÇÕES': l.obs||'',
+    'DATA CONTATO':  l.dtContato||'', 'MEU NÚMERO WA': l.meuNumero||'', 'OBSERVAÇÕES': l.obs||'',
     'NOME': l.nome, 'SEXO': l.sexo, 'CPF': l.cpf, 'CNPJ': l.cnpj,
     'CEP': l.cep, 'CIDADE': l.cidade, 'BAIRRO': l.bairro,
     'ENDEREÇO': l.endereco, 'NÚMERO': l.numero, 'UF': l.uf,
@@ -7092,7 +7789,7 @@ function openNewLeadModal() {
   ['nl-placa','nl-edital','nl-nome','nl-cpf','nl-cnpj','nl-nasc',
    'nl-tel1','nl-tel2','nl-tel3','nl-email','nl-cidade','nl-bairro',
    'nl-cep','nl-endereco','nl-numero','nl-infracao','nl-renavam',
-   'nl-chassi','nl-dtctt','nl-obs'].forEach(id => {
+   'nl-chassi','nl-dtctt','nl-obs','nl-meunumero'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -7168,6 +7865,7 @@ function saveNewLead() {
     tels,
     status,
     dtContato: g('nl-dtctt') || (status !== 'Novo Lead' ? hoje : ''),
+    meuNumero: g('nl-meunumero'),
     obs:       g('nl-obs'),
     manual:    true,
   };
@@ -7199,15 +7897,60 @@ function saveNewLead() {
 
 let _crmChartsRendered = false;
 
+// ── Atualiza estado visual da nav global ──
+function _updateGlobalNav(mod) {
+  const nav = document.getElementById('globalNav');
+  if (!nav) return;
+  if (mod === 'home') {
+    nav.style.display = 'none';
+    return;
+  }
+  nav.style.display = 'flex';
+  ['gnavHome','gnavRadar','gnavGuia','gnavCrm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('gnav-active','gnav-guia-active'); }
+  });
+  if (mod === 'radar') document.getElementById('gnavRadar')?.classList.add('gnav-active');
+  if (mod === 'guia')  document.getElementById('gnavGuia')?.classList.add('gnav-guia-active');
+  if (mod === 'crm')   document.getElementById('gnavCrm')?.classList.add('gnav-active');
+  // No CRM, destaca botão do Guia na nav
+  if (mod === 'crm') {
+    const g = document.getElementById('gnavGuia');
+    if (g) g.classList.add('gnav-btn-guia-crm');
+  } else {
+    const g = document.getElementById('gnavGuia');
+    if (g) g.classList.remove('gnav-btn-guia-crm');
+  }
+}
+
+// ── Abrir Guia a partir da nav global ──
+function gnavAbrirGuia() {
+  const home  = document.getElementById('homeScreen');
+  const radar = document.getElementById('moduleRadar');
+  const crm   = document.getElementById('moduleCrm');
+  const crmVisible = crm && crm.style.display !== 'none';
+  // Se estiver no CRM, abre o drawer; caso contrário vai para o módulo Radar+Guia
+  if (crmVisible) {
+    abrirCrmGuiaDrawer('prosp');
+  } else {
+    switchModule('guia');
+  }
+}
+
 function switchModule(mod) {
   const home   = document.getElementById('homeScreen');
   const radar  = document.getElementById('moduleRadar');
   const crm    = document.getElementById('moduleCrm');
 
+  // Fecha drawer do Guia se estiver aberto ao trocar de módulo
+  fecharCrmGuiaDrawer(true);
+
   // Hide all
   home.style.display  = 'none';
   radar.style.display = 'none';
   crm.style.display   = 'none';
+
+  _updateGlobalNav(mod);
 
   if (mod === 'home') {
     home.style.display = 'flex';
@@ -7218,7 +7961,6 @@ function switchModule(mod) {
   if (mod === 'radar') {
     radar.style.display = 'block';
     document.body.style.overflow = 'hidden';
-    // Re-render radar if needed
     if (typeof renderAll === 'function') setTimeout(renderAll, 50);
     return;
   }
@@ -7226,7 +7968,6 @@ function switchModule(mod) {
   if (mod === 'guia') {
     radar.style.display = 'block';
     document.body.style.overflow = 'hidden';
-    // Open guia panel inside radar
     setTimeout(() => {
       if (typeof abrirGuia === 'function') abrirGuia();
     }, 80);
@@ -7236,12 +7977,86 @@ function switchModule(mod) {
   if (mod === 'crm') {
     crm.style.display = 'block';
     document.body.style.overflow = 'hidden';
-    // Re-render dashboard charts (hidden elements don't render)
     setTimeout(() => {
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof renderImportStats === 'function') renderImportStats();
     }, 100);
     return;
+  }
+}
+
+// ══════════════════════════════════════════════
+// DRAWER DO GUIA DENTRO DO CRM
+// ══════════════════════════════════════════════
+let _crmGuiaLoaded = false;
+
+function abrirCrmGuiaDrawer(tab) {
+  const drawer  = document.getElementById('crmGuiaDrawer');
+  const overlay = document.getElementById('crmGuiaOverlay');
+  if (!drawer) return;
+
+  // Carrega o iframe do Guia na primeira abertura (reutiliza o srcdoc do guiaFrame)
+  if (!_crmGuiaLoaded) {
+    const src = document.getElementById('guiaFrame');
+    const dst = document.getElementById('crmGuiaFrame');
+    if (src && dst) {
+      dst.setAttribute('srcdoc', src.getAttribute('srcdoc'));
+      dst.addEventListener('load', function() {
+        setTimeout(() => {
+          // Aplica edições do EP no iframe do drawer
+          if (typeof EP !== 'undefined' && EP.pushToIframe) {
+            // Temporariamente aponta para o frame do drawer
+            const origFrame = document.getElementById('guiaFrame');
+            // Usa a mesma lógica do pushToIframe mas no frame do drawer
+            const fw = dst.contentWindow;
+            if (fw) {
+              const edits = EP.getEdits ? EP.getEdits() : {};
+              Object.keys(edits).forEach(id => {
+                try {
+                  const el = fw.document.getElementById(id);
+                  if (el) el.innerText = edits[id];
+                } catch(e) {}
+              });
+            }
+          }
+        }, 200);
+      }, { once: true });
+    }
+    _crmGuiaLoaded = true;
+  }
+
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+
+  // Muda para a aba solicitada
+  if (tab) cgdSetTab(tab, document.getElementById('cgdTab' + tab.charAt(0).toUpperCase() + tab.slice(1)));
+}
+
+function fecharCrmGuiaDrawer(silent) {
+  const drawer  = document.getElementById('crmGuiaDrawer');
+  const overlay = document.getElementById('crmGuiaOverlay');
+  if (drawer)  drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function cgdSetTab(tab, btn) {
+  // Atualiza abas visuais do drawer
+  document.querySelectorAll('.cgd-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Navega dentro do iframe do drawer manipulando o DOM diretamente
+  const frame = document.getElementById('crmGuiaFrame');
+  if (!frame || !frame.contentWindow || !frame.contentDocument) return;
+  try {
+    const tabMap = { prosp: 0, orc: 1, obj: 2 };
+    const idx = tabMap[tab];
+    if (idx === undefined) return;
+    const stabs = frame.contentDocument.querySelectorAll('.stab');
+    const secs  = frame.contentDocument.querySelectorAll('.sec');
+    stabs.forEach((s,i) => { s.classList.toggle('on', i===idx); });
+    secs.forEach((s,i)  => { s.classList.toggle('on', i===idx); });
+  } catch(e) {
+    // srcdoc iframes são same-origin, mas catching por segurança
+    console.warn('cgdSetTab:', e);
   }
 }
 
@@ -7306,6 +8121,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('homeScreen').style.display = 'flex';
   document.getElementById('moduleRadar').style.display = 'none';
   document.getElementById('moduleCrm').style.display   = 'none';
+  // Esconde nav global na home
+  const nav = document.getElementById('globalNav');
+  if (nav) nav.style.display = 'none';
 });
 </script>
 
