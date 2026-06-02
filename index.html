@@ -6471,6 +6471,8 @@ function cp(id,btn){
   <div style="display:flex;gap:8px;align-items:center">
     <button class="crm-guia-hint" onclick="abrirCrmGuiaDrawer('prosp')" title="Abrir Guia sem sair do CRM">📖 Guia de Mensagens</button>
     <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
+    <button class="crm-guia-hint" onclick="abrirSyncModal()" title="Sincronizar leads entre dispositivos" id="syncNavBtn" style="background:rgba(0,114,255,.15);border-color:rgba(0,114,255,.35);color:#5aabff">☁️ <span id="syncNavLabel">Sincronizar</span></button>
+    <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
     <div class="ts" id="lastUpdate">Nenhum dado</div>
     <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
     <button class="home-nav-btn" onclick="switchModule('home')" title="Voltar à Central">🏠 Central</button>
@@ -8124,9 +8126,534 @@ document.addEventListener('DOMContentLoaded', function() {
   // Esconde nav global na home
   const nav = document.getElementById('globalNav');
   if (nav) nav.style.display = 'none';
+  // Inicializa sync
+  syncInit();
 });
 </script>
 
+<!-- ════════════════════════════════════════════════════════════
+     MÓDULO DE SINCRONIZAÇÃO BIDIRECIONAL — GitHub Gist
+     ════════════════════════════════════════════════════════════ -->
+<style>
+#syncModal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(13,31,60,.65);backdrop-filter:blur(4px)}
+#syncModal.open{display:flex}
+#syncPanel{
+  background:#0d1f3c;border:1px solid #1e3a5f;border-radius:14px;
+  width:min(520px,95vw);max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.55);font-family:'Titillium Web',system-ui,sans-serif;
+}
+.sync-head{
+  display:flex;align-items:center;gap:10px;
+  padding:1rem 1.25rem;border-bottom:1px solid #1e3a5f;
+}
+.sync-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0072ff,#009fd7);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0}
+.sync-title{font-size:14px;font-weight:700;color:#F0F6FF}
+.sync-sub{font-size:10px;color:#7a9cc0;margin-top:1px}
+.sync-close{margin-left:auto;background:none;border:none;color:#7a9cc0;font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.sync-close:hover{color:#F87171}
+.sync-body{padding:1.25rem}
+.sync-tabs{display:flex;border-bottom:1px solid #1e3a5f;margin-bottom:1.25rem;gap:2px}
+.sync-tab{
+  flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;
+  background:none;border:none;color:#7a9cc0;cursor:pointer;border-bottom:2px solid transparent;
+  font-family:'Titillium Web',system-ui,sans-serif;transition:all .15s;
+}
+.sync-tab.active{color:#5aabff;border-bottom-color:#0072ff}
+.sync-tab:hover:not(.active){color:#F0F6FF}
+.sync-pane{display:none}.sync-pane.active{display:block}
+.sync-field{margin-bottom:.875rem}
+.sync-label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7a9cc0;margin-bottom:.375rem}
+.sync-input{
+  width:100%;background:#132848;border:1.5px solid #1e3a5f;border-radius:7px;
+  padding:.55rem .875rem;font-size:13px;color:#F0F6FF;outline:none;
+  font-family:'Titillium Web',system-ui,sans-serif;transition:border .15s;
+}
+.sync-input:focus{border-color:#0072ff}
+.sync-input::placeholder{color:#374151}
+.sync-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 18px;border:none;border-radius:7px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'Titillium Web',system-ui,sans-serif;transition:all .15s;width:100%;
+}
+.sync-btn+.sync-btn{margin-top:.5rem}
+.sync-btn-primary{background:linear-gradient(135deg,#0072ff,#009fd7);color:#fff;box-shadow:0 3px 10px rgba(0,114,255,.35)}
+.sync-btn-primary:hover{box-shadow:0 5px 16px rgba(0,114,255,.5);transform:translateY(-1px)}
+.sync-btn-success{background:linear-gradient(135deg,#097A52,#0fa870);color:#fff;box-shadow:0 3px 10px rgba(9,122,82,.3)}
+.sync-btn-success:hover{box-shadow:0 5px 16px rgba(9,122,82,.4);transform:translateY(-1px)}
+.sync-btn-ghost{background:rgba(255,255,255,.06);color:#b0c8e0;border:1px solid #1e3a5f}
+.sync-btn-ghost:hover{background:rgba(255,255,255,.1);color:#F0F6FF}
+.sync-btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.sync-alert{border-radius:8px;padding:.65rem .875rem;font-size:12px;line-height:1.5;margin-bottom:.875rem}
+.sync-alert-info{background:rgba(0,114,255,.1);border:1px solid rgba(0,114,255,.25);color:#91d8f5}
+.sync-alert-success{background:rgba(9,122,82,.12);border:1px solid rgba(9,122,82,.3);color:#4ade80}
+.sync-alert-warn{background:rgba(196,125,10,.12);border:1px solid rgba(196,125,10,.3);color:#fbbf24}
+.sync-alert-err{background:rgba(163,37,50,.12);border:1px solid rgba(163,37,50,.3);color:#f87171}
+.sync-status-bar{
+  display:flex;align-items:center;gap:8px;
+  background:#132848;border:1px solid #1e3a5f;border-radius:8px;
+  padding:.55rem .875rem;font-size:11px;color:#7a9cc0;margin-bottom:.875rem;
+}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sd-green{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.15)}
+.sd-amber{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.15)}
+.sd-blue{background:#5aabff;animation:sdpulse 1.2s ease-in-out infinite}
+.sd-gray{background:#374151}
+@keyframes sdpulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-log{
+  background:#080f1e;border:1px solid #1e3a5f;border-radius:7px;
+  padding:.625rem;font-family:monospace;font-size:10.5px;color:#5aabff;
+  min-height:60px;max-height:140px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;
+}
+.sync-divider{height:1px;background:#1e3a5f;margin:1rem 0}
+.sync-steps{margin-bottom:.875rem}
+.sync-step{display:flex;gap:.625rem;margin-bottom:.625rem;align-items:flex-start}
+.sync-step-n{
+  width:18px;height:18px;border-radius:50%;background:#0072ff;color:#fff;
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
+}
+.sync-step-txt{font-size:12px;color:#b0c8e0;line-height:1.55}
+.sync-step-txt strong{color:#91d8f5}
+.sync-step-txt a{color:#5aabff;text-decoration:none}
+.sync-step-txt a:hover{text-decoration:underline}
+.sync-chip{display:inline-block;background:#132848;border:1px solid #1e3a5f;border-radius:4px;padding:1px 6px;font-size:10px;font-family:monospace;color:#91d8f5}
+.sync-conflict-box{background:#132848;border:1px solid #fbbf24;border-radius:8px;padding:.875rem;margin-bottom:.875rem}
+.sync-conflict-box h4{font-size:12px;color:#fbbf24;margin-bottom:.5rem}
+.sync-conflict-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 12px;
+  border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Titillium Web',system-ui,sans-serif;
+  margin-right:.375rem;margin-top:.375rem;border:none;
+}
+.scb-blue{background:rgba(0,114,255,.2);color:#5aabff;border:1px solid rgba(0,114,255,.3)}
+.scb-green{background:rgba(9,122,82,.2);color:#4ade80;border:1px solid rgba(9,122,82,.3)}
+</style>
 
+<!-- MODAL HTML -->
+<div id="syncModal">
+  <div id="syncPanel">
+    <div class="sync-head">
+      <div class="sync-logo">☁️</div>
+      <div>
+        <div class="sync-title">Sincronização de Leads</div>
+        <div class="sync-sub">Bidirecional · GitHub Gist · Sem custo</div>
+      </div>
+      <button class="sync-close" onclick="fecharSyncModal()">✕</button>
+    </div>
+    <div class="sync-body">
+      <div class="sync-tabs">
+        <button class="sync-tab active" onclick="syncSetTab('config',this)">⚙️ Config</button>
+        <button class="sync-tab" onclick="syncSetTab('exportar',this)">📤 Enviar</button>
+        <button class="sync-tab" onclick="syncSetTab('importar',this)">📥 Receber</button>
+        <button class="sync-tab" onclick="syncSetTab('ajuda',this)">❓ Como usar</button>
+      </div>
+
+      <!-- TAB CONFIG -->
+      <div class="sync-pane active" id="sync-pane-config">
+        <div class="sync-alert sync-alert-info">
+          Faça isso <strong>uma única vez</strong> em cada dispositivo. O token fica salvo localmente.
+        </div>
+        <div class="sync-field">
+          <label class="sync-label">GitHub Personal Access Token</label>
+          <input class="sync-input" type="password" id="sync-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="sync-field">
+          <label class="sync-label">ID do Gist <span style="text-transform:none;font-weight:400">(gerado automaticamente no 1º envio)</span></label>
+          <input class="sync-input" type="text" id="sync-gist-id" placeholder="Será preenchido automaticamente">
+        </div>
+        <button class="sync-btn sync-btn-primary" onclick="syncSaveConfig()">💾 Salvar Configuração</button>
+        <div id="sync-config-status" style="margin-top:.75rem"></div>
+        <div class="sync-divider"></div>
+        <div id="sync-status-bar" class="sync-status-bar">
+          <div class="sync-dot sd-gray" id="sync-dot"></div>
+          <span id="sync-status-txt">Configuração não salva</span>
+        </div>
+      </div>
+
+      <!-- TAB EXPORTAR -->
+      <div class="sync-pane" id="sync-pane-exportar">
+        <div class="sync-alert sync-alert-info">
+          Envia <strong>todos os leads deste dispositivo</strong> para a nuvem. Use depois de alimentar o CRM.
+        </div>
+        <div id="sync-export-info" style="margin-bottom:.875rem"></div>
+        <button class="sync-btn sync-btn-primary" id="sync-btn-export" onclick="syncExportar()">☁️ Enviar Leads para a Nuvem</button>
+        <div id="sync-export-status" style="margin-top:.75rem"></div>
+      </div>
+
+      <!-- TAB IMPORTAR -->
+      <div class="sync-pane" id="sync-pane-importar">
+        <div class="sync-alert sync-alert-info">
+          Baixa os leads mais recentes da nuvem. <strong>Funciona em qualquer dispositivo</strong> — celular ou computador.
+        </div>
+        <div id="sync-import-info" style="margin-bottom:.875rem"></div>
+        <div id="sync-conflict-area"></div>
+        <button class="sync-btn sync-btn-success" id="sync-btn-import" onclick="syncImportar()">⬇️ Baixar e Importar Leads</button>
+        <button class="sync-btn sync-btn-ghost" style="margin-top:.5rem" onclick="syncVerNuvem()">🔍 Ver versão na nuvem sem importar</button>
+        <div id="sync-import-status" style="margin-top:.75rem"></div>
+      </div>
+
+      <!-- TAB AJUDA -->
+      <div class="sync-pane" id="sync-pane-ajuda">
+        <div class="sync-alert sync-alert-info">
+          A sincronização é <strong>bidirecional</strong>: qualquer dispositivo pode enviar ou receber. O último a enviar define a versão na nuvem.
+        </div>
+        <div class="sync-steps">
+          <div class="sync-step"><div class="sync-step-n">1</div><div class="sync-step-txt">Acesse <a href="https://github.com" target="_blank">github.com</a> e crie uma conta gratuita</div></div>
+          <div class="sync-step"><div class="sync-step-n">2</div><div class="sync-step-txt">Vá em <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → <strong>Generate new token (classic)</strong></div></div>
+          <div class="sync-step"><div class="sync-step-n">3</div><div class="sync-step-txt">Dê um nome, marque apenas o escopo <span class="sync-chip">gist</span> e clique em <strong>Generate token</strong></div></div>
+          <div class="sync-step"><div class="sync-step-n">4</div><div class="sync-step-txt">Cole o token na aba <strong>Config</strong> deste painel e salve</div></div>
+          <div class="sync-step"><div class="sync-step-n">5</div><div class="sync-step-txt">Clique em <strong>Enviar</strong> no computador. Um Gist privado será criado automaticamente</div></div>
+          <div class="sync-step"><div class="sync-step-n">6</div><div class="sync-step-txt">No celular, configure o mesmo token e copie o ID do Gist. Clique em <strong>Receber</strong></div></div>
+        </div>
+        <div class="sync-divider"></div>
+        <div style="font-size:11px;color:#7a9cc0;line-height:1.7">
+          <strong style="color:#91d8f5">💡 Rotina diária recomendada</strong><br>
+          Computador: alimenta leads → clica <strong>Enviar</strong><br>
+          Celular: clica <strong>Receber</strong> → CRM atualizado ✓<br><br>
+          Alterou algo no celular? Clique <strong>Enviar</strong> no celular antes de sair. O sistema detecta conflito se houver dados mais novos dos dois lados e pergunta o que fazer.
+        </div>
+        <div class="sync-divider"></div>
+        <div class="sync-log" id="sync-log">// Log de operações...</div>
+        <button class="sync-btn sync-btn-ghost" style="margin-top:.5rem;font-size:11px" onclick="document.getElementById('sync-log').innerHTML='// Log limpo...'">🗑 Limpar log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// SYNC MODULE — Bidirecional via GitHub Gist
+// ══════════════════════════════════════════════════════════════════
+const SYNC_CONFIG_KEY = 'somultas_sync_cfg_v1';
+const SYNC_GIST_FILE  = 'somultas_leads.json';
+// STORAGE_KEY já definido no módulo CRM como 'crm_somultas_v3'
+
+// ── Utilitários ──────────────────────────────────────────────────
+function syncLog(msg, type) {
+  const el = document.getElementById('sync-log');
+  if (!el) return;
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  const c  = {info:'#5aabff', success:'#4ade80', warn:'#fbbf24', err:'#f87171'}[type||'info'];
+  el.innerHTML += `<span style="color:#2a4a6a">[${ts}]</span> <span style="color:${c}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function syncShowStatus(id, msg, type) {
+  const icons = {info:'ℹ️', success:'✅', warn:'⚠️', err:'❌'};
+  const cls   = {info:'sync-alert-info', success:'sync-alert-success', warn:'sync-alert-warn', err:'sync-alert-err'};
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="sync-alert ${cls[type||'info']}">${icons[type||'info']} ${msg}</div>`;
+}
+
+function syncGetConfig() {
+  try { return JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function syncUpdateDot(state, txt) {
+  const dot = document.getElementById('sync-dot');
+  const stxt = document.getElementById('sync-status-txt');
+  if (dot)  { dot.className='sync-dot'; dot.classList.add({ok:'sd-green',busy:'sd-blue',warn:'sd-amber',off:'sd-gray'}[state||'off']); }
+  if (stxt && txt) stxt.textContent = txt;
+}
+
+function syncUpdateNavBtn(lastSync) {
+  const btn   = document.getElementById('syncNavBtn');
+  const label = document.getElementById('syncNavLabel');
+  if (!btn || !label) return;
+  if (lastSync) {
+    const d = new Date(lastSync);
+    const now = new Date();
+    const diffMin = Math.round((now - d) / 60000);
+    const txt = diffMin < 60 ? `${diffMin}min atrás` : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    label.textContent = `Sync ${txt}`;
+    btn.title = `Última sync: ${d.toLocaleString('pt-BR')}`;
+  } else {
+    label.textContent = 'Sincronizar';
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────
+function abrirSyncModal() {
+  document.getElementById('syncModal').classList.add('open');
+  syncLoadConfig();
+  syncUpdateExportInfo();
+  syncUpdateImportInfo();
+}
+
+function fecharSyncModal() {
+  document.getElementById('syncModal').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') fecharSyncModal();
+});
+document.getElementById('syncModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('syncModal')) fecharSyncModal();
+});
+
+function syncSetTab(tab, btn) {
+  document.querySelectorAll('.sync-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sync-pane').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const pane = document.getElementById('sync-pane-' + tab);
+  if (pane) pane.classList.add('active');
+}
+
+// ── Config ────────────────────────────────────────────────────────
+function syncSaveConfig() {
+  const token  = document.getElementById('sync-token').value.trim();
+  const gistId = document.getElementById('sync-gist-id').value.trim();
+  if (!token) { syncShowStatus('sync-config-status','Informe o token do GitHub','err'); return; }
+  const cfg = { token, gistId, savedAt: new Date().toISOString() };
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+  syncShowStatus('sync-config-status','Configuração salva ✓','success');
+  syncUpdateDot('ok','Configurado · pronto para sincronizar');
+  syncLog('Configuração salva ✓', 'success');
+}
+
+function syncLoadConfig() {
+  const cfg = syncGetConfig();
+  if (cfg.token) {
+    document.getElementById('sync-token').value  = cfg.token;
+    document.getElementById('sync-gist-id').value = cfg.gistId || '';
+    syncUpdateDot('ok', cfg.gistId ? 'Configurado · Gist: '+cfg.gistId.substring(0,12)+'…' : 'Token salvo · ainda sem Gist');
+  } else {
+    syncUpdateDot('off', 'Configuração não salva');
+  }
+}
+
+// ── GitHub API ────────────────────────────────────────────────────
+async function gistCreate(token, content) {
+  const r = await fetch('https://api.github.com/gists', {
+    method: 'POST',
+    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      description: 'Só Multas — Leads CRM Sync',
+      public: false,
+      files: { [SYNC_GIST_FILE]: { content } }
+    })
+  });
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.statusText}`);
+  return r.json();
+}
+
+async function gistUpdate(token, id, content) {
+  const r = await fetch(`https://api.github.com/gists/${id}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ files: { [SYNC_GIST_FILE]: { content } } })
+  });
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.statusText}`);
+  return r.json();
+}
+
+async function gistRead(token, id) {
+  const r = await fetch(`https://api.github.com/gists/${id}`, {
+    headers: { 'Authorization': `token ${token}` }
+  });
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.statusText}`);
+  const data = await r.json();
+  const file = data.files[SYNC_GIST_FILE];
+  if (!file) throw new Error('Arquivo de leads não encontrado no Gist');
+  if (file.truncated) {
+    const raw = await fetch(file.raw_url);
+    return raw.text();
+  }
+  return file.content;
+}
+
+// ── Info displays ─────────────────────────────────────────────────
+function syncUpdateExportInfo() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const lastExp = localStorage.getItem('somultas_last_export');
+  let html = '';
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      const n = Object.keys(d.leads||{}).length;
+      html += `<div class="sync-status-bar"><div class="sync-dot sd-green"></div><span>${n} lead(s) local(is) prontos para enviar</span></div>`;
+    } catch(e) {}
+  } else {
+    html += `<div class="sync-status-bar"><div class="sync-dot sd-gray"></div><span>Nenhum dado local encontrado</span></div>`;
+  }
+  if (lastExp) html += `<div style="font-size:10px;color:#7a9cc0;margin-bottom:.25rem">Último envio: ${new Date(lastExp).toLocaleString('pt-BR')}</div>`;
+  document.getElementById('sync-export-info').innerHTML = html;
+}
+
+function syncUpdateImportInfo() {
+  const lastImp = localStorage.getItem('somultas_last_import');
+  const srcRaw  = localStorage.getItem('somultas_last_import_src');
+  if (!lastImp) { document.getElementById('sync-import-info').innerHTML=''; return; }
+  let src = {};
+  try { src = JSON.parse(srcRaw||'{}'); } catch(e){}
+  document.getElementById('sync-import-info').innerHTML =
+    `<div class="sync-status-bar"><div class="sync-dot sd-green"></div>` +
+    `<span>Último recebimento: ${new Date(lastImp).toLocaleString('pt-BR')}` +
+    (src.leadsCount ? ` · ${src.leadsCount} leads` : '') + `</span></div>`;
+}
+
+// ── Exportar ──────────────────────────────────────────────────────
+async function syncExportar() {
+  const cfg = syncGetConfig();
+  if (!cfg.token) { syncShowStatus('sync-export-status','Configure o token primeiro (aba Config)','err'); return; }
+
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) { syncShowStatus('sync-export-status','Nenhum dado de leads encontrado no CRM','err'); return; }
+
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch(e) { syncShowStatus('sync-export-status','Erro ao ler dados: '+e.message,'err'); return; }
+
+  const leadsCount = Object.keys(parsed.leads||{}).length;
+  const btn = document.getElementById('sync-btn-export');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  syncUpdateDot('busy','Enviando para a nuvem…');
+  syncLog(`Exportando ${leadsCount} lead(s)…`);
+
+  try {
+    const payload = JSON.stringify({
+      ...parsed,
+      _sync: {
+        exportedAt:  new Date().toISOString(),
+        leadsCount,
+        device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+      }
+    }, null, 2);
+
+    let gist;
+    if (cfg.gistId) {
+      gist = await gistUpdate(cfg.token, cfg.gistId, payload);
+      syncLog('Gist atualizado: '+gist.id, 'success');
+    } else {
+      gist = await gistCreate(cfg.token, payload);
+      cfg.gistId = gist.id;
+      document.getElementById('sync-gist-id').value = gist.id;
+      localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+      syncLog('Gist criado: '+gist.id, 'success');
+    }
+
+    const now = new Date().toISOString();
+    localStorage.setItem('somultas_last_export', now);
+    syncUpdateDot('ok','Enviado · '+new Date().toLocaleTimeString('pt-BR'));
+    syncUpdateNavBtn(now);
+    syncUpdateExportInfo();
+    syncShowStatus('sync-export-status',
+      `<strong>${leadsCount} leads</strong> enviados com sucesso!<br>` +
+      `<small style="opacity:.8">Gist: ${gist.id.substring(0,20)}…</small>`, 'success');
+  } catch(e) {
+    syncLog('Erro: '+e.message, 'err');
+    syncUpdateDot('warn','Erro ao enviar');
+    syncShowStatus('sync-export-status','Erro: '+e.message,'err');
+  }
+
+  btn.disabled = false; btn.textContent = '☁️ Enviar Leads para a Nuvem';
+}
+
+// ── Importar ──────────────────────────────────────────────────────
+async function syncImportar(forcar) {
+  const cfg = syncGetConfig();
+  if (!cfg.token || !cfg.gistId) {
+    syncShowStatus('sync-import-status','Configure o token e ID do Gist na aba Config','err');
+    return;
+  }
+
+  const btn = document.getElementById('sync-btn-import');
+  btn.disabled = true; btn.textContent = '⏳ Baixando…';
+  syncUpdateDot('busy','Baixando da nuvem…');
+  document.getElementById('sync-conflict-area').innerHTML = '';
+
+  try {
+    const content = await gistRead(cfg.token, cfg.gistId);
+    const cloud   = JSON.parse(content);
+    const cloudCount = Object.keys(cloud.leads||{}).length;
+    const cloudSync  = cloud._sync || {};
+
+    // Detectar conflito: há dados locais mais novos que a última importação?
+    if (!forcar) {
+      const localRaw   = localStorage.getItem(STORAGE_KEY);
+      const lastExport = localStorage.getItem('somultas_last_export');
+      const lastImport = localStorage.getItem('somultas_last_import');
+      const cloudTs    = cloudSync.exportedAt ? new Date(cloudSync.exportedAt) : null;
+
+      if (localRaw && lastExport && cloudTs) {
+        const localExportTs = new Date(lastExport);
+        // Conflito: exportamos localmente DEPOIS do que está na nuvem
+        if (localExportTs > cloudTs) {
+          const localCount = Object.keys(JSON.parse(localRaw).leads||{}).length;
+          document.getElementById('sync-conflict-area').innerHTML = `
+            <div class="sync-conflict-box">
+              <h4>⚠️ Conflito detectado</h4>
+              <div style="font-size:11px;color:#b0c8e0;margin-bottom:.5rem">
+                Este dispositivo tem dados enviados em <strong>${localExportTs.toLocaleString('pt-BR')}</strong> (${localCount} leads),
+                mais recentes que a nuvem (<strong>${cloudTs.toLocaleString('pt-BR')}</strong>, ${cloudCount} leads).<br>
+                Importar vai sobrescrever os dados deste dispositivo.
+              </div>
+              <button class="sync-conflict-btn scb-blue" onclick="syncImportar(true)">⬇️ Importar mesmo assim (${cloudCount} leads da nuvem)</button>
+              <button class="sync-conflict-btn scb-green" onclick="syncExportar()">☁️ Manter os meus (${localCount} leads) e enviar</button>
+            </div>`;
+          syncUpdateDot('warn','Conflito — escolha o que fazer');
+          btn.disabled = false; btn.textContent = '⬇️ Baixar e Importar Leads';
+          return;
+        }
+      }
+    }
+
+    // Importar
+    const { _sync, ...crmData } = cloud;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(crmData));
+    const now = new Date().toISOString();
+    localStorage.setItem('somultas_last_import', now);
+    localStorage.setItem('somultas_last_import_src', JSON.stringify(cloudSync));
+    document.getElementById('sync-conflict-area').innerHTML = '';
+
+    syncLog(`${cloudCount} leads importados ✓`, 'success');
+    if (cloudSync.exportedAt) syncLog(`Enviado em: ${new Date(cloudSync.exportedAt).toLocaleString('pt-BR')} (${cloudSync.device||'?'})`, 'info');
+    syncUpdateDot('ok','Importado · '+new Date().toLocaleTimeString('pt-BR'));
+    syncUpdateNavBtn(now);
+    syncUpdateImportInfo();
+
+    // Atualiza o CRM na tela sem precisar fechar o modal
+    if (typeof renderDashboard === 'function') { renderDashboard(); }
+    if (typeof renderImportStats === 'function') { renderImportStats(); }
+    if (typeof refreshHeader === 'function') { const d=crmReadData(); refreshHeader(d); }
+
+    syncShowStatus('sync-import-status',
+      `<strong>${cloudCount} leads</strong> importados!` +
+      (cloudSync.device ? ` Enviado pelo ${cloudSync.device}.` : '') +
+      `<br><small>O CRM já foi atualizado ✓</small>`, 'success');
+  } catch(e) {
+    syncLog('Erro: '+e.message, 'err');
+    syncUpdateDot('warn','Erro ao importar');
+    syncShowStatus('sync-import-status','Erro: '+e.message,'err');
+  }
+
+  btn.disabled = false; btn.textContent = '⬇️ Baixar e Importar Leads';
+}
+
+async function syncVerNuvem() {
+  const cfg = syncGetConfig();
+  if (!cfg.token || !cfg.gistId) { syncShowStatus('sync-import-status','Configure token e Gist primeiro','err'); return; }
+  try {
+    const content = await gistRead(cfg.token, cfg.gistId);
+    const d = JSON.parse(content);
+    const n = Object.keys(d.leads||{}).length;
+    const s = d._sync;
+    syncLog(`Nuvem: ${n} leads | ${s ? new Date(s.exportedAt).toLocaleString('pt-BR') : 'sem info'} | ${s?.device||'?'}`, 'info');
+    syncShowStatus('sync-import-status',
+      `Nuvem tem <strong>${n} leads</strong>` +
+      (s ? ` · enviado em ${new Date(s.exportedAt).toLocaleString('pt-BR')} (${s.device||'?'})` : ''), 'info');
+  } catch(e) { syncShowStatus('sync-import-status','Erro: '+e.message,'err'); }
+}
+
+// ── Helper para re-leitura do CRM ─────────────────────────────────
+function crmReadData() {
+  try { const r=localStorage.getItem(STORAGE_KEY); return r?JSON.parse(r):{leads:{},meta:{}}; } catch(e){ return {leads:{},meta:{}}; }
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+function syncInit() {
+  const cfg = syncGetConfig();
+  const lastSync = localStorage.getItem('somultas_last_export') || localStorage.getItem('somultas_last_import');
+  if (lastSync) syncUpdateNavBtn(lastSync);
+  syncLog('Sync module iniciado · chave CRM: '+STORAGE_KEY, 'info');
+}
+</script>
 </body>
 </html>
