@@ -833,7 +833,7 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .btn-sel.desel{border-color:#aaa;color:#888}.btn-sel.desel:hover{background:#f0f0f0;color:#555}
 
 /* BULK BAR */
-#bulkBar{display:none;position:fixed;bottom:0;left:0;right:0;background:#1a2980;color:#fff;padding:10px 22px;align-items:center;gap:11px;z-index:60;box-shadow:0 -3px 14px rgba(0,0,0,.25)}
+#bulkBar{display:none;position:fixed;bottom:0;left:0;right:0;background:#1a2980;color:#fff;padding:10px 22px;align-items:center;gap:11px;z-index:2000;box-shadow:0 -3px 14px rgba(0,0,0,.25)}
 #bulkBar.visible{display:flex}
 #bulkBar .sc{font-size:.8rem;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:20px}
 #bulkBar select{padding:6px 10px;border:none;border-radius:7px;font-size:.77rem;background:#fff;color:#333;font-weight:700}
@@ -908,6 +908,34 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 #leadModal .field .fv{font-size:.82rem;font-weight:600;color:#333;word-break:break-word}
 #leadModal .field .fv.placeholder{color:#ccc;font-weight:400;font-style:italic}
 #leadModal .modal-foot{padding:14px 24px 20px;display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #f0f2f5;flex-shrink:0}
+/* ── Follow-up section ── */
+#leadModal .followup-section{background:linear-gradient(135deg,#fffbeb,#fef9c3);border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:4px}
+#leadModal .followup-section .section-title{color:#92400e;border-bottom-color:#fde68a}
+.fu-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.fu-date-field{background:#fff;border-radius:8px;padding:8px 11px;border:1px solid #fde68a}
+.fu-date-field .fl{font-size:.62rem;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:700}
+.fu-date-input{border:none;outline:none;font-size:.82rem;font-weight:600;color:#1a2980;font-family:'Titillium Web',sans-serif;width:100%;background:transparent;cursor:pointer}
+.fu-date-input:focus{outline:2px solid #fbbf24;border-radius:4px}
+.fu-badge{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:4px}
+.fu-badge.vence-hoje{background:#fef9c3;color:#92400e;border:1px solid #fbbf24}
+.fu-badge.vencida{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.fu-badge.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.fu-badge.sem-prazo{background:#f0f0f0;color:#888;border:1px solid #ddd}
+.fu-followup-row{margin-top:10px;border-top:1px dashed #fde68a;padding-top:10px}
+.fu-followup-label{font-size:.62rem;color:#92400e;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:6px}
+.fu-followup-inputs{display:flex;gap:8px;align-items:flex-start}
+.fu-followup-date-wrap{background:#fff;border:1px solid #fde68a;border-radius:8px;padding:6px 10px;flex-shrink:0}
+.fu-followup-note{flex:1;background:#fff;border:1px solid #fde68a;border-radius:8px;padding:6px 10px;font-size:.8rem;font-family:'Titillium Web',sans-serif;resize:none;min-height:36px;color:#333}
+.fu-followup-note:focus{outline:2px solid #fbbf24;border-radius:8px}
+/* ── Dashboard follow-up card ── */
+.fu-dash-card{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fbbf24;border-radius:12px;padding:14px 18px;margin-bottom:16px}
+.fu-dash-card h3{font-size:.75rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.fu-dash-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto}
+.fu-dash-item{background:#fff;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid #fde68a;transition:box-shadow .15s}
+.fu-dash-item:hover{box-shadow:0 2px 8px rgba(251,191,36,.3)}
+.fu-dash-item .fu-item-name{font-size:.82rem;font-weight:700;color:#1a2980;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fu-dash-item .fu-item-meta{font-size:.68rem;color:#666}
+.fu-dash-item .fu-item-badge{flex-shrink:0}
 .status-badge-large{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:.74rem;font-weight:700}
 
 /* CLEAR MODAL */
@@ -6605,6 +6633,10 @@ function cp(id,btn){
       <tbody id="spotBody"></tbody></table>
     </div>
   </div>
+  <div id="fuDashCard" class="fu-dash-card" style="display:none">
+    <h3>⏰ Follow-ups & Prazos Urgentes <span id="fuDashCount" style="background:#fbbf24;color:#92400e;font-size:.65rem;padding:1px 7px;border-radius:10px;margin-left:6px"></span></h3>
+    <div class="fu-dash-list" id="fuDashList"></div>
+  </div>
   <div class="charts">
     <div class="ccard"><h3>📊 Funil de Vendas</h3><div class="cbox"><canvas id="funnelChart"></canvas></div></div>
     <div class="ccard"><h3>📅 Leads por Dia</h3><div class="cbox"><canvas id="dailyChart"></canvas></div></div>
@@ -6666,12 +6698,68 @@ function cp(id,btn){
   </div>
 </div>
 
+<!-- MODAL LISTA DE DISPARO -->
+<div class="modal-bg" id="disparoModal">
+  <div class="modal-box" style="width:460px;max-width:96vw;border-radius:16px;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;padding:18px 22px 14px;position:relative">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:2px">📲 Gerar Lista de Disparo</div>
+      <div style="font-size:.76rem;opacity:.85" id="disparoSubtitle">—</div>
+      <button onclick="fecharModalDisparo()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.2);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+      <!-- Formato do arquivo -->
+      <div>
+        <div style="font-size:.68rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Formato do arquivo</div>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="disparoFmt" value="xlsx" checked style="margin-right:5px">
+            <span style="font-size:.85rem;font-weight:600">Excel (.xlsx)</span>
+          </label>
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="disparoFmt" value="txt" style="margin-right:5px">
+            <span style="font-size:.85rem;font-weight:600">Texto (.txt)</span>
+          </label>
+        </div>
+      </div>
+      <!-- Código do país -->
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 14px">
+        <div style="font-size:.68rem;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Código do país (+55)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="cursor:pointer;display:flex;align-items:flex-start;gap:9px">
+            <input type="radio" name="disparoCC" value="com55" checked style="margin-top:2px">
+            <div>
+              <div style="font-size:.85rem;font-weight:700;color:#166534">Com +55 (ex: 5511999998888)</div>
+              <div style="font-size:.72rem;color:#555">Para ferramentas que exigem código do país</div>
+            </div>
+          </label>
+          <label style="cursor:pointer;display:flex;align-items:flex-start;gap:9px">
+            <input type="radio" name="disparoCC" value="sem55" style="margin-top:2px">
+            <div>
+              <div style="font-size:.85rem;font-weight:700;color:#333">Sem +55 (ex: 11999998888)</div>
+              <div style="font-size:.72rem;color:#555">Para ferramentas que não precisam do código</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <!-- Info -->
+      <div style="background:#f8f9fa;border-radius:8px;padding:10px 12px;font-size:.76rem;color:#666;line-height:1.5">
+        📋 Cada telefone vira uma linha separada &nbsp;·&nbsp; Leads com múltiplos números repetem o nome &nbsp;·&nbsp; Sem cabeçalho
+      </div>
+    </div>
+    <div style="padding:0 22px 20px;display:flex;gap:8px">
+      <button onclick="fecharModalDisparo()" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:.85rem;font-family:'Titillium Web',sans-serif">Cancelar</button>
+      <button onclick="exportarListaDisparo()" style="flex:2;padding:10px;background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:700;font-family:'Titillium Web',sans-serif">⬇️ Gerar e Baixar</button>
+    </div>
+  </div>
+</div>
+
 <!-- BULK BAR -->
 <div id="bulkBar">
   <span class="sc" id="selCount">0 selecionados</span>
   <select id="bulkStatus"><option value="">— Alterar status —</option></select>
   <button class="ba" onclick="applyBulkStatus()">✔ Aplicar em massa</button>
   <span class="bulk-info" id="bulkInfo"></span>
+  <button class="ba" onclick="abrirModalDisparo()" style="background:linear-gradient(135deg,#0a5c3d,#097A52);margin-left:4px" title="Gerar lista de disparo com os selecionados">📲 Gerar Lista de Disparo</button>
   <button class="bc" onclick="clearSelection()">✕ Desselecionar</button>
 </div>
 
@@ -6771,7 +6859,34 @@ function cp(id,btn){
           <div class="field"><div class="fl">Observações</div><div class="fv" id="md-obs">—</div></div>
         </div>
       </div>
-    </div>
+
+      <!-- ── FOLLOW-UP / PRAZOS ── -->
+      <div class="followup-section">
+        <div class="section-title" style="font-size:.7rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #fde68a">⏰ Prazos & Follow-up</div>
+        <div class="fu-date-grid">
+          <div class="fu-date-field">
+            <div class="fl">📄 Prazo NA (Notif. Autuação)</div>
+            <input type="date" class="fu-date-input" id="md-prazo-na" onchange="savePrazoNA()" title="Data limite da Notificação de Autuação">
+            <div id="md-prazo-na-badge"></div>
+          </div>
+          <div class="fu-date-field">
+            <div class="fl">📋 Prazo NP (Notif. Penalidade)</div>
+            <input type="date" class="fu-date-input" id="md-prazo-np" onchange="savePrazoNP()" title="Data limite da Notificação de Penalidade">
+            <div id="md-prazo-np-badge"></div>
+          </div>
+        </div>
+        <div class="fu-followup-row">
+          <div class="fu-followup-label">📅 Próximo Follow-up</div>
+          <div class="fu-followup-inputs">
+            <div class="fu-followup-date-wrap">
+              <div style="font-size:.58rem;color:#92400e;font-weight:700;margin-bottom:3px">DATA</div>
+              <input type="date" class="fu-date-input" id="md-followup-date" onchange="saveFollowup()" style="font-size:.78rem">
+            </div>
+            <textarea class="fu-followup-note" id="md-followup-note" placeholder="Anotação do follow-up (ex: aguardando resposta, reenviar proposta...)" rows="2" oninput="saveFollowup()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div><!-- /modal-body -->
     <div class="modal-foot" style="flex-direction:column;gap:10px;align-items:stretch">
       <!-- Bloco de mensagens rápidas -->
       <div style="background:#f0f4f8;border:1px solid #dde3ea;border-radius:10px;padding:10px 12px">
@@ -7251,7 +7366,7 @@ function renderDashboard() {
   const gc    = s => leads.filter(l=>l.status===s).length;
   const pct   = (n,d) => d>0 ? (n/d*100).toFixed(1) : '0.0';
 
-  const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido");
+  const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido")+gc("Sem Retorno");
   const conf   = gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
   const neg    = gc("Em Conversa/Negociação")+gc("Venda Realizada");
   const vendas = gc("Venda Realizada");
@@ -7271,6 +7386,9 @@ function renderDashboard() {
   </div>`).join('');
 
   if (S.spotStatus) renderSpotlight();
+
+  renderFollowupDash();
+  checkPrazosVencidos();
 
   // Funnel chart
   const fv = STATUS_OPTIONS.map(s=>gc(s));
@@ -7511,6 +7629,9 @@ function updateBulkBar() {
   document.getElementById('selCount').textContent = `${n} selecionado${n!==1?'s':''}`;
   document.getElementById('bulkInfo').textContent = n > 0 ? `(de ${allLeadsCache.length} no CRM)` : '';
   document.getElementById('bulkBar').classList.toggle('visible', n > 0);
+  // Oculta a nav global enquanto a bulk bar está visível para evitar sobreposição
+  const gnav = document.getElementById('globalNav');
+  if (gnav) gnav.style.display = n > 0 ? 'none' : '';
 }
 
 function applyBulkStatus() {
@@ -7552,6 +7673,158 @@ function updateStatus(key, ns, sel) {
 function updateObs(key, val) {
   const data = loadData();
   if (data.leads[key]) { data.leads[key].obs = val; saveData(data); }
+}
+
+// ══════════════════════════════════════════════
+// FOLLOW-UP & PRAZOS
+// ══════════════════════════════════════════════
+
+function fuDateBadge(dateStr) {
+  if (!dateStr) return '<span class="fu-badge sem-prazo">Sem prazo</span>';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0)  return `<span class="fu-badge vencida">⚠️ Venceu há ${Math.abs(diff)}d</span>`;
+  if (diff === 0) return `<span class="fu-badge vence-hoje">🔔 Vence hoje!</span>`;
+  if (diff <= 7)  return `<span class="fu-badge vence-hoje">⏳ Vence em ${diff}d</span>`;
+  return `<span class="fu-badge ok">✅ ${diff}d restantes</span>`;
+}
+
+function savePrazoNA() {
+  if (!S.modalLead) return;
+  const val = document.getElementById('md-prazo-na').value;
+  const data = loadData();
+  if (data.leads[S.modalLead.key]) {
+    data.leads[S.modalLead.key].prazoNA = val;
+    saveData(data);
+    S.modalLead.prazoNA = val;
+  }
+  document.getElementById('md-prazo-na-badge').innerHTML = fuDateBadge(val);
+}
+
+function savePrazoNP() {
+  if (!S.modalLead) return;
+  const val = document.getElementById('md-prazo-np').value;
+  const data = loadData();
+  if (data.leads[S.modalLead.key]) {
+    data.leads[S.modalLead.key].prazoNP = val;
+    saveData(data);
+    S.modalLead.prazoNP = val;
+  }
+  document.getElementById('md-prazo-np-badge').innerHTML = fuDateBadge(val);
+}
+
+function saveFollowup() {
+  if (!S.modalLead) return;
+  const date = document.getElementById('md-followup-date').value;
+  const note = document.getElementById('md-followup-note').value;
+  const data = loadData();
+  if (data.leads[S.modalLead.key]) {
+    data.leads[S.modalLead.key].followupDate = date;
+    data.leads[S.modalLead.key].followupNote = note;
+    saveData(data);
+    S.modalLead.followupDate = date;
+    S.modalLead.followupNote = note;
+  }
+}
+
+// Renderiza o card de follow-ups urgentes no Dashboard
+function renderFollowupDash() {
+  const card = document.getElementById('fuDashCard');
+  const list = document.getElementById('fuDashList');
+  const countEl = document.getElementById('fuDashCount');
+  if (!card || !list) return;
+
+  const data  = loadData();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const leads = Object.values(data.leads);
+
+  // Leads com prazos ou follow-ups relevantes (não vendidos nem perdidos)
+  const activeStatuses = new Set(['Contactado','Confirmado','Em Conversa/Negociação','Sem Retorno']);
+  const items = [];
+
+  leads.forEach(l => {
+    if (!activeStatuses.has(l.status)) return;
+    const checks = [
+      { label:'NA', date: l.prazoNA },
+      { label:'NP', date: l.prazoNP },
+      { label:'Follow-up', date: l.followupDate },
+    ];
+    checks.forEach(c => {
+      if (!c.date) return;
+      const d = new Date(c.date + 'T00:00:00');
+      const diff = Math.round((d - today) / 86400000);
+      if (diff <= 7) { // Mostra até 7 dias à frente e vencidos
+        items.push({ lead: l, label: c.label, date: c.date, diff });
+      }
+    });
+  });
+
+  if (!items.length) { card.style.display = 'none'; return; }
+
+  // Ordenar: vencidos primeiro, depois mais próximos
+  items.sort((a, b) => a.diff - b.diff);
+  countEl.textContent = items.length + ' pendente' + (items.length > 1 ? 's' : '');
+  card.style.display = '';
+
+  list.innerHTML = items.map(item => {
+    const badge = fuDateBadge(item.date);
+    const note  = item.label === 'Follow-up' && item.lead.followupNote
+      ? `<span class="fu-item-meta" style="margin-left:6px;font-style:italic">"${esc(item.lead.followupNote.substring(0,40))}${item.lead.followupNote.length>40?'…':''}"</span>` : '';
+    const sc = SC[item.lead.status]||SC['Novo Lead'];
+    return `<div class="fu-dash-item" onclick="openLeadByKey('${item.lead.key}')">
+      <span class="fu-item-badge">${badge}</span>
+      <span class="fu-item-name">${esc(item.lead.nome||'Sem nome')} · <span style="letter-spacing:1px">${esc(item.lead.placa||'')}</span></span>
+      <span class="fu-item-meta" style="background:${sc.bg};color:${sc.tc};padding:1px 7px;border-radius:8px;font-size:.65rem;font-weight:700">${esc(item.lead.status)}</span>
+      <span class="fu-item-meta">${item.label}</span>
+      ${note}
+    </div>`;
+  }).join('');
+}
+
+// Abre modal de lead pelo key (usado no card de follow-up)
+function openLeadByKey(key) {
+  const data = loadData();
+  const l = data.leads[key];
+  if (!l) return;
+  // Injeta no filteredLeads temporariamente
+  const idx = filteredLeads.findIndex(x => x.key === key);
+  if (idx >= 0) { openLeadModal(idx); return; }
+  filteredLeads = [l];
+  openLeadModal(0);
+}
+
+// Auto-mover para Perdido X dias após prazo vencido
+const FU_GRACE_DAYS = 3; // dias de graça após prazo antes de mover para Perdido
+
+function checkPrazosVencidos() {
+  const data  = loadData();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const activeStatuses = new Set(['Contactado','Confirmado','Em Conversa/Negociação','Sem Retorno']);
+  let changed = false;
+  const moved = [];
+
+  Object.entries(data.leads).forEach(([key, l]) => {
+    if (!activeStatuses.has(l.status)) return;
+    const prazos = [l.prazoNA, l.prazoNP].filter(Boolean);
+    if (!prazos.length) return;
+    // Usar o prazo mais recente como deadline
+    const latest = prazos.map(p => new Date(p + 'T00:00:00')).sort((a,b) => b-a)[0];
+    const diff = Math.round((today - latest) / 86400000);
+    if (diff >= FU_GRACE_DAYS) {
+      data.leads[key].status = 'Perdido';
+      data.leads[key]._perdidoAutoPrazo = new Date().toISOString();
+      changed = true;
+      moved.push(l.nome || l.placa || key);
+    }
+  });
+
+  if (changed) {
+    saveData(data);
+    crmShowToast(`⏰ ${moved.length} lead(s) movido(s) para Perdido por prazo vencido`);
+    renderDashboard();
+    if (typeof renderLeads === 'function') renderLeads();
+  }
 }
 
 function updateMeuNumero(key, val) {
@@ -7712,6 +7985,16 @@ function openLeadModal(idx) {
     mnEl.innerHTML = `<span class="placeholder" style="color:#c4b5fd;font-style:italic;font-size:.8rem">Não definido</span>`;
   }
   document.getElementById('md-obs').innerHTML   = fv(l.obs);
+
+  // Follow-up & Prazos
+  const naEl = document.getElementById('md-prazo-na');
+  const npEl = document.getElementById('md-prazo-np');
+  const fuDateEl = document.getElementById('md-followup-date');
+  const fuNoteEl = document.getElementById('md-followup-note');
+  if (naEl) { naEl.value = l.prazoNA || ''; document.getElementById('md-prazo-na-badge').innerHTML = fuDateBadge(l.prazoNA||''); }
+  if (npEl) { npEl.value = l.prazoNP || ''; document.getElementById('md-prazo-np-badge').innerHTML = fuDateBadge(l.prazoNP||''); }
+  if (fuDateEl) fuDateEl.value = l.followupDate || '';
+  if (fuNoteEl) fuNoteEl.value = l.followupNote || '';
 
   // WhatsApp link (primeiro telefone com número válido)
   const firstTel = (l.tels||[]).find(t => t.replace(/\D/g,'').length>=10);
@@ -7884,6 +8167,69 @@ function exportXLSX() {
   XLSX.utils.book_append_sheet(wb, ws, 'LEADS');
   XLSX.writeFile(wb, `CRM_Leads_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
   crmShowToast('⬇️ Excel exportado!');
+}
+
+// ══════════════════════════════════════════════
+// LISTA DE DISPARO
+// ══════════════════════════════════════════════
+
+function abrirModalDisparo() {
+  if (!S.selectedKeys.size) { crmShowToast('Selecione pelo menos 1 lead primeiro.'); return; }
+  document.getElementById('disparoSubtitle').textContent =
+    S.selectedKeys.size + ' lead(s) selecionado(s)';
+  document.getElementById('disparoModal').classList.add('open');
+}
+
+function fecharModalDisparo() {
+  document.getElementById('disparoModal').classList.remove('open');
+}
+
+function exportarListaDisparo() {
+  if (!S.selectedKeys.size) { crmShowToast('Nenhum lead selecionado.'); return; }
+
+  const fmt    = document.querySelector('input[name="disparoFmt"]:checked').value;
+  const com55  = document.querySelector('input[name="disparoCC"]:checked').value === 'com55';
+  const data   = loadData();
+  const rows   = []; // [{tel, nome}]
+
+  S.selectedKeys.forEach(key => {
+    const l = data.leads[key];
+    if (!l) return;
+    const tels = (l.tels || []).map(t => t.replace(/\D/g,'')).filter(t => t.length >= 10);
+    if (!tels.length) return;
+    tels.forEach(t => {
+      const tel = com55 ? ('55' + t) : t;
+      rows.push({ tel, nome: l.nome || '' });
+    });
+  });
+
+  if (!rows.length) { crmShowToast('Nenhum telefone válido nos leads selecionados.'); return; }
+
+  const date = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  const cc   = com55 ? 'com55' : 'sem55';
+
+  if (fmt === 'xlsx') {
+    // Excel sem cabeçalho: telefone na coluna A, nome na coluna B
+    const wsData = rows.map(r => [r.tel, r.nome]);
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    // Largura das colunas
+    ws['!cols'] = [{wch:18},{wch:40}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Disparo');
+    XLSX.writeFile(wb, `Disparo_${date}_${cc}.xlsx`);
+  } else {
+    // TXT: cada linha "telefone\tnome"
+    const txt = rows.map(r => r.tel + '\t' + r.nome).join('\r\n');
+    const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Disparo_${date}_${cc}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  fecharModalDisparo();
+  crmShowToast(`📲 Lista de disparo gerada — ${rows.length} linha(s)!`);
 }
 
 // ══════════════════════════════════════════════
