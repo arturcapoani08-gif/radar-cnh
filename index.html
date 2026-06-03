@@ -6596,7 +6596,7 @@ function cp(id,btn){
       <button class="close-btn" onclick="closeSpotlight()">✕ Fechar</button>
     </h3>
     <div class="spot-wrap">
-      <table><thead><tr><th>Data</th><th>Nome</th><th>Cidade/UF</th><th>Telefone</th><th>Placa</th><th>Edital</th><th>Obs.</th></tr></thead>
+      <table><thead><tr><th>Data</th><th>Nome</th><th>CPF/CNPJ</th><th>Cidade/UF</th><th>Telefone</th><th>Meu WA</th><th>Placa</th><th>Edital</th><th>Obs.</th><th></th></tr></thead>
       <tbody id="spotBody"></tbody></table>
     </div>
   </div>
@@ -6629,6 +6629,7 @@ function cp(id,btn){
     <select id="statusFilter" onchange="renderLeads()"><option value="">Todos os Status</option></select>
     <select id="ufFilter" onchange="renderLeads()"><option value="">Todos os Estados</option></select>
     <select id="dateFilter" onchange="renderLeads()"><option value="">Todas as Datas</option></select>
+    <select id="meuWaFilter" onchange="renderLeads()" title="Filtrar por Meu WA (número usado para contatar)"><option value="">📱 Meu WA</option></select>
     <span class="badge-cnt" id="leadsCount">0</span>
   </div>
 
@@ -7163,26 +7164,58 @@ function closeSpotlight() {
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active-card'));
 }
 
+function spotOpenLead(key) {
+  // Sync filteredLeads from full list so openLeadModal can find the lead by index
+  const data = loadData();
+  const allVals = Object.values(data.leads);
+  const idx = allVals.findIndex(l => l.key === key);
+  if (idx < 0) return;
+  // Temporarily set filteredLeads to allVals so openLeadModal can find it
+  const prevFiltered = filteredLeads.slice();
+  filteredLeads = allVals;
+  openLeadModal(idx);
+  // Restore after modal opens (modal holds its own reference)
+  filteredLeads = prevFiltered;
+}
+
 function renderSpotlight() {
   if (!S.spotStatus) return closeSpotlight();
   const data = loadData();
   let leads = applyCtx(Object.values(data.leads).filter(l => inDateRange(l)));
-  const list = leads.filter(l => l.status===S.spotStatus);
+  const list = leads.filter(l => S.spotStatus==='_all' ? true : l.status===S.spotStatus);
   const sc = SC[S.spotStatus]||SC["Novo Lead"];
+  const labelTxt = S.spotStatus==='_all' ? 'Todos os Leads' : S.spotStatus;
   document.getElementById('spotTitle').innerHTML =
-    `<span style="background:${sc.bg};color:${sc.tc};padding:2px 10px;border-radius:9px;font-size:.78rem">${S.spotStatus}</span> — ${list.length} lead${list.length!==1?'s':''}`;
+    `<span style="background:${sc.bg};color:${sc.tc};padding:2px 10px;border-radius:9px;font-size:.78rem">${labelTxt}</span> — ${list.length} lead${list.length!==1?'s':''}`;
   list.sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  // Build a lookup from lead key → index in allLeadsCache (for openLeadModal)
+  const allVals = Object.values(data.leads);
+
   document.getElementById('spotBody').innerHTML = list.map(l => {
     const tel = (l.tels||[])[0]||'—';
-    const ed  = (l.edital||'').substring(0,38)+((l.edital||'').length>38?'…':'');
+    const num = tel.replace(/\D/g,'');
+    const waUrl = num.length >= 10 ? `https://wa.me/55${num}` : null;
+    const telHtml = waUrl
+      ? `<a href="${waUrl}" target="_blank" class="wa-link" style="font-size:.72rem">${esc(tel)}</a>`
+      : `<span style="font-size:.72rem">${esc(tel)}</span>`;
+    const ed  = (l.edital||'').substring(0,34)+((l.edital||'').length>34?'…':'');
+    const idxInAll = allVals.findIndex(x=>x.key===l.key);
+    // find idx in filteredLeads or allVals for openLeadModal
+    const openBtn = idxInAll >= 0
+      ? `<button onclick="spotOpenLead('${escAttr(l.key)}')" title="Ver ficha completa" style="background:var(--primary);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.67rem;cursor:pointer;white-space:nowrap">👁 Ficha</button>`
+      : '';
     return `<tr>
-      <td style="color:#aaa;font-size:.7rem">${l.data}</td>
-      <td><b>${esc(l.nome)}</b></td>
-      <td>${esc(l.cidade)} <b>${l.uf}</b></td>
-      <td>${tel}</td>
-      <td><b>${l.placa}</b></td>
-      <td style="font-size:.7rem;color:#777" title="${esc(l.edital)}">${esc(ed)}</td>
-      <td style="font-size:.7rem;color:#999">${esc(l.obs||'')}</td>
+      <td style="color:#aaa;font-size:.7rem;white-space:nowrap">${l.data}</td>
+      <td><b style="font-size:.75rem">${esc(l.nome)}</b></td>
+      <td style="font-size:.68rem;color:#999;white-space:nowrap">${esc(l.cpf||l.cnpj||'—')}</td>
+      <td style="white-space:nowrap;font-size:.75rem">${esc(l.cidade)} <b>${l.uf}</b></td>
+      <td>${telHtml}</td>
+      <td style="font-size:.72rem;color:#26d0ce;white-space:nowrap">${esc(l.meuNumero||'—')}</td>
+      <td><b style="font-size:.75rem;letter-spacing:1px">${esc(l.placa)}</b></td>
+      <td style="font-size:.68rem;color:#777;max-width:130px" title="${esc(l.edital)}">${esc(ed)}</td>
+      <td style="font-size:.7rem;color:#999;max-width:110px">${esc(l.obs||'')}</td>
+      <td>${openBtn}</td>
     </tr>`;
   }).join('');
   document.getElementById('spotlight').style.display = 'block';
@@ -7305,14 +7338,18 @@ function populateLeadsFilters(all) {
   const sf=document.getElementById('statusFilter'), cv_s=sf.value;
   const uf=document.getElementById('ufFilter'),     cv_u=uf.value;
   const df=document.getElementById('dateFilter'),   cv_d=df.value;
+  const wf=document.getElementById('meuWaFilter'),  cv_w=wf?wf.value:'';
   const ufs   = [...new Set(all.map(l=>l.uf))].filter(Boolean).sort();
   const dates = [...new Set(all.map(l=>l.data))].filter(Boolean).sort((a,b)=>brToIso(a).localeCompare(brToIso(b)));
+  const was   = [...new Set(all.map(l=>l.meuNumero))].filter(Boolean).sort();
   sf.innerHTML = '<option value="">Todos os Status</option>' +
     STATUS_OPTIONS.map(s=>`<option value="${s}"${s===cv_s?' selected':''}>${s}</option>`).join('');
   uf.innerHTML = '<option value="">Todos os Estados</option>' +
     ufs.map(u=>`<option value="${u}"${u===cv_u?' selected':''}>${u}</option>`).join('');
   df.innerHTML = '<option value="">Todas as Datas</option>' +
     dates.map(d=>`<option value="${d}"${d===cv_d?' selected':''}>${d}</option>`).join('');
+  if (wf) wf.innerHTML = '<option value="">📱 Meu WA</option>' +
+    was.map(w=>`<option value="${w}"${w===cv_w?' selected':''}>${w}</option>`).join('');
   document.getElementById('bulkStatus').innerHTML =
     '<option value="">— Alterar status —</option>' +
     STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('');
@@ -7332,13 +7369,14 @@ function renderLeads() {
   const sf = document.getElementById('statusFilter').value;
   const uf = document.getElementById('ufFilter').value;
   const df = document.getElementById('dateFilter').value;
+  const wf = (document.getElementById('meuWaFilter')||{}).value||'';
 
   filteredLeads = allLeadsCache.filter(l => {
     const ts = (l.tels||[]).join(' ');
     const ms = !q || (l.nome||'').toLowerCase().includes(q) ||
       (l.placa||'').toLowerCase().includes(q) || (l.cidade||'').toLowerCase().includes(q) ||
       ts.includes(q) || (l.cpf||'').includes(q);
-    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df);
+    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf);
   });
   filteredLeads.sort((a,b)=>brToIso(b.data).localeCompare(brToIso(a.data))||a.nome.localeCompare(b.nome));
 
