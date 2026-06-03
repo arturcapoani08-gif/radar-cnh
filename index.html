@@ -6566,7 +6566,7 @@ function cp(id,btn){
   <div style="display:flex;gap:8px;align-items:center">
     <button class="crm-guia-hint" onclick="abrirCrmGuiaDrawer('prosp')" title="Abrir Guia sem sair do CRM">📖 Guia de Mensagens</button>
     <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
-    <button class="crm-guia-hint" onclick="abrirSyncModal()" id="syncNavBtn" title="Sincronizar leads" style="background:rgba(0,114,255,.15);border-color:rgba(0,114,255,.35);color:#5aabff">☁️ <span id="syncNavLabel">Sync</span></button>
+    <button class="crm-guia-hint" onclick="topbarAutoSync()" id="syncNavBtn" title="Sincronizar leads com a nuvem agora" style="background:rgba(0,114,255,.15);border-color:rgba(0,114,255,.35);color:#5aabff;position:relative">☁️ <span id="syncNavLabel">Sincronizar</span></button>
     <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
     <div class="ts" id="lastUpdate">Nenhum dado</div>
     <div style="width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0"></div>
@@ -8420,10 +8420,10 @@ function syncUpdateDot(state) {
   if (dotEl) { dotEl.className='sync-dot'; dotEl.classList.add({ok:'sd-green',busy:'sd-blue',warn:'sd-amber',off:'sd-gray'}[state||'off']); }
   if (btn) btn.style.setProperty('--sync-dot-color', colors[state]||colors.off);
   var lbl = document.getElementById('syncNavLabel');
-  if (state==='ok' && syncConfigOK()) { if(lbl) lbl.textContent='Auto ON'; }
-  else if (state==='busy') { if(lbl) lbl.textContent='Sync...'; }
-  else if (state==='warn') { if(lbl) lbl.textContent='Erro'; }
-  else { if(lbl) lbl.textContent='Sync'; }
+  if (state==='ok' && syncConfigOK()) { if(lbl) lbl.textContent='Sincronizar'; }
+  else if (state==='busy') { if(lbl) lbl.textContent='⏳ Sincronizando…'; }
+  else if (state==='warn') { if(lbl) lbl.textContent='⚠️ Erro'; }
+  else { if(lbl) lbl.textContent='Sincronizar'; }
 }
 
 function syncUpdateLastTxt() {
@@ -8435,7 +8435,7 @@ function syncUpdateLastTxt() {
   var diffMin = Math.round((new Date()-d)/60000);
   var txt = diffMin < 60 ? diffMin+'min atrás' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
   var lbl = document.getElementById('syncNavLabel');
-  if (lbl && syncConfigOK()) lbl.textContent = 'Sync '+txt;
+  if (lbl && syncConfigOK()) lbl.textContent = '✅ '+txt;
 }
 
 // ── Modal ─────────────────────────────────────────────────────
