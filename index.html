@@ -1512,6 +1512,11 @@ body {
         💰 Montar Orçamento
       </button>
       <div class="topbar-sep"></div>
+      <button id="topbarSyncBtn" class="tb-btn tb-btn-ghost" onclick="topbarAutoSync()" title="Sincronizar com a nuvem agora" style="color:#5aabff;border-color:rgba(90,171,255,.35);position:relative" id="topbarSyncBtn">
+        <span id="topbarSyncIcon">☁️</span> <span id="topbarSyncLabel">Sincronizar</span>
+        <span id="topbarSyncDot" style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);display:none"></span>
+      </button>
+      <div class="topbar-sep"></div>
       <button class="home-nav-btn" onclick="switchModule('home')" title="Voltar à Central">🏠 Central</button>
     </div>
   </header>
@@ -8323,7 +8328,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div id="syncPanel">
     <div class="sync-head">
       <div class="sync-logo">☁️</div>
-      <div><div class="sync-title">Sincronização de Leads</div><div class="sync-sub">Automática · GitHub Gist · Bidirecional</div></div>
+      <div><div class="sync-title">Sincronização de Leads</div><div class="sync-sub">Manual · GitHub Gist · Bidirecional</div></div>
       <button class="sync-close" onclick="fecharSyncModal()">✕</button>
     </div>
     <div class="sync-body">
@@ -8334,8 +8339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <button class="sync-tab" onclick="syncSetTab('ajuda',this)">❓ Ajuda</button>
       </div>
       <div class="sync-pane active" id="sync-pane-config">
-        <div id="sync-autosync-status" class="sync-alert sync-alert-success" style="display:none">🤖 <strong>Auto-sync ativo</strong> — sincroniza automaticamente.</div>
-        <div id="sync-autosync-inactive" class="sync-alert sync-alert-info">Configure o token para ativar a <strong>sincronização automática</strong>.</div>
+        <div id="sync-autosync-status" class="sync-alert sync-alert-success" style="display:none">✅ <strong>Configurado</strong> — use o botão <strong>☁️ Sincronizar</strong> na barra superior para sincronizar.</div>
+        <div id="sync-autosync-inactive" class="sync-alert sync-alert-info">Configure o token para usar a sincronização <strong>manual via botão na topbar</strong>.</div>
         <div class="sync-field"><label class="sync-label">GitHub Personal Access Token</label><input class="sync-input" type="password" id="sync-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"></div>
         <div class="sync-field"><label class="sync-label">ID do Gist (gerado automaticamente no 1º envio)</label><input class="sync-input" type="text" id="sync-gist-id" placeholder="Será preenchido automaticamente"></div>
         <button class="sync-btn sync-btn-primary" onclick="syncSaveConfig()">💾 Salvar Configuração</button>
@@ -8357,13 +8362,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="sync-import-status" style="margin-top:.75rem"></div>
       </div>
       <div class="sync-pane" id="sync-pane-ajuda">
-        <div class="sync-alert sync-alert-info">Sincronização <strong>bidirecional automática</strong>. Qualquer dispositivo envia e recebe.</div>
+        <div class="sync-alert sync-alert-info">Sincronização <strong>manual bidirecional</strong>. Use o botão <strong>☁️ Sincronizar</strong> na barra superior quando quiser sincronizar.</div>
         <div class="sync-step"><div class="sync-step-n">1</div><div class="sync-step-txt">Acesse <a href="https://github.com" target="_blank">github.com</a> e crie conta gratuita</div></div>
         <div class="sync-step"><div class="sync-step-n">2</div><div class="sync-step-txt">Vá em <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → Generate new token (classic)</div></div>
         <div class="sync-step"><div class="sync-step-n">3</div><div class="sync-step-txt">Marque apenas o escopo <span class="sync-chip">gist</span> e clique em Generate</div></div>
         <div class="sync-step"><div class="sync-step-n">4</div><div class="sync-step-txt">Cole o token na aba <strong>Config</strong> e salve</div></div>
         <div class="sync-step"><div class="sync-step-n">5</div><div class="sync-step-txt">Clique <strong>Enviar</strong> no computador — ID do Gist será criado automaticamente</div></div>
-        <div class="sync-step"><div class="sync-step-n">6</div><div class="sync-step-txt">No celular: mesmo token + ID do Gist → auto-sync ativo ✓</div></div>
+        <div class="sync-step"><div class="sync-step-n">6</div><div class="sync-step-txt">No celular: mesmo token + ID do Gist → clique <strong>☁️ Sincronizar</strong> na topbar para sincronizar ✓</div></div>
         <div style="height:.875rem"></div>
         <div class="sync-log" id="sync-log">// Log de operações...</div>
         <button class="sync-btn sync-btn-ghost" style="font-size:11px;margin-top:.375rem" onclick="document.getElementById('sync-log').innerHTML=''">🗑 Limpar log</button>
@@ -8373,13 +8378,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 <script>
 // ══════════════════════════════════════════════════════════════
-// SYNC MODULE + AUTO-SYNC — GitHub Gist
+// SYNC MODULE — GitHub Gist (sincronização manual via botão)
 // ══════════════════════════════════════════════════════════════
 var SYNC_CFG_KEY = 'somultas_sync_cfg_v1';
 var SYNC_FILE    = 'somultas_leads.json';
 // STORAGE_KEY already declared in CRM module
-var AUTO_INTERVAL = 2 * 60 * 1000;
-var _autoTimer = null;
 var _syncBusy  = false;
 var _installPrompt = null;
 
@@ -8474,7 +8477,10 @@ function syncSaveConfig() {
   syncShowStatus('sync-config-status','Configuração salva ✓','success');
   syncUpdateDot('ok');
   syncLog('Configuração salva ✓','success');
-  if (gistId) { autoSyncStart(); }
+  var el1 = document.getElementById('sync-autosync-status');
+  var el2 = document.getElementById('sync-autosync-inactive');
+  if (el1) el1.style.display = '';
+  if (el2) el2.style.display = 'none';
 }
 
 function syncLoadConfig() {
@@ -8483,7 +8489,7 @@ function syncLoadConfig() {
   if (cfg.gistId) document.getElementById('sync-gist-id').value = cfg.gistId;
   syncUpdateDot(cfg.token ? (cfg.gistId ? 'ok' : 'warn') : 'off');
   var stxt = document.getElementById('sync-status-txt');
-  if (stxt) stxt.textContent = cfg.gistId ? 'Configurado · auto-sync ativo' : (cfg.token ? 'Token salvo · sem Gist ainda' : 'Não configurado');
+  if (stxt) stxt.textContent = cfg.gistId ? 'Configurado · sincronização manual ativa' : (cfg.token ? 'Token salvo · sem Gist ainda' : 'Não configurado');
 }
 
 // ── GitHub API ────────────────────────────────────────────────
@@ -8557,7 +8563,6 @@ function syncExportar() {
       cfg.gistId = gist.id;
       document.getElementById('sync-gist-id').value = gist.id;
       localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
-      autoSyncStart();
     }
     var now = new Date().toISOString();
     localStorage.setItem('somultas_last_export', now);
@@ -8623,81 +8628,146 @@ function syncVerNuvem() {
   });
 }
 
-// ── Auto-Sync ─────────────────────────────────────────────────
-function autoSyncExportSilent() {
-  if (_syncBusy) return;
-  var cfg = syncGetConfig();
-  if (!cfg.token||!cfg.gistId) return;
-  var raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
-  var parsed; try { parsed=JSON.parse(raw); } catch(e){return;}
-  _syncBusy=true; syncUpdateDot('busy');
-  var n = Object.keys(parsed.leads||{}).length;
-  var payload = JSON.stringify(Object.assign({},parsed,{_sync:{exportedAt:new Date().toISOString(),leadsCount:n,device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}}),null,2);
-  gistUpdate(cfg.token, cfg.gistId, payload, function(g, err) {
-    _syncBusy=false;
-    if (!err&&g&&!g.message) {
-      localStorage.setItem('somultas_last_export', new Date().toISOString());
-      syncUpdateDot('ok'); syncUpdateLastTxt();
-      syncLog('Auto-export: '+n+' leads ✓','success');
-    } else { syncUpdateDot('warn'); syncLog('Auto-export erro: '+(err||g.message),'err'); }
-  });
-}
-
-function autoSyncImportSilent() {
-  if (_syncBusy) return;
-  var cfg = syncGetConfig();
-  if (!cfg.token||!cfg.gistId) return;
-  _syncBusy=true; syncUpdateDot('busy');
-  gistRead(cfg.token, cfg.gistId, function(content, err) {
-    _syncBusy=false;
-    if (err||!content) { syncUpdateDot('warn'); return; }
-    try {
-      var cloud = JSON.parse(content);
-      var cloudTs = cloud._sync&&cloud._sync.exportedAt ? new Date(cloud._sync.exportedAt).getTime() : 0;
-      var lastExp = localStorage.getItem('somultas_last_export');
-      var localTs = lastExp ? new Date(lastExp).getTime() : 0;
-      if (cloudTs > localTs + 5000) {
-        delete cloud._sync;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-        localStorage.setItem('somultas_last_import', new Date().toISOString());
-        syncUpdateDot('ok'); syncUpdateLastTxt();
-        var n = Object.keys(cloud.leads||{}).length;
-        syncLog('Auto-import: '+n+' leads ✓','success');
-        try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
-        try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
-        try { if(typeof crmShowToast==='function') crmShowToast('☁️ Leads atualizados ('+n+')'); } catch(e){}
-      } else { syncUpdateDot('ok'); }
-    } catch(e) { syncUpdateDot('warn'); }
-  });
-}
-
-function autoSyncStart() {
-  if (_autoTimer) clearInterval(_autoTimer);
-  if (!syncConfigOK()) return;
-  syncLog('Auto-sync iniciado (intervalo: 2min)','success');
-  setTimeout(autoSyncImportSilent, 2000);
-  _autoTimer = setInterval(autoSyncImportSilent, AUTO_INTERVAL);
-  // Patch localStorage.setItem to auto-export on CRM data change
-  if (!localStorage._patched) {
-    var _orig = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(key, value) {
-      _orig(key, value);
-      if (key === STORAGE_KEY && syncConfigOK()) {
-        clearTimeout(window._autoExportDebounce);
-        window._autoExportDebounce = setTimeout(autoSyncExportSilent, 2000);
-      }
-    };
-    localStorage._patched = true;
+// ── Topbar Auto-Sync Button ────────────────────────────────────
+function _topbarSyncSetState(state, label) {
+  var btn  = document.getElementById('topbarSyncBtn');
+  var icon = document.getElementById('topbarSyncIcon');
+  var lbl  = document.getElementById('topbarSyncLabel');
+  var dot  = document.getElementById('topbarSyncDot');
+  if (!btn) return;
+  var states = {
+    idle:    { icon:'☁️', lbl:'Sincronizar', color:'#5aabff', dotColor:'rgba(255,255,255,.25)', dotShow:false, disabled:false },
+    busy:    { icon:'⏳', lbl:'Sincronizando…', color:'#fbbf24', dotColor:'#fbbf24', dotShow:true, disabled:true },
+    ok:      { icon:'✅', lbl:'Sincronizado!', color:'#34d399', dotColor:'#34d399', dotShow:true, disabled:false },
+    upload:  { icon:'⬆️', lbl:'Enviando…', color:'#5aabff', dotColor:'#5aabff', dotShow:true, disabled:true },
+    download:{ icon:'⬇️', lbl:'Baixando…', color:'#5aabff', dotColor:'#5aabff', dotShow:true, disabled:true },
+    warn:    { icon:'⚠️', lbl:'Verificar sync', color:'#fbbf24', dotColor:'#fbbf24', dotShow:true, disabled:false },
+    err:     { icon:'❌', lbl:'Erro no sync', color:'#f87171', dotColor:'#f87171', dotShow:true, disabled:false }
+  };
+  var s = states[state] || states.idle;
+  if (label) s.lbl = label;
+  if (icon) icon.textContent = s.icon;
+  if (lbl)  lbl.textContent  = s.lbl;
+  btn.style.color        = s.color;
+  btn.style.borderColor  = s.color.replace(')',', .4)').replace('rgb','rgba');
+  btn.disabled           = s.disabled;
+  if (dot) {
+    dot.style.display    = s.dotShow ? 'block' : 'none';
+    dot.style.background = s.dotColor;
   }
+}
+
+function topbarAutoSync() {
+  if (_syncBusy) return;
+  if (!syncConfigOK()) {
+    abrirSyncModal();
+    try { if(typeof crmShowToast==='function') crmShowToast('⚙️ Configure o sync primeiro'); } catch(e){}
+    return;
+  }
+  var cfg = syncGetConfig();
+  _syncBusy = true;
+  syncUpdateDot('busy');
+  _topbarSyncSetState('busy');
+  syncLog('Iniciando sincronização manual…','info');
+
+  // Passo 1: Ler a nuvem para comparar timestamps
+  if (!cfg.gistId) {
+    // Sem gistId ainda: apenas exportar (vai criar o gist)
+    _doTopbarExport(cfg, function() {
+      _syncBusy = false;
+      syncUpdateDot('ok');
+    });
+    return;
+  }
+
+  _topbarSyncSetState('busy', 'Verificando nuvem…');
+  gistRead(cfg.token, cfg.gistId, function(content, err) {
+    if (err || !content) {
+      // Nuvem inacessível ou gist vazio → apenas exporta
+      syncLog('Nuvem vazia ou erro, exportando localmente…','warn');
+      _doTopbarExport(cfg, function() {
+        _syncBusy = false;
+        syncUpdateDot('ok');
+      });
+      return;
+    }
+
+    var cloud; try { cloud = JSON.parse(content); } catch(e) {
+      syncLog('JSON inválido na nuvem, exportando…','warn');
+      _doTopbarExport(cfg, function() { _syncBusy = false; syncUpdateDot('ok'); });
+      return;
+    }
+
+    var cloudTs = cloud._sync && cloud._sync.exportedAt ? new Date(cloud._sync.exportedAt).getTime() : 0;
+    var lastExp = localStorage.getItem('somultas_last_export');
+    var localTs = lastExp ? new Date(lastExp).getTime() : 0;
+
+    if (cloudTs > localTs + 5000) {
+      // Nuvem é mais recente → baixar
+      syncLog('Nuvem mais recente, baixando…','info');
+      _topbarSyncSetState('download', 'Baixando…');
+      var _syncMeta = cloud._sync; delete cloud._sync;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
+      localStorage.setItem('somultas_last_import', new Date().toISOString());
+      var n = Object.keys(cloud.leads||{}).length;
+      syncLog(n+' leads baixados da nuvem ✓','success');
+      syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateImportInfo();
+      try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
+      try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
+      try { if(typeof crmShowToast==='function') crmShowToast('⬇️ '+n+' leads atualizados da nuvem'); } catch(e){}
+      _syncBusy = false;
+      _topbarSyncSetState('ok', 'Atualizado!');
+      setTimeout(function(){ _topbarSyncSetState('idle'); }, 3000);
+    } else {
+      // Local é mais recente ou igual → enviar para a nuvem
+      _topbarSyncSetState('upload', 'Enviando…');
+      _doTopbarExport(cfg, function() {
+        _syncBusy = false;
+        syncUpdateDot('ok');
+      });
+    }
+  });
+}
+
+function _doTopbarExport(cfg, cb) {
+  var raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) { _topbarSyncSetState('warn','Sem dados'); if(cb) cb(); return; }
+  var parsed; try { parsed = JSON.parse(raw); } catch(e) { _topbarSyncSetState('err'); if(cb) cb(); return; }
+  var n = Object.keys(parsed.leads||{}).length;
+  syncLog('Enviando '+n+' lead(s) para a nuvem…','info');
+  var payload = JSON.stringify(Object.assign({},parsed,{_sync:{exportedAt:new Date().toISOString(),leadsCount:n,device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}}),null,2);
+  var done = function(gist, err) {
+    if (err||!gist||gist.message) {
+      syncLog('Erro ao enviar: '+(err||gist.message),'err');
+      syncUpdateDot('warn');
+      _topbarSyncSetState('err');
+      setTimeout(function(){ _topbarSyncSetState('idle'); }, 4000);
+      if(cb) cb(); return;
+    }
+    if (!cfg.gistId) {
+      cfg.gistId = gist.id;
+      var gistInput = document.getElementById('sync-gist-id');
+      if (gistInput) gistInput.value = gist.id;
+      localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
+    }
+    localStorage.setItem('somultas_last_export', new Date().toISOString());
+    syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateExportInfo();
+    syncLog(n+' leads enviados ✓','success');
+    try { if(typeof crmShowToast==='function') crmShowToast('☁️ '+n+' leads sincronizados'); } catch(e){}
+    _topbarSyncSetState('ok', 'Enviado!');
+    setTimeout(function(){ _topbarSyncSetState('idle'); }, 3000);
+    if(cb) cb();
+  };
+  if (cfg.gistId) { gistUpdate(cfg.token, cfg.gistId, payload, done); }
+  else { gistCreate(cfg.token, payload, done); }
 }
 
 // ── Init ──────────────────────────────────────────────────────
 function syncInit() {
   syncUpdateLastTxt();
-  if (syncConfigOK()) { syncUpdateDot('ok'); autoSyncStart(); }
+  if (syncConfigOK()) { syncUpdateDot('ok'); _topbarSyncSetState('idle'); }
   else { syncUpdateDot('off'); }
-  syncLog('Sync module pronto','info');
+  syncLog('Sync manual pronto — use o botão ☁️ Sincronizar na topbar','info');
 }
 
 // ── PWA ───────────────────────────────────────────────────────
