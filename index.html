@@ -7049,6 +7049,16 @@ renderCards();
     <span id="painelDrawerUFLabel" style="background:#1a4270;color:#91d8f5;font-family:monospace;font-size:11px;font-weight:700;padding:3px 10px;border-radius:5px;letter-spacing:1px">Todos</span>
     <button id="painelDrawerClearFilter" onclick="renderPainelDrawer(null)" style="font-size:10px;background:transparent;border:1px solid #d1d5db;border-radius:5px;padding:2px 8px;cursor:pointer;color:#6b7280;display:none">Ver todos</button>
   </div>
+  <div style="padding:8px 16px 0">
+    <input id="painelDrawerSearch"
+      type="text"
+      placeholder="🔍 Buscar órgão ou estado..."
+      oninput="painelDrawerFiltrar()"
+      style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;outline:none;color:#111827;background:#f9fafb"
+      onfocus="this.style.borderColor='#f5a623';this.style.background='#fff'"
+      onblur="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'"
+    >
+  </div>
   <div id="painelDrawerContent" style="padding:12px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px"></div>
   <div style="padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid #e5e7eb;text-align:center">
     <button onclick="fecharCrmPainelDrawer();switchModule('painel')" style="background:linear-gradient(135deg,#5a320a,#f5a623);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer">🚦 Abrir Painel Completo</button>
@@ -9190,63 +9200,108 @@ document.addEventListener('DOMContentLoaded', function() {
   <div id="syncPanel">
     <div class="sync-head">
       <div class="sync-logo">☁️</div>
-      <div><div class="sync-title">Sincronização de Leads</div><div class="sync-sub">Manual · GitHub Gist · Bidirecional</div></div>
+      <div><div class="sync-title">Sincronização de Dados</div><div class="sync-sub">Manual · GitHub Gist · Você decide o que fazer</div></div>
       <button class="sync-close" onclick="fecharSyncModal()">✕</button>
     </div>
     <div class="sync-body">
       <div class="sync-tabs">
-        <button class="sync-tab active" onclick="syncSetTab('config',this)">⚙️ Config</button>
-        <button class="sync-tab" onclick="syncSetTab('exportar',this)">📤 Enviar</button>
-        <button class="sync-tab" onclick="syncSetTab('importar',this)">📥 Receber</button>
+        <button class="sync-tab active" onclick="syncSetTab('principal',this)">☁️ Sincronizar</button>
+        <button class="sync-tab" onclick="syncSetTab('config',this)">⚙️ Config</button>
         <button class="sync-tab" onclick="syncSetTab('ajuda',this)">❓ Ajuda</button>
       </div>
-      <div class="sync-pane active" id="sync-pane-config">
-        <div id="sync-autosync-status" class="sync-alert sync-alert-success" style="display:none">✅ <strong>Configurado</strong> — use o botão <strong>☁️ Sincronizar</strong> na barra superior para sincronizar.</div>
-        <div id="sync-autosync-inactive" class="sync-alert sync-alert-info">Configure o token para usar a sincronização <strong>manual via botão na topbar</strong>.</div>
+
+      <!-- ── PRINCIPAL ──────────────────────────────────────── -->
+      <div class="sync-pane active" id="sync-pane-principal">
+
+        <!-- Status resumido -->
+        <div id="sync-status-card" style="background:#0d1b2e;border:1px solid #1e3a5f;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+          <div class="sync-dot sd-gray" id="sync-dot" style="flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:#e2e8f0" id="sync-status-txt">Verificando...</div>
+            <div style="font-size:10px;color:#5a8ab0;margin-top:2px" id="sync-status-detail"> </div>
+          </div>
+          <button onclick="syncVerificarNuvem()" style="font-size:10px;background:transparent;border:1px solid #2a4a6e;border-radius:6px;padding:4px 10px;cursor:pointer;color:#5aabff;white-space:nowrap">🔍 Ver nuvem</button>
+        </div>
+
+        <!-- Preview nuvem -->
+        <div id="sync-cloud-preview" style="display:none;background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#7ab4d8">
+          <div style="font-weight:700;color:#91d8f5;margin-bottom:4px">☁️ Na nuvem:</div>
+          <div id="sync-cloud-preview-txt"> </div>
+        </div>
+
+        <!-- Dois botões sempre visíveis -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+
+          <div style="background:#0d1b2e;border:1px solid #1e3a5f;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:11px;font-weight:700;color:#91d8f5;text-transform:uppercase;letter-spacing:.5px">⬆️ Subir para nuvem</div>
+            <div style="font-size:10px;color:#5a8ab0" id="sync-local-summary">Carregando...</div>
+            <button class="sync-btn sync-btn-primary" id="sync-btn-upload" onclick="syncSubir()" style="margin-top:auto">
+              ⬆️ Subir meus dados
+            </button>
+            <div id="sync-upload-status" style="font-size:10px;min-height:14px"></div>
+          </div>
+
+          <div style="background:#0d1b2e;border:1px solid #1e3a5f;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.5px">⬇️ Baixar da nuvem</div>
+            <div style="font-size:10px;color:#5a8ab0" id="sync-cloud-summary">Clique em "Ver nuvem" para verificar</div>
+            <button class="sync-btn sync-btn-success" id="sync-btn-download" onclick="syncBaixar()" style="margin-top:auto">
+              ⬇️ Baixar e aplicar
+            </button>
+            <div id="sync-download-status" style="font-size:10px;min-height:14px"></div>
+          </div>
+
+        </div>
+
+        <!-- Confirmação antes de sobrescrever -->
+        <div id="sync-confirm-area" style="display:none;background:#1a1008;border:1px solid #f5a623;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:700;color:#f5a623;margin-bottom:6px" id="sync-confirm-title">⚠️ Confirmar operação</div>
+          <div style="font-size:11px;color:#d4a050;margin-bottom:10px" id="sync-confirm-msg"> </div>
+          <div style="display:flex;gap:8px">
+            <button id="sync-confirm-ok"  style="flex:1;background:#f5a623;color:#000;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer"> </button>
+            <button onclick="syncFecharConfirm()" style="flex:1;background:transparent;color:#9ca3af;border:1px solid #374151;border-radius:7px;padding:8px;font-size:12px;cursor:pointer">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Log compacto -->
+        <div class="sync-log" id="sync-log" style="max-height:80px;font-size:10px">// aguardando operação...</div>
+      </div>
+
+      <!-- ── CONFIG ─────────────────────────────────────────── -->
+      <div class="sync-pane" id="sync-pane-config">
+        <div id="sync-autosync-status" class="sync-alert sync-alert-success" style="display:none">✅ <strong>Configurado</strong> — botões de Subir/Baixar ativos.</div>
+        <div id="sync-autosync-inactive" class="sync-alert sync-alert-info">Configure o token GitHub para habilitar a sincronização.</div>
         <div class="sync-field"><label class="sync-label">GitHub Personal Access Token</label><input class="sync-input" type="password" id="sync-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"></div>
-        <div class="sync-field"><label class="sync-label">ID do Gist (gerado automaticamente no 1º envio)</label><input class="sync-input" type="text" id="sync-gist-id" placeholder="Será preenchido automaticamente"></div>
+        <div class="sync-field"><label class="sync-label">ID do Gist <span style="color:#5a8ab0;font-size:10px">(gerado automaticamente no 1º envio)</span></label><input class="sync-input" type="text" id="sync-gist-id" placeholder="Será preenchido automaticamente"></div>
         <button class="sync-btn sync-btn-primary" onclick="syncSaveConfig()">💾 Salvar Configuração</button>
         <div id="sync-config-status" style="margin-top:.75rem"></div>
-        <div class="sync-status-bar" style="margin-top:.875rem"><div class="sync-dot sd-gray" id="sync-dot"></div><span id="sync-status-txt">Não configurado</span></div>
       </div>
-      <div class="sync-pane" id="sync-pane-exportar">
-        <div class="sync-alert sync-alert-info">Envia <strong>todos os leads deste dispositivo</strong> para a nuvem.</div>
-        <div id="sync-export-info" style="margin-bottom:.875rem"></div>
-        <button class="sync-btn sync-btn-primary" id="sync-btn-export" onclick="syncExportar()">☁️ Enviar Leads para a Nuvem</button>
-        <div id="sync-export-status" style="margin-top:.75rem"></div>
-      </div>
-      <div class="sync-pane" id="sync-pane-importar">
-        <div class="sync-alert sync-alert-info">Baixa os leads mais recentes da nuvem para este dispositivo.</div>
-        <div id="sync-import-info" style="margin-bottom:.875rem"></div>
-        <div id="sync-conflict-area"></div>
-        <button class="sync-btn sync-btn-success" id="sync-btn-import" onclick="syncImportar(false)">⬇️ Baixar e Importar Leads</button>
-        <button class="sync-btn sync-btn-ghost" onclick="syncVerNuvem()">🔍 Ver versão na nuvem</button>
-        <div id="sync-import-status" style="margin-top:.75rem"></div>
-      </div>
+
+      <!-- ── AJUDA ──────────────────────────────────────────── -->
       <div class="sync-pane" id="sync-pane-ajuda">
-        <div class="sync-alert sync-alert-info">Sincronização <strong>manual bidirecional</strong>. Use o botão <strong>☁️ Sincronizar</strong> na barra superior quando quiser sincronizar.</div>
+        <div class="sync-alert sync-alert-info" style="margin-bottom:10px">
+          <strong>Como funciona:</strong><br>
+          Você controla manualmente o que acontece — <strong>Subir</strong> envia seus dados para a nuvem, <strong>Baixar</strong> traz os dados da nuvem para este celular. Não há sync automático.
+        </div>
         <div class="sync-step"><div class="sync-step-n">1</div><div class="sync-step-txt">Acesse <a href="https://github.com" target="_blank">github.com</a> e crie conta gratuita</div></div>
         <div class="sync-step"><div class="sync-step-n">2</div><div class="sync-step-txt">Vá em <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → Generate new token (classic)</div></div>
-        <div class="sync-step"><div class="sync-step-n">3</div><div class="sync-step-txt">Marque apenas o escopo <span class="sync-chip">gist</span> e clique em Generate</div></div>
-        <div class="sync-step"><div class="sync-step-n">4</div><div class="sync-step-txt">Cole o token na aba <strong>Config</strong> e salve</div></div>
-        <div class="sync-step"><div class="sync-step-n">5</div><div class="sync-step-txt">Clique <strong>Enviar</strong> no computador — ID do Gist será criado automaticamente</div></div>
-        <div class="sync-step"><div class="sync-step-n">6</div><div class="sync-step-txt">No celular: mesmo token + ID do Gist → clique <strong>☁️ Sincronizar</strong> na topbar para sincronizar ✓</div></div>
-        <div style="height:.875rem"></div>
-        <div class="sync-log" id="sync-log">// Log de operações...</div>
-        <button class="sync-btn sync-btn-ghost" style="font-size:11px;margin-top:.375rem" onclick="document.getElementById('sync-log').innerHTML=''">🗑 Limpar log</button>
+        <div class="sync-step"><div class="sync-step-n">3</div><div class="sync-step-txt">Marque apenas o escopo <span class="sync-chip">gist</span> → Generate token</div></div>
+        <div class="sync-step"><div class="sync-step-n">4</div><div class="sync-step-txt">Cole o token em <strong>Config</strong> e salve</div></div>
+        <div class="sync-step"><div class="sync-step-n">5</div><div class="sync-step-txt">No celular A: clique <strong>⬆️ Subir</strong> — o ID do Gist será criado automaticamente</div></div>
+        <div class="sync-step"><div class="sync-step-n">6</div><div class="sync-step-txt">No celular B: mesmo token + mesmo ID do Gist → clique <strong>⬇️ Baixar</strong></div></div>
+        <div class="sync-step"><div class="sync-step-n">7</div><div class="sync-step-txt">O ID do Gist fica salvo na aba Config. Copie para todos os celulares.</div></div>
       </div>
     </div>
   </div>
 </div>
 <script>
 // ══════════════════════════════════════════════════════════════
-// SYNC MODULE — GitHub Gist (sincronização manual via botão)
+// SYNC MODULE — GitHub Gist · Controle manual explícito
 // ══════════════════════════════════════════════════════════════
 var SYNC_CFG_KEY = 'somultas_sync_cfg_v1';
 var SYNC_FILE    = 'somultas_leads.json';
-// STORAGE_KEY already declared in CRM module
-var _syncBusy  = false;
+var _syncBusy    = false;
 var _installPrompt = null;
+var _cloudCache  = null; // cache do último gistRead
 
 // ── Helpers ──────────────────────────────────────────────────
 function syncLog(msg, type) {
@@ -9254,15 +9309,8 @@ function syncLog(msg, type) {
   if (!el) return;
   var ts = new Date().toLocaleTimeString('pt-BR');
   var c = {info:'#5aabff',success:'#4ade80',warn:'#fbbf24',err:'#f87171'}[type||'info'];
-  el.innerHTML += '['+ts+'] <span style="color:"+c+"">'+(msg||'')+'</span><br>';
+  el.innerHTML += '['+ts+'] <span style="color:'+c+'">'+(msg||'')+'</span><br>';
   el.scrollTop = el.scrollHeight;
-}
-
-function syncShowStatus(id, msg, type) {
-  var icons = {info:'ℹ️',success:'✅',warn:'⚠️',err:'❌'};
-  var cls = {info:'sync-alert-info',success:'sync-alert-success',warn:'sync-alert-warn',err:'sync-alert-err'};
-  var el = document.getElementById(id);
-  if (el) el.innerHTML = '<div class="sync-alert '+cls[type||'info']+'">'+icons[type||'info']+' '+msg+'</div>';
 }
 
 function syncGetConfig() {
@@ -9274,24 +9322,18 @@ function syncConfigOK() {
 }
 
 function syncUpdateDot(state) {
-  var dot = document.getElementById('sync-dot');
-  var txt = document.getElementById('sync-status-txt');
-  var btn = document.getElementById('syncNavBtn');
+  var dot    = document.getElementById('sync-dot');
+  var txt    = document.getElementById('sync-status-txt');
+  var btn    = document.getElementById('syncNavBtn');
   var colors = {ok:'#4ade80',busy:'#5aabff',warn:'#fbbf24',off:'#374151'};
-  var dotEl = dot;
-  if (dotEl) { dotEl.className='sync-dot'; dotEl.classList.add({ok:'sd-green',busy:'sd-blue',warn:'sd-amber',off:'sd-gray'}[state||'off']); }
+  if (dot) { dot.className='sync-dot'; dot.classList.add({ok:'sd-green',busy:'sd-blue',warn:'sd-amber',off:'sd-gray'}[state||'off']); }
   if (btn) btn.style.setProperty('--sync-dot-color', colors[state]||colors.off);
-  var lbl = document.getElementById('syncNavLabel');
-  if (state==='ok' && syncConfigOK()) { if(lbl) lbl.textContent='Sincronizar'; }
-  else if (state==='busy') { if(lbl) lbl.textContent='⏳ Sincronizando…'; }
-  else if (state==='warn') { if(lbl) lbl.textContent='⚠️ Erro'; }
-  else { if(lbl) lbl.textContent='Sincronizar'; }
 }
 
 function syncUpdateLastTxt() {
   var lastExp = localStorage.getItem('somultas_last_export');
   var lastImp = localStorage.getItem('somultas_last_import');
-  var last = lastExp || lastImp;
+  var last    = lastExp || lastImp;
   if (!last) return;
   var d = new Date(last);
   var diffMin = Math.round((new Date()-d)/60000);
@@ -9304,13 +9346,13 @@ function syncUpdateLastTxt() {
 function abrirSyncModal() {
   document.getElementById('syncModal').classList.add('open');
   syncLoadConfig();
-  syncUpdateExportInfo();
-  syncUpdateImportInfo();
-  var active = syncConfigOK();
-  var el1 = document.getElementById('sync-autosync-status');
-  var el2 = document.getElementById('sync-autosync-inactive');
-  if (el1) el1.style.display = active ? '' : 'none';
-  if (el2) el2.style.display = active ? 'none' : '';
+  syncAtualizarLocalSummary();
+  _cloudCache = null;
+  document.getElementById('sync-cloud-summary').textContent = 'Clique em "Ver nuvem" para verificar';
+  document.getElementById('sync-cloud-preview').style.display = 'none';
+  document.getElementById('sync-confirm-area').style.display = 'none';
+  document.getElementById('sync-upload-status').textContent = '';
+  document.getElementById('sync-download-status').textContent = '';
 }
 
 function fecharSyncModal() {
@@ -9343,15 +9385,49 @@ function syncSaveConfig() {
   var el2 = document.getElementById('sync-autosync-inactive');
   if (el1) el1.style.display = '';
   if (el2) el2.style.display = 'none';
+  syncAtualizarLocalSummary();
 }
 
 function syncLoadConfig() {
   var cfg = syncGetConfig();
-  if (cfg.token) document.getElementById('sync-token').value = cfg.token;
+  if (cfg.token)  document.getElementById('sync-token').value  = cfg.token;
   if (cfg.gistId) document.getElementById('sync-gist-id').value = cfg.gistId;
-  syncUpdateDot(cfg.token ? (cfg.gistId ? 'ok' : 'warn') : 'off');
+  syncUpdateDot(cfg.token ? 'ok' : 'off');
   var stxt = document.getElementById('sync-status-txt');
-  if (stxt) stxt.textContent = cfg.gistId ? 'Configurado · sincronização manual ativa' : (cfg.token ? 'Token salvo · sem Gist ainda' : 'Não configurado');
+  var sdet = document.getElementById('sync-status-detail');
+  if (!cfg.token) {
+    if (stxt) stxt.textContent = 'Não configurado';
+    if (sdet) sdet.textContent = 'Configure o token na aba Config';
+  } else if (!cfg.gistId) {
+    if (stxt) stxt.textContent = 'Token salvo — sem Gist ainda';
+    if (sdet) sdet.textContent = 'Suba os dados pela primeira vez para criar o Gist';
+  } else {
+    if (stxt) stxt.textContent = 'Pronto para sincronizar';
+    var lastExp = localStorage.getItem('somultas_last_export');
+    var lastImp = localStorage.getItem('somultas_last_import');
+    var last = lastExp || lastImp;
+    if (sdet) sdet.textContent = last ? 'Última operação: '+new Date(last).toLocaleString('pt-BR') : 'Nenhuma operação ainda';
+  }
+  var el1 = document.getElementById('sync-autosync-status');
+  var el2 = document.getElementById('sync-autosync-inactive');
+  if (el1) el1.style.display = cfg.token ? '' : 'none';
+  if (el2) el2.style.display = cfg.token ? 'none' : '';
+}
+
+function syncShowStatus(id, msg, type) {
+  var icons = {info:'ℹ️',success:'✅',warn:'⚠️',err:'❌'};
+  var cls   = {info:'sync-alert-info',success:'sync-alert-success',warn:'sync-alert-warn',err:'sync-alert-err'};
+  var el = document.getElementById(id);
+  if (el) el.innerHTML = '<div class="sync-alert '+cls[type||'info']+'">'+icons[type||'info']+' '+msg+'</div>';
+}
+
+function syncAtualizarLocalSummary() {
+  var raw = localStorage.getItem(STORAGE_KEY);
+  var n = 0;
+  try { n = Object.keys(JSON.parse(raw||'{}').leads||{}).length; } catch(e) {}
+  var lastExp = localStorage.getItem('somultas_last_export');
+  var el = document.getElementById('sync-local-summary');
+  if (el) el.innerHTML = '<strong style="color:#e2e8f0">'+n+' lead(s)</strong> locais'+(lastExp ? '<br>Último envio: '+new Date(lastExp).toLocaleString('pt-BR') : '');
 }
 
 // ── GitHub API ────────────────────────────────────────────────
@@ -9387,110 +9463,192 @@ function gistRead(token, id, cb) {
   }).catch(function(e){cb(null,e);});
 }
 
-// ── Info panels ───────────────────────────────────────────────
-function syncUpdateExportInfo() {
-  var raw = localStorage.getItem(STORAGE_KEY);
-  var n = 0;
-  if (raw) { try { n = Object.keys(JSON.parse(raw).leads||{}).length; } catch(e){} }
-  var lastExp = localStorage.getItem('somultas_last_export');
-  var html = '<div class="sync-status-bar"><div class="sync-dot '+(n>0?'sd-green':'sd-gray')+'"></div><span>'+n+' lead(s) local(is)</span></div>';
-  if (lastExp) html += '<div style="font-size:10px;color:#7a9cc0">Último envio: '+new Date(lastExp).toLocaleString('pt-BR')+'</div>';
-  document.getElementById('sync-export-info').innerHTML = html;
-}
-
-function syncUpdateImportInfo() {
-  var lastImp = localStorage.getItem('somultas_last_import');
-  if (!lastImp) { document.getElementById('sync-import-info').innerHTML=''; return; }
-  document.getElementById('sync-import-info').innerHTML =
-    '<div class="sync-status-bar"><div class="sync-dot sd-green"></div><span>Importado: '+new Date(lastImp).toLocaleString('pt-BR')+'</span></div>';
-}
-
-// ── Export ────────────────────────────────────────────────────
-function syncExportar() {
+// ── Ver nuvem ─────────────────────────────────────────────────
+function syncVerificarNuvem() {
   var cfg = syncGetConfig();
-  if (!cfg.token) { syncShowStatus('sync-export-status','Configure o token primeiro','err'); return; }
+  if (!cfg.token || !cfg.gistId) {
+    document.getElementById('sync-cloud-summary').textContent = '⚠️ Configure o token e ID do Gist primeiro';
+    return;
+  }
+  document.getElementById('sync-cloud-summary').textContent = '⏳ Lendo nuvem...';
+  document.getElementById('sync-cloud-preview').style.display = 'none';
+  gistRead(cfg.token, cfg.gistId, function(content, err) {
+    if (err || !content) {
+      document.getElementById('sync-cloud-summary').textContent = '❌ Erro: '+(err||'vazio');
+      _cloudCache = null;
+      return;
+    }
+    try {
+      var d = JSON.parse(content);
+      _cloudCache = d;
+      var n   = Object.keys(d.leads||{}).length;
+      var s   = d._sync;
+      var dt  = s ? new Date(s.exportedAt).toLocaleString('pt-BR') : '—';
+      var dev = s ? s.device : '—';
+      document.getElementById('sync-cloud-summary').innerHTML =
+        '<strong style="color:#34d399">'+n+' lead(s)</strong> na nuvem';
+      document.getElementById('sync-cloud-preview-txt').innerHTML =
+        '📅 Enviado em: <strong>'+dt+'</strong><br>📱 Dispositivo: <strong>'+dev+'</strong><br>👥 Leads: <strong>'+n+'</strong>';
+      document.getElementById('sync-cloud-preview').style.display = '';
+      syncLog('Nuvem verificada: '+n+' leads ('+dt+')','success');
+    } catch(e) {
+      document.getElementById('sync-cloud-summary').textContent = '❌ JSON inválido na nuvem';
+      _cloudCache = null;
+    }
+  });
+}
+
+// ── Confirmação ───────────────────────────────────────────────
+function syncMostrarConfirm(title, msg, labelOk, fn) {
+  document.getElementById('sync-confirm-title').textContent = title;
+  document.getElementById('sync-confirm-msg').textContent   = msg;
+  var okBtn = document.getElementById('sync-confirm-ok');
+  okBtn.textContent  = labelOk;
+  okBtn.onclick = function() { syncFecharConfirm(); fn(); };
+  document.getElementById('sync-confirm-area').style.display = '';
+}
+
+function syncFecharConfirm() {
+  document.getElementById('sync-confirm-area').style.display = 'none';
+}
+
+// ── SUBIR ─────────────────────────────────────────────────────
+function syncSubir() {
+  var cfg = syncGetConfig();
+  if (!cfg.token) { document.getElementById('sync-upload-status').textContent = '❌ Configure o token primeiro (aba Config)'; return; }
+
   var raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) { syncShowStatus('sync-export-status','Nenhum dado encontrado','err'); return; }
-  var parsed; try { parsed = JSON.parse(raw); } catch(e) { syncShowStatus('sync-export-status','Erro ao ler dados','err'); return; }
-  var leadsCount = Object.keys(parsed.leads||{}).length;
-  var btn = document.getElementById('sync-btn-export');
+  if (!raw) { document.getElementById('sync-upload-status').textContent = '❌ Nenhum dado local encontrado'; return; }
+  var parsed; try { parsed = JSON.parse(raw); } catch(e) { document.getElementById('sync-upload-status').textContent = '❌ Erro ao ler dados locais'; return; }
+  var n = Object.keys(parsed.leads||{}).length;
+
+  // Se já há dados na nuvem, pede confirmação
+  if (_cloudCache && Object.keys(_cloudCache.leads||{}).length > 0) {
+    var nuvemN = Object.keys(_cloudCache.leads||{}).length;
+    syncMostrarConfirm(
+      '⬆️ Confirmar envio',
+      'A nuvem tem '+nuvemN+' lead(s). Você vai sobrescrever com seus '+n+' lead(s) locais. Continuar?',
+      '⬆️ Sim, subir meus dados',
+      function() { _doSubir(cfg, parsed, n); }
+    );
+  } else {
+    _doSubir(cfg, parsed, n);
+  }
+}
+
+function _doSubir(cfg, parsed, n) {
+  var btn = document.getElementById('sync-btn-upload');
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
   syncUpdateDot('busy');
-  syncLog('Exportando '+leadsCount+' lead(s)...');
-  var payload = JSON.stringify(Object.assign({},parsed,{_sync:{exportedAt:new Date().toISOString(),leadsCount:leadsCount,device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}}),null,2);
-  var done = function(gist, err) {
-    btn.disabled=false; btn.textContent='☁️ Enviar Leads para a Nuvem';
-    if (err||!gist||gist.message) { syncLog('Erro: '+(err||gist.message),'err'); syncUpdateDot('warn'); syncShowStatus('sync-export-status','Erro: '+(err||gist.message),'err'); return; }
+  syncLog('Enviando '+n+' lead(s)...','info');
+  document.getElementById('sync-upload-status').textContent = '⏳ Enviando...';
+
+  var payload = JSON.stringify(Object.assign({}, parsed, {
+    _sync: {
+      exportedAt: new Date().toISOString(),
+      leadsCount: n,
+      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    }
+  }), null, 2);
+
+  function done(gist, err) {
+    btn.disabled = false; btn.textContent = '⬆️ Subir meus dados';
+    if (err || !gist || gist.message) {
+      var msg = err ? err.message||String(err) : gist.message;
+      syncLog('Erro: '+msg,'err');
+      syncUpdateDot('warn');
+      document.getElementById('sync-upload-status').textContent = '❌ Erro: '+msg;
+      return;
+    }
     if (!cfg.gistId) {
       cfg.gistId = gist.id;
-      document.getElementById('sync-gist-id').value = gist.id;
+      var gi = document.getElementById('sync-gist-id');
+      if (gi) gi.value = gist.id;
       localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
     }
-    var now = new Date().toISOString();
-    localStorage.setItem('somultas_last_export', now);
-    syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateExportInfo();
-    syncLog(leadsCount+' leads enviados ✓','success');
-    syncShowStatus('sync-export-status','<strong>'+leadsCount+' leads</strong> enviados!','success');
-  };
+    localStorage.setItem('somultas_last_export', new Date().toISOString());
+    _cloudCache = null; // invalida cache
+    syncUpdateDot('ok'); syncUpdateLastTxt(); syncAtualizarLocalSummary();
+    syncLog(n+' leads enviados ✓','success');
+    document.getElementById('sync-upload-status').textContent = '✅ '+n+' leads enviados!';
+    document.getElementById('sync-cloud-summary').textContent = 'Clique em "Ver nuvem" para atualizar';
+    try { if(typeof crmShowToast==='function') crmShowToast('☁️ '+n+' leads enviados para a nuvem'); } catch(e){}
+  }
+
   if (cfg.gistId) { gistUpdate(cfg.token, cfg.gistId, payload, done); }
   else { gistCreate(cfg.token, payload, done); }
 }
 
-// ── Import ────────────────────────────────────────────────────
-function syncImportar(force) {
+// ── BAIXAR ────────────────────────────────────────────────────
+function syncBaixar() {
   var cfg = syncGetConfig();
-  if (!cfg.token||!cfg.gistId) { syncShowStatus('sync-import-status','Configure token e Gist','err'); return; }
-  var btn = document.getElementById('sync-btn-import');
-  btn.disabled=true; btn.textContent='⏳ Baixando...';
-  syncUpdateDot('busy');
-  document.getElementById('sync-conflict-area').innerHTML='';
-  gistRead(cfg.token, cfg.gistId, function(content, err) {
-    btn.disabled=false; btn.textContent='⬇️ Baixar e Importar Leads';
-    if (err||!content) { syncLog('Erro: '+(err||'vazio'),'err'); syncUpdateDot('warn'); syncShowStatus('sync-import-status','Erro ao baixar: '+(err),'err'); return; }
-    var cloud; try { cloud=JSON.parse(content); } catch(e) { syncShowStatus('sync-import-status','JSON inválido','err'); return; }
-    var cloudTs = cloud._sync&&cloud._sync.exportedAt ? new Date(cloud._sync.exportedAt).getTime() : 0;
-    var lastExp = localStorage.getItem('somultas_last_export');
-    var localTs = lastExp ? new Date(lastExp).getTime() : 0;
-    if (!force && localTs > cloudTs + 5000) {
-      var localRaw = localStorage.getItem(STORAGE_KEY);
-      var localN = 0; try { localN=Object.keys(JSON.parse(localRaw||'{}').leads||{}).length; } catch(e){}
-      var cloudN = Object.keys(cloud.leads||{}).length;
-      document.getElementById('sync-conflict-area').innerHTML =
-        '<div class="sync-conflict-box"><h4>⚠️ Conflito detectado</h4>' +
-        '<div style="font-size:11px;color:#b0c8e0;margin-bottom:.5rem">Este device tem dados mais recentes ('+localN+' leads). A nuvem tem '+cloudN+' leads.</div>' +
-        '<button class="sync-conflict-btn scb-blue" onclick="syncImportar(true)">⬇️ Importar da nuvem ('+cloudN+')</button>' +
-        '<button class="sync-conflict-btn scb-green" onclick="syncExportar()">☁️ Enviar os meus ('+localN+')</button></div>';
-      syncUpdateDot('warn'); return;
+  if (!cfg.token || !cfg.gistId) {
+    document.getElementById('sync-download-status').textContent = '❌ Configure token e ID do Gist (aba Config)';
+    return;
+  }
+
+  var raw = localStorage.getItem(STORAGE_KEY);
+  var localN = 0;
+  try { localN = Object.keys(JSON.parse(raw||'{}').leads||{}).length; } catch(e) {}
+
+  function doBaixar() {
+    var btn = document.getElementById('sync-btn-download');
+    btn.disabled = true; btn.textContent = '⏳ Baixando...';
+    syncUpdateDot('busy');
+    syncLog('Baixando da nuvem...','info');
+    document.getElementById('sync-download-status').textContent = '⏳ Baixando...';
+
+    function aplicar(cloud) {
+      btn.disabled = false; btn.textContent = '⬇️ Baixar e aplicar';
+      var _meta = cloud._sync; delete cloud._sync;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
+      localStorage.setItem('somultas_last_import', new Date().toISOString());
+      var n = Object.keys(cloud.leads||{}).length;
+      syncLog(n+' leads importados ✓','success');
+      syncUpdateDot('ok'); syncUpdateLastTxt(); syncAtualizarLocalSummary();
+      document.getElementById('sync-download-status').textContent = '✅ '+n+' leads aplicados!';
+      try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
+      try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
+      try { if(typeof crmShowToast==='function') crmShowToast('⬇️ '+n+' leads atualizados da nuvem'); } catch(e){}
     }
-    var _sync = cloud._sync; delete cloud._sync;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-    var now = new Date().toISOString();
-    localStorage.setItem('somultas_last_import', now);
-    var n = Object.keys(cloud.leads||{}).length;
-    syncLog(n+' leads importados ✓','success');
-    syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateImportInfo();
-    try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
-    try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
-    try { if(typeof crmShowToast==='function') crmShowToast('☁️ '+n+' leads sincronizados'); } catch(e){}
-    syncShowStatus('sync-import-status','<strong>'+n+' leads</strong> importados!<br><small>CRM atualizado ✓</small>','success');
-  });
+
+    // Se já temos o cache, usa direto (evita 2ª chamada API)
+    if (_cloudCache) {
+      aplicar(JSON.parse(JSON.stringify(_cloudCache)));
+      _cloudCache = null;
+      return;
+    }
+
+    gistRead(cfg.token, cfg.gistId, function(content, err) {
+      btn.disabled = false; btn.textContent = '⬇️ Baixar e aplicar';
+      if (err || !content) {
+        syncLog('Erro: '+(err||'vazio'),'err');
+        syncUpdateDot('warn');
+        document.getElementById('sync-download-status').textContent = '❌ Erro: '+(err||'sem conteúdo');
+        return;
+      }
+      var cloud; try { cloud = JSON.parse(content); } catch(e) {
+        document.getElementById('sync-download-status').textContent = '❌ JSON inválido'; return;
+      }
+      aplicar(cloud);
+    });
+  }
+
+  // Sempre pede confirmação antes de sobrescrever dados locais
+  if (localN > 0) {
+    var cloudN = _cloudCache ? Object.keys(_cloudCache.leads||{}).length : '?';
+    syncMostrarConfirm(
+      '⬇️ Confirmar importação',
+      'Você tem '+localN+' lead(s) locais. Baixar da nuvem vai substituir TODOS eles pelos '+cloudN+' lead(s) da nuvem. Esta ação não pode ser desfeita.',
+      '⬇️ Sim, baixar e substituir',
+      doBaixar
+    );
+  } else {
+    doBaixar();
+  }
 }
 
-function syncVerNuvem() {
-  var cfg = syncGetConfig();
-  if (!cfg.token||!cfg.gistId) { syncShowStatus('sync-import-status','Configure token e Gist','err'); return; }
-  gistRead(cfg.token, cfg.gistId, function(content, err) {
-    if (err||!content) { syncShowStatus('sync-import-status','Erro: '+err,'err'); return; }
-    try {
-      var d = JSON.parse(content);
-      var n = Object.keys(d.leads||{}).length;
-      var s = d._sync;
-      syncShowStatus('sync-import-status','Nuvem: <strong>'+n+' leads</strong>'+(s?' · '+new Date(s.exportedAt).toLocaleString('pt-BR'):''),'info');
-    } catch(e) { syncShowStatus('sync-import-status','Erro ao ler','err'); }
-  });
-}
-
-// ── Topbar Auto-Sync Button ────────────────────────────────────
+// ── Topbar button ─────────────────────────────────────────────
 function _topbarSyncSetState(state, label) {
   var btn  = document.getElementById('topbarSyncBtn');
   var icon = document.getElementById('topbarSyncIcon');
@@ -9498,150 +9656,30 @@ function _topbarSyncSetState(state, label) {
   var dot  = document.getElementById('topbarSyncDot');
   if (!btn) return;
   var states = {
-    idle:    { icon:'☁️', lbl:'Sincronizar', color:'#5aabff', dotColor:'rgba(255,255,255,.25)', dotShow:false, disabled:false },
-    busy:    { icon:'⏳', lbl:'Sincronizando…', color:'#fbbf24', dotColor:'#fbbf24', dotShow:true, disabled:true },
-    ok:      { icon:'✅', lbl:'Sincronizado!', color:'#34d399', dotColor:'#34d399', dotShow:true, disabled:false },
-    upload:  { icon:'⬆️', lbl:'Enviando…', color:'#5aabff', dotColor:'#5aabff', dotShow:true, disabled:true },
-    download:{ icon:'⬇️', lbl:'Baixando…', color:'#5aabff', dotColor:'#5aabff', dotShow:true, disabled:true },
-    warn:    { icon:'⚠️', lbl:'Verificar sync', color:'#fbbf24', dotColor:'#fbbf24', dotShow:true, disabled:false },
-    err:     { icon:'❌', lbl:'Erro no sync', color:'#f87171', dotColor:'#f87171', dotShow:true, disabled:false }
+    idle:    {icon:'☁️',lbl:'Sincronizar',color:'#5aabff',dotShow:false,disabled:false},
+    busy:    {icon:'⏳',lbl:'Aguarde…',   color:'#fbbf24',dotShow:true, disabled:true },
+    ok:      {icon:'✅',lbl:'Pronto!',    color:'#34d399',dotShow:true, disabled:false},
+    warn:    {icon:'⚠️',lbl:'Verificar',  color:'#fbbf24',dotShow:true, disabled:false},
+    err:     {icon:'❌',lbl:'Erro',       color:'#f87171',dotShow:true, disabled:false}
   };
   var s = states[state] || states.idle;
   if (label) s.lbl = label;
   if (icon) icon.textContent = s.icon;
   if (lbl)  lbl.textContent  = s.lbl;
-  btn.style.color        = s.color;
-  btn.style.borderColor  = s.color.replace(')',', .4)').replace('rgb','rgba');
-  btn.disabled           = s.disabled;
-  if (dot) {
-    dot.style.display    = s.dotShow ? 'block' : 'none';
-    dot.style.background = s.dotColor;
-  }
+  btn.style.color       = s.color;
+  btn.style.borderColor = s.color.replace(')',', .4)').replace('rgb','rgba');
+  btn.disabled          = s.disabled;
+  if (dot) { dot.style.display = s.dotShow ? 'block' : 'none'; dot.style.background = s.color; }
 }
 
+// O botão da topbar abre o modal — usuário decide o que fazer
 function topbarAutoSync() {
-  if (_syncBusy) return;
-  if (!syncConfigOK()) {
-    abrirSyncModal();
-    try { if(typeof crmShowToast==='function') crmShowToast('⚙️ Configure o sync primeiro'); } catch(e){}
-    return;
-  }
-  var cfg = syncGetConfig();
-  _syncBusy = true;
-  syncUpdateDot('busy');
-  _topbarSyncSetState('busy');
-  syncLog('Iniciando sincronização manual…','info');
-
-  // Passo 1: Ler a nuvem para comparar timestamps
-  if (!cfg.gistId) {
-    // Sem gistId ainda: apenas exportar (vai criar o gist)
-    _doTopbarExport(cfg, function() {
-      _syncBusy = false;
-      syncUpdateDot('ok');
-    });
-    return;
-  }
-
-  _topbarSyncSetState('busy', 'Verificando nuvem…');
-  gistRead(cfg.token, cfg.gistId, function(content, err) {
-    if (err || !content) {
-      // Nuvem inacessível ou gist vazio → apenas exporta
-      syncLog('Nuvem vazia ou erro, exportando localmente…','warn');
-      _doTopbarExport(cfg, function() {
-        _syncBusy = false;
-        syncUpdateDot('ok');
-      });
-      return;
-    }
-
-    var cloud; try { cloud = JSON.parse(content); } catch(e) {
-      syncLog('JSON inválido na nuvem, exportando…','warn');
-      _doTopbarExport(cfg, function() { _syncBusy = false; syncUpdateDot('ok'); });
-      return;
-    }
-
-    var cloudTs = cloud._sync && cloud._sync.exportedAt ? new Date(cloud._sync.exportedAt).getTime() : 0;
-    var lastExp = localStorage.getItem('somultas_last_export');
-    var localTs = lastExp ? new Date(lastExp).getTime() : 0;
-
-    if (cloudTs > localTs + 5000) {
-      // Nuvem é mais recente → baixar
-      syncLog('Nuvem mais recente, baixando…','info');
-      _topbarSyncSetState('download', 'Baixando…');
-      var _syncMeta = cloud._sync; delete cloud._sync;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-      localStorage.setItem('somultas_last_import', new Date().toISOString());
-      var n = Object.keys(cloud.leads||{}).length;
-      syncLog(n+' leads baixados da nuvem ✓','success');
-      syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateImportInfo();
-      try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
-      try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
-      try { if(typeof crmShowToast==='function') crmShowToast('⬇️ '+n+' leads atualizados da nuvem'); } catch(e){}
-      _syncBusy = false;
-      _topbarSyncSetState('ok', 'Atualizado!');
-      setTimeout(function(){ _topbarSyncSetState('idle'); }, 3000);
-    } else {
-      // Local é mais recente ou igual → enviar para a nuvem
-      _topbarSyncSetState('upload', 'Enviando…');
-      _doTopbarExport(cfg, function() {
-        _syncBusy = false;
-        syncUpdateDot('ok');
-      });
-    }
-  });
-}
-
-function _doTopbarExport(cfg, cb) {
-  var raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) { _topbarSyncSetState('warn','Sem dados'); if(cb) cb(); return; }
-  var parsed; try { parsed = JSON.parse(raw); } catch(e) { _topbarSyncSetState('err'); if(cb) cb(); return; }
-  var n = Object.keys(parsed.leads||{}).length;
-  syncLog('Enviando '+n+' lead(s) para a nuvem…','info');
-  var payload = JSON.stringify(Object.assign({},parsed,{_sync:{exportedAt:new Date().toISOString(),leadsCount:n,device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}}),null,2);
-  var done = function(gist, err) {
-    if (err||!gist||gist.message) {
-      syncLog('Erro ao enviar: '+(err||gist.message),'err');
-      syncUpdateDot('warn');
-      _topbarSyncSetState('err');
-      setTimeout(function(){ _topbarSyncSetState('idle'); }, 4000);
-      if(cb) cb(); return;
-    }
-    if (!cfg.gistId) {
-      cfg.gistId = gist.id;
-      var gistInput = document.getElementById('sync-gist-id');
-      if (gistInput) gistInput.value = gist.id;
-      localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
-    }
-    localStorage.setItem('somultas_last_export', new Date().toISOString());
-    syncUpdateDot('ok'); syncUpdateLastTxt(); syncUpdateExportInfo();
-    syncLog(n+' leads enviados ✓','success');
-    try { if(typeof crmShowToast==='function') crmShowToast('☁️ '+n+' leads sincronizados'); } catch(e){}
-    _topbarSyncSetState('ok', 'Enviado!');
-    setTimeout(function(){ _topbarSyncSetState('idle'); }, 3000);
-    if(cb) cb();
-  };
-  if (cfg.gistId) { gistUpdate(cfg.token, cfg.gistId, payload, done); }
-  else { gistCreate(cfg.token, payload, done); }
+  abrirSyncModal();
 }
 
 // ══════════════════════════════════════════════
 // DRAWER DO PAINEL DE MULTAS
 // ══════════════════════════════════════════════
-
-function abrirCrmPainelDrawer(filterUF) {
-  renderPainelDrawer(filterUF);
-  var drawer  = document.getElementById('crmPainelDrawer');
-  var overlay = document.getElementById('crmPainelOverlay');
-  if (drawer)  drawer.classList.add('open');
-  if (overlay) overlay.classList.add('open');
-}
-
-function fecharCrmPainelDrawer() {
-  var drawer  = document.getElementById('crmPainelDrawer');
-  var overlay = document.getElementById('crmPainelOverlay');
-  if (drawer)  drawer.classList.remove('open');
-  if (overlay) overlay.classList.remove('open');
-}
 
 var _PAINEL_DEFAULT = [
   {id:"pd001",estado:"SP",nome:"DETRAN-SP",links:[
@@ -9667,33 +9705,79 @@ var _PAINEL_DEFAULT = [
   ]}
 ];
 
+function abrirCrmPainelDrawer(filterUF) {
+  var searchEl = document.getElementById('painelDrawerSearch');
+  if (searchEl) searchEl.value = '';
+  renderPainelDrawer(filterUF);
+  var drawer  = document.getElementById('crmPainelDrawer');
+  var overlay = document.getElementById('crmPainelOverlay');
+  if (drawer)  drawer.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+}
+
+function fecharCrmPainelDrawer() {
+  var drawer  = document.getElementById('crmPainelDrawer');
+  var overlay = document.getElementById('crmPainelOverlay');
+  if (drawer)  drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+}
+
+var _painelDrawerCurrentUF = null;
+
+function painelDrawerFiltrar() {
+  renderPainelDrawer(_painelDrawerCurrentUF);
+}
+
 function renderPainelDrawer(filterUF) {
+  _painelDrawerCurrentUF = filterUF;
+
   var orgaos = [];
   try {
     var raw = localStorage.getItem('sm_orgaos');
     orgaos = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(_PAINEL_DEFAULT));
   } catch(e) { orgaos = JSON.parse(JSON.stringify(_PAINEL_DEFAULT)); }
 
-  var lbl = document.getElementById('painelDrawerUFLabel');
+  var lbl      = document.getElementById('painelDrawerUFLabel');
   var clearBtn = document.getElementById('painelDrawerClearFilter');
-  if (lbl) lbl.textContent = filterUF || 'Todos';
+  if (lbl)      lbl.textContent = filterUF || 'Todos';
   if (clearBtn) clearBtn.style.display = filterUF ? 'inline-block' : 'none';
 
+  // Apply UF filter
   var list = filterUF
     ? orgaos.filter(function(o){ return o.estado && o.estado.toUpperCase() === filterUF.toUpperCase(); })
     : orgaos;
+
+  // Apply search text filter
+  var searchEl = document.getElementById('painelDrawerSearch');
+  var q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  if (q) {
+    list = list.filter(function(o){
+      return (o.nome  && o.nome.toLowerCase().includes(q))  ||
+             (o.estado && o.estado.toLowerCase().includes(q)) ||
+             (o.links  && o.links.some(function(l){
+               return (l.label && l.label.toLowerCase().includes(q)) ||
+                      (l.url   && l.url.toLowerCase().includes(q));
+             }));
+    });
+  }
 
   var content = document.getElementById('painelDrawerContent');
   if (!content) return;
 
   if (!list.length) {
-    content.innerHTML = filterUF
-      ? '<div class="pd-empty">Nenhum órgão cadastrado para <b>' + filterUF + '</b>.<br><br>Adicione pelo <b>Painel Completo</b>.</div>'
-      : '<div class="pd-empty">Nenhum órgão cadastrado ainda.<br><br>Adicione pelo <b>Painel Completo</b>.</div>';
+    if (q) {
+      content.innerHTML = '<div class="pd-empty">Nenhum resultado para "<b>' + q + '</b>".<br><br>Tente outro termo.</div>';
+    } else {
+      content.innerHTML = filterUF
+        ? '<div class="pd-empty">Nenhum órgão cadastrado para <b>' + filterUF + '</b>.<br><br>Adicione pelo <b>Painel Completo</b>.</div>'
+        : '<div class="pd-empty">Nenhum órgão cadastrado ainda.<br><br>Adicione pelo <b>Painel Completo</b>.</div>';
+    }
     return;
   }
 
-  function pdEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function pdEsc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   content.innerHTML = list.map(function(o) {
     var links = (o.links || []).map(function(l) {
@@ -9709,23 +9793,24 @@ function renderPainelDrawer(filterUF) {
         '<span class="pd-uf-badge">' + pdEsc(o.estado) + '</span>' +
         '<span class="pd-orgao-name">' + pdEsc(o.nome) + '</span>' +
       '</div>' +
-      '<div class="pd-links">' + (links || '<span style="font-size:12px;color:#9ca3af">Nenhum link cadastrado.</span>') + '</div>' +
+      '<div class="pd-links">' +
+        (links || '<span style="font-size:12px;color:#9ca3af">Nenhum link cadastrado.</span>') +
+      '</div>' +
     '</div>';
   }).join('');
 }
 
-// ── gnavAbrirPainel ──
+// ── gnavAbrirPainel ──────────────────────────────────────────
 function gnavAbrirPainel() {
   var crm = document.getElementById('moduleCrm');
-  var crmVisible = crm && crm.style.display !== 'none';
-  if (crmVisible) {
+  if (crm && crm.style.display !== 'none') {
     abrirCrmPainelDrawer(null);
   } else {
     switchModule('painel');
   }
 }
 
-// ── Abrir Painel drawer a partir do modal do lead ──
+// ── Botão Painel no modal do lead ────────────────────────────
 function abrirPainelFromLead() {
   var ufVei  = (document.getElementById('md-ufvei') || {}).textContent || '';
   var ufLead = (document.getElementById('md-uf')    || {}).textContent || '';
@@ -9735,12 +9820,13 @@ function abrirPainelFromLead() {
   setTimeout(function(){ abrirCrmPainelDrawer(uf); }, 80);
 }
 
+
 // ── Init ──────────────────────────────────────────────────────
 function syncInit() {
   syncUpdateLastTxt();
   if (syncConfigOK()) { syncUpdateDot('ok'); _topbarSyncSetState('idle'); }
   else { syncUpdateDot('off'); }
-  syncLog('Sync manual pronto — use o botão ☁️ Sincronizar na topbar','info');
+  syncLog('Pronto. Use ⬆️ Subir ou ⬇️ Baixar para sincronizar.','info');
 }
 
 // ── PWA ───────────────────────────────────────────────────────
