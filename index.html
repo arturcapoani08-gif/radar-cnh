@@ -649,9 +649,9 @@ td.over{color:var(--red);font-weight:700}
   #newLeadModal .nl-grid.g3{grid-template-columns:1fr 1fr}
   #newLeadModal .nl-grid.g2{grid-template-columns:1fr 1fr}
   .page{padding:10px 8px calc(90px + env(safe-area-inset-bottom,0px))}
-  #globalNav{bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:4px 6px;gap:1px;max-width:calc(100vw - 24px)}
-  .gnav-btn{padding:5px 8px;font-size:11px;gap:3px}
-  .gnav-sep{display:none}
+  #globalNav{bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:4px 6px;gap:1px;max-width:calc(100vw - 16px)}
+  .gnav-btn{padding:6px 10px;font-size:11px;gap:3px;flex-shrink:0}
+  .gnav-sep{width:1px;height:16px;flex-shrink:0}
   #crmGuiaDrawer{width:100%;left:0;transform:translateY(110%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
   #crmGuiaDrawer.open{transform:translateY(0)}
   .guia-topbar{padding:0 .625rem;gap:.375rem}
@@ -669,8 +669,8 @@ td.over{color:var(--red);font-weight:700}
   .nav button{padding:8px 9px;font-size:.68rem}
   #newLeadModal .nl-grid.g3{grid-template-columns:1fr}
   #newLeadModal .nl-grid.g2{grid-template-columns:1fr}
-  #globalNav{width:calc(100% - 16px);border-radius:12px;justify-content:space-around;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
-  .gnav-btn{flex:1;justify-content:center;padding:7px 2px;font-size:10px}
+  #globalNav{width:calc(100% - 12px);border-radius:16px;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:4px 8px}
+  .gnav-btn{flex-shrink:0;padding:6px 10px;font-size:10px}
 }
 @media(hover:none) and (pointer:coarse){
   .btn-add,.btn-cancel{padding:11px}
@@ -1267,7 +1267,6 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-  display: none;
   background: rgba(13,31,60,.96);
   border: 1px solid rgba(255,255,255,.13);
   border-radius: 40px;
@@ -1279,8 +1278,15 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   user-select: none;
-  max-width: calc(100vw - 32px);
+  /* scroll horizontal em telas pequenas */
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
 }
+#globalNav::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 .gnav-btn {
   display: inline-flex;
   align-items: center;
@@ -7068,7 +7074,7 @@ renderCards();
 <!-- ══════════════════════════════════════════
      BARRA DE NAVEGAÇÃO GLOBAL FLUTUANTE
      ══════════════════════════════════════════ -->
-<div id="globalNav">
+<div id="globalNav" role="navigation" aria-label="Menu principal">
   <button class="gnav-btn" id="gnavHome" onclick="switchModule('home')" title="Início">🏠 Central</button>
   <div class="gnav-sep"></div>
   <button class="gnav-btn" id="gnavRadar" onclick="switchModule('radar')" title="Radar CNH">📡 Radar</button>
