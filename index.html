@@ -742,6 +742,30 @@ td.over{color:var(--red);font-weight:700}
 .guia-tab-btn:not(.active){background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1)}
 .guia-tab-btn:not(.active):hover{background:rgba(255,255,255,.1);color:#fff}
 
+
+/* ── DRAWER DO PAINEL ── */
+#crmPainelOverlay { position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;display:none;backdrop-filter:blur(2px) }
+#crmPainelOverlay.open { display:block }
+#crmPainelDrawer { position:fixed;top:0;right:0;bottom:0;width:460px;max-width:96vw;background:#fff;z-index:10001;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.28);transform:translateX(110%);transition:transform .32s cubic-bezier(.4,0,.2,1) }
+#crmPainelDrawer.open { transform:translateX(0) }
+@media(max-width:600px){
+  #crmPainelDrawer{width:100%;left:0;transform:translateY(110%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+  #crmPainelDrawer.open{transform:translateY(0)}
+}
+.pd-card { background:#fff;border:1px solid #e5e7eb;border-radius:10px }
+.pd-card-header { padding:10px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px;border-radius:10px 10px 0 0 }
+.pd-uf-badge { font-family:monospace;font-size:10px;font-weight:700;background:#1a4270;color:#91d8f5;padding:2px 8px;border-radius:3px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0 }
+.pd-orgao-name { font-size:13px;font-weight:600;color:#111827;flex:1 }
+.pd-links { display:flex;flex-direction:column;gap:6px;padding:10px 14px }
+.pd-link-btn { display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:7px;border:1px solid transparent;text-decoration:none;font-size:12px;font-weight:500;transition:opacity .15s }
+.pd-link-btn:hover { opacity:.82 }
+.pd-link-btn.veiculo { background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);color:#1d4ed8 }
+.pd-link-btn.cnh { background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#065f46 }
+.pd-link-lbl { flex:1 }
+.pd-link-tag { font-size:10px;font-family:monospace;padding:2px 6px;border-radius:3px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0 }
+.pd-link-btn.veiculo .pd-link-tag { background:rgba(59,130,246,.15);color:#1d4ed8 }
+.pd-link-btn.cnh .pd-link-tag { background:rgba(16,185,129,.15);color:#065f46 }
+.pd-empty { text-align:center;color:#9ca3af;padding:40px 20px;font-size:13px }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1127,7 +1151,7 @@ body {
 
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
   max-width: 860px;
   width: 100%;
@@ -1150,6 +1174,7 @@ body {
 .home-card:nth-child(1) { animation-delay: .1s; }
 .home-card:nth-child(2) { animation-delay: .2s; }
 .home-card:nth-child(3) { animation-delay: .3s; }
+.home-card:nth-child(4) { animation-delay: .4s; }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
@@ -1190,6 +1215,7 @@ body {
 .home-card-icon.radar  { background: linear-gradient(135deg, #0d3b6e, #3A5F8C); box-shadow: 0 4px 20px rgba(58,95,140,.35); }
 .home-card-icon.guia   { background: linear-gradient(135deg, #1a4731, #097A52); box-shadow: 0 4px 20px rgba(9,122,82,.35); }
 .home-card-icon.crm    { background: linear-gradient(135deg, #4a1020, #A32532); box-shadow: 0 4px 20px rgba(163,37,50,.35); }
+.home-card-icon.painel { background: linear-gradient(135deg, #5a320a, #f5a623); box-shadow: 0 4px 20px rgba(245,166,35,.35); }
 
 .home-card-title {
   font-size: 1.1rem;
@@ -1497,6 +1523,12 @@ body {
       <div class="home-card-title">CRM</div>
       <div class="home-card-desc">Gestão de leads, funil de vendas e análise por Estado e Edital</div>
       <div class="home-card-badge">▶ Abrir CRM</div>
+    </div>
+    <div class="home-card" onclick="switchModule('painel')">
+      <div class="home-card-icon painel">🚦</div>
+      <div class="home-card-title">Painel de Multas</div>
+      <div class="home-card-desc">Consulta de multas por órgão, links de veículo e CNH por estado</div>
+      <div class="home-card-badge">▶ Abrir Painel</div>
     </div>
   </div>
 
@@ -6555,6 +6587,474 @@ function cp(id,btn){
 </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     MODULE: PAINEL DE CONSULTA DE MULTAS
+     ══════════════════════════════════════════ -->
+<div id="modulePainel" style="display:none;position:fixed;inset:0;z-index:10;overflow:hidden auto;background:#0f1117">
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+#modulePainel {
+  --pm-bg:#0f1117;--pm-surface:#181c27;--pm-card:#1e2333;--pm-border:#2a3045;
+  --pm-accent:#f5a623;--pm-text:#e8eaf0;--pm-muted:#8892a4;--pm-danger:#ef4444;
+  --pm-veiculo:#3b82f6;--pm-cnh:#10b981;--pm-radius:10px;
+}
+#modulePainel{font-family:'Inter',sans-serif;background:var(--pm-bg);color:var(--pm-text);min-height:100vh;padding-bottom:48px}
+
+/* ── HEADER ── */
+#modulePainel header{background:var(--pm-surface);border-bottom:1px solid var(--pm-border);padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20}
+.logo-mark{width:36px;height:36px;background:var(--pm-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+header h1{font-size:17px;font-weight:700;letter-spacing:-.3px}
+header small{font-size:12px;color:var(--pm-muted)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* ── TOOLBAR ── */
+.toolbar{padding:14px 28px;background:var(--pm-surface);border-bottom:1px solid var(--pm-border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px;max-width:340px}
+.search-wrap input{width:100%;background:var(--pm-card);border:1px solid var(--pm-border);border-radius:7px;padding:9px 12px 9px 36px;color:var(--pm-text);font-size:13px;outline:none;transition:border-color .15s}
+.search-wrap input:focus{border-color:var(--pm-accent)}
+.search-wrap input::placeholder{color:var(--pm-muted)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--pm-muted)}
+.dot{width:9px;height:9px;border-radius:3px}
+.dot.v{background:var(--pm-veiculo)}.dot.c{background:var(--pm-cnh)}
+
+/* ── BUTTONS BASE ── */
+button,label.btn{font-family:'Inter',sans-serif;cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:500;padding:8px 14px;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s,background .15s}
+button:hover,label.btn:hover{opacity:.85}
+.btn-primary{background:var(--pm-accent);color:#0f1117}
+.btn-outline{background:transparent;border:1px solid var(--pm-border);color:var(--pm-muted)}
+.btn-outline:hover{border-color:var(--pm-text);color:var(--pm-text);opacity:1}
+.btn-danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.btn-danger:hover{background:rgba(239,68,68,.22);opacity:1}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+#file-import{display:none}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:24px 28px;max-width:1400px;margin:0 auto}
+.empty-state{grid-column:1/-1;text-align:center;color:var(--pm-muted);padding:60px 20px;font-size:14px}
+
+/* ── CARD ── */
+.card{background:var(--pm-card);border:1px solid var(--pm-border);border-radius:var(--pm-radius);overflow:hidden;transition:border-color .2s,transform .15s}
+.card:hover{border-color:rgba(245,166,35,.4);transform:translateY(-2px)}
+.card-header{padding:14px 16px 11px;border-bottom:1px solid var(--pm-border);display:flex;align-items:center;gap:10px}
+.estado-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;background:var(--pm-border);color:var(--pm-accent);padding:3px 8px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+.orgao-nome{font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-actions{display:flex;gap:4px;margin-left:auto;opacity:0;transition:opacity .15s}
+.card:hover .card-actions{opacity:1}
+.card-actions button{background:transparent;border:1px solid var(--pm-border);color:var(--pm-muted);padding:4px 7px;font-size:11px;border-radius:5px}
+.card-actions button:hover{border-color:var(--pm-text);color:var(--pm-text);opacity:1}
+.card-#modulePainel{padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px}
+.btn-consulta{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:7px;border:1px solid transparent;text-decoration:none;font-size:12px;font-weight:500;transition:background .15s,border-color .15s,opacity .15s}
+.btn-consulta:hover{opacity:.82}
+.btn-consulta.veiculo{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);color:#93c5fd}
+.btn-consulta.veiculo:hover{background:rgba(59,130,246,.18);border-color:rgba(59,130,246,.5)}
+.btn-consulta.cnh{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#6ee7b7}
+.btn-consulta.cnh:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.5)}
+.btn-lbl{flex:1}
+.tipo-tag{font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:3px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.btn-consulta.veiculo .tipo-tag{background:rgba(59,130,246,.2);color:#93c5fd}
+.btn-consulta.cnh .tipo-tag{background:rgba(16,185,129,.2);color:#6ee7b7}
+.ext{font-size:10px;opacity:.4}
+
+/* ── MODAL OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--pm-surface);border:1px solid var(--pm-border);border-radius:14px;width:100%;max-width:700px;min-height:min-content}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--pm-border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:16px;font-weight:700}
+.modal-close{background:transparent;border:1px solid var(--pm-border);color:var(--pm-muted);padding:6px 10px;border-radius:6px;font-size:14px}
+.modal-#modulePainel{padding:20px 24px}
+
+/* ── FORM ── */
+.form-section{background:var(--pm-card);border:1px solid var(--pm-border);border-radius:var(--pm-radius);padding:18px;margin-bottom:20px}
+.form-section h3{font-size:13px;font-weight:600;color:var(--pm-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:120px 1fr;gap:10px;margin-bottom:10px}
+.form-row.full{grid-template-columns:1fr}
+label.field-label{font-size:12px;color:var(--pm-muted);margin-bottom:4px;display:block}
+input.field,select.field{width:100%;background:var(--pm-bg);border:1px solid var(--pm-border);border-radius:6px;padding:8px 11px;color:var(--pm-text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+input.field:focus,select.field:focus{border-color:var(--pm-accent)}
+input.field::placeholder{color:var(--pm-muted)}
+select.field option{background:var(--pm-surface)}
+.links-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.link-row{display:grid;grid-template-columns:110px 1fr 32px;gap:6px;align-items:center}
+.link-row select.field,.link-row input.field{margin:0}
+.btn-remove-link{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5;border-radius:5px;padding:0;width:30px;height:30px;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-remove-link:hover{background:rgba(239,68,68,.22);opacity:1}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:4px}
+
+/* ── ORGAOS LIST ── */
+.orgaos-table{margin-top:4px}
+.orgao-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;transition:background .15s}
+.orgao-row:hover{background:var(--pm-card)}
+.orgao-row-estado{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--pm-accent);background:var(--pm-border);padding:2px 7px;border-radius:3px;letter-spacing:1px;flex-shrink:0}
+.orgao-row-nome{font-size:13px;flex:1}
+.orgao-row-count{font-size:11px;color:var(--pm-muted)}
+.orgao-row-btns{display:flex;gap:6px;margin-left:auto}
+.divider{border:none;border-top:1px solid var(--pm-border);margin:12px 0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--pm-surface);border:1px solid var(--pm-border);border-radius:9px;padding:12px 18px;font-size:13px;z-index:200;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5}
+
+#modulePainel footer{text-align:center;color:var(--pm-muted);font-size:12px;padding:20px 28px 0}
+
+@media(max-width:600px){
+  #modulePainel header,\.toolbar,.grid{padding-left:14px;padding-right:14px}
+  .form-row{grid-template-columns:1fr}
+  .link-row{grid-template-columns:100px 1fr 32px}
+}
+
+/* Painel module wrapper fixes */
+#modulePainel { font-family:'Inter',sans-serif; }
+#modulePainel header { position:sticky;top:0;z-index:20; }
+</style>
+
+
+
+<header>
+  <div class="logo-mark">🚦</div>
+  <div><h1>Painel de Consulta de Multas</h1><small>Só Multas Central</small></div>
+  <div class="header-right">
+    <button class="btn-outline" onclick="pm_exportData()">⬇ Exportar</button>
+    <label class="btn btn-outline" for="pm-file-import">⬆ Importar<input type="file" id="pm-file-import" accept=".json" onchange="pm_importData(event)"></label>
+    <button class="btn-primary" onclick="pm_openModal()">+ Gerenciar Órgãos</button>
+    <button class="home-nav-btn" onclick="switchModule('home')" style="margin-left:8px">🏠 Central</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="pm-search" placeholder="Buscar órgão ou estado…" oninput="renderCards()">
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="dot v"></span>Veículo</div>
+    <div class="legend-item"><span class="dot c"></span>CNH / Habilitação</div>
+  </div>
+  <span style="margin-left:auto;font-size:12px;color:var(--muted)" id="pm-count-label"></span>
+</div>
+
+<div class="grid" id="pm-grid"></div>
+
+<!-- MODAL -->
+<div class="overlay" id="pm-overlay" onclick="pm_closeModalOutside(event)">
+  <div class="modal" id="pm-modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Gerenciar Órgãos</h2>
+      <button class="modal-close" onclick="pm_closeModal()">✕ Fechar</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- FORM ADD/EDIT -->
+      <div class="form-section">
+        <h3 id="form-title">Novo Órgão</h3>
+        <div class="form-row">
+          <div>
+            <label class="field-label">Estado (UF)</label>
+            <input class="field" id="f-estado" maxlength="2" placeholder="SP" style="text-transform:uppercase">
+          </div>
+          <div>
+            <label class="field-label">Nome do Órgão</label>
+            <input class="field" id="f-nome" placeholder="DETRAN-SP">
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="field-label">Links de Consulta</label>
+          <div class="links-list" id="links-list"></div>
+          <button class="btn-outline btn-sm" onclick="addLinkRow()">+ Adicionar link</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn-outline" onclick="resetForm()">Cancelar</button>
+          <button class="btn-primary" onclick="saveOrgao()">Salvar Órgão</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- LIST -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:600">Órgãos cadastrados</span>
+          <span id="modal-count" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div class="orgaos-table" id="orgaos-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="pm-toast"></div>
+
+<footer>Só Multas Central · dados salvos localmente no navegador</footer>
+
+<script>
+(function(){
+
+// ── DATA ──────────────────────────────────────────────────────────────
+const DEFAULT = [
+  {id:uid(),estado:"SP",nome:"DETRAN-SP",links:[
+    {tipo:"veiculo",label:"Consultar Multas — Veículo",url:"https://www.detran.sp.gov.br/detransp/pb/servico/pilar/consultar_multas?id=carta_de_servico_consultar_multasDER"}
+  ]},
+  {id:uid(),estado:"SP",nome:"DER-SP",links:[
+    {tipo:"veiculo",label:"Consultar Multas — Veículo",url:"https://www.multas1.der.sp.gov.br/der_multas_web/GERAL/PesquisaDetran"}
+  ]},
+  {id:uid(),estado:"MG",nome:"DETRAN-MG",links:[
+    {tipo:"veiculo",label:"Infrações e Multas — Veículo",url:"https://www.detran.mg.gov.br/infracoes/multa/"},
+    {tipo:"veiculo",label:"Situação do Veículo",url:"https://www.detran.mg.gov.br/veiculos/situacao-do-veiculo/consulta-de-situacao-do-veiculo"}
+  ]},
+  {id:uid(),estado:"MT",nome:"DETRAN-MT",links:[
+    {tipo:"veiculo",label:"Consultar Veículo",url:"https://www.detran.mt.gov.br/consulte-seu-veiculo"},
+    {tipo:"cnh",label:"Consultar Habilitação",url:"https://www.detran.mt.gov.br/consulte-sua-habilitacao"}
+  ]},
+  {id:uid(),estado:"ES",nome:"DETRAN-ES",links:[
+    {tipo:"veiculo",label:"Dossiê Consolidado — Veículo",url:"https://servicos.detrannet.es.gov.br/CentralVeiculo?Servico=DossieConsolidadoVeiculo"}
+  ]},
+  {id:uid(),estado:"RJ",nome:"DETRAN-RJ",links:[
+    {tipo:"cnh",label:"Consultar Pontuação — CNH",url:"https://multas.detran.rj.gov.br/gaideweb2/consultaPontuacao"},
+    {tipo:"veiculo",label:"Nada Consta — Veículo",url:"https://www.detran.rj.gov.br/consultas/consultas-drv/nada-consta.html"}
+  ]}
+];
+
+function uid(){return 'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+let data = load();
+let editingId = null;
+
+function load(){
+  try{const s=localStorage.getItem('sm_orgaos');return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT))}
+  catch{return JSON.parse(JSON.stringify(DEFAULT))}
+}
+function save(){localStorage.setItem('sm_orgaos',JSON.stringify(data))}
+
+// ── CARDS ─────────────────────────────────────────────────────────────
+function renderCards(){
+  const q=(document.getElementById('pm-search').value||'').toLowerCase().trim();
+  const filtered=data.filter(o=>!q||o.nome.toLowerCase().includes(q)||o.estado.toLowerCase().includes(q));
+  const grid=document.getElementById('pm-grid');
+  document.getElementById('pm-count-label').textContent=`${filtered.length} de ${data.length} órgão${data.length!==1?'s':''}`;
+  if(!filtered.length){
+    grid.innerHTML=`<div class="empty-state">Nenhum órgão encontrado${q?' para "'+q+'"':''}.<br><span style="font-size:12px">Adicione pelo botão <strong>Gerenciar Órgãos</strong>.</span></div>`;
+    return;
+  }
+  grid.innerHTML=filtered.map(o=>`
+    <div class="card">
+      <div class="card-header">
+        <span class="estado-badge">${esc(o.estado)}</span>
+        <span class="orgao-nome">${esc(o.nome)}</span>
+        <div class="card-actions">
+          <button onclick="editOrgao('${o.id}')">✏️</button>
+          <button onclick="deleteOrgao('${o.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="card-body">
+        ${o.links.map(l=>`
+          <a class="btn-consulta ${l.tipo}" href="${esc(l.url)}" target="_blank" rel="noopener">
+            <span>${l.tipo==='veiculo'?'🚗':'🪪'}</span>
+            <span class="btn-lbl">${esc(l.label)}</span>
+            <span class="tipo-tag">${l.tipo==='veiculo'?'Veículo':'CNH'}</span>
+            <span class="ext">↗</span>
+          </a>`).join('')}
+        ${!o.links.length?'<span style="font-size:12px;color:var(--muted)">Nenhum link cadastrado.</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── MODAL ─────────────────────────────────────────────────────────────
+function openModal(){resetForm();renderOrgaosList();document.getElementById('pm-overlay').classList.add('open')}
+function closeModal(){document.getElementById('pm-overlay').classList.remove('open')}
+function closeModalOutside(e){if(e.target===document.getElementById('pm-overlay'))closeModal()}
+
+function renderOrgaosList(){
+  const el=document.getElementById('orgaos-list');
+  document.getElementById('modal-count').textContent=`${data.length} cadastrado${data.length!==1?'s':''}`;
+  if(!data.length){el.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Nenhum órgão cadastrado ainda.</p>';return}
+  el.innerHTML=data.map(o=>`
+    <div class="orgao-row">
+      <span class="orgao-row-estado">${esc(o.estado)}</span>
+      <span class="orgao-row-nome">${esc(o.nome)}</span>
+      <span class="orgao-row-count">${o.links.length} link${o.links.length!==1?'s':''}</span>
+      <div class="orgao-row-btns">
+        <button class="btn-outline btn-sm" onclick="editOrgao('${o.id}')">✏️ Editar</button>
+        <button class="btn-danger btn-sm" onclick="deleteOrgao('${o.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────
+function resetForm(){
+  editingId=null;
+  document.getElementById('form-title').textContent='Novo Órgão';
+  document.getElementById('f-estado').value='';
+  document.getElementById('f-nome').value='';
+  document.getElementById('links-list').innerHTML='';
+  addLinkRow();
+}
+
+function addLinkRow(tipo='veiculo',label='',url=''){
+  const row=document.createElement('div');
+  row.className='link-row';
+  row.innerHTML=`
+    <select class="field lr-tipo">
+      <option value="veiculo"${tipo==='veiculo'?' selected':''}>🚗 Veículo</option>
+      <option value="cnh"${tipo==='cnh'?' selected':''}>🪪 CNH</option>
+    </select>
+    <input class="field lr-label" placeholder="Descrição (ex: Consultar Multas)" value="${esc(label)}">
+    <input class="field lr-url" placeholder="https://…" value="${esc(url)}" style="grid-column:2/span 1;display:none">
+    <button class="btn-remove-link" onclick="this.closest('.link-row').remove()" title="Remover">✕</button>`;
+  // show url row below
+  const wrap=document.createElement('div');
+  wrap.className='link-row';
+  wrap.style.gridTemplateColumns='110px 1fr 32px';
+  wrap.innerHTML=`<span style="font-size:11px;color:var(--muted);padding-left:2px">URL</span><input class="field lr-url" placeholder="https://…" value="${esc(url)}"><span></span>`;
+  document.getElementById('links-list').append(row,wrap);
+}
+
+// Rebuild addLinkRow to be a 2-line form per link
+document.getElementById('links-list').innerHTML=''; // clear
+(function(){
+  // override addLinkRow with cleaner approach
+  window.addLinkRow = function(tipo,label,url){
+    tipo=tipo||'veiculo'; label=label||''; url=url||'';
+    const container=document.createElement('div');
+    container.className='';
+    container.style.cssText='background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;margin-bottom:6px;display:flex;flex-direction:column;gap:7px';
+    container.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="field lr-tipo" style="width:130px;flex-shrink:0">
+          <option value="veiculo"${tipo==='veiculo'?' selected':''}>🚗 Veículo</option>
+          <option value="cnh"${tipo==='cnh'?' selected':''}>🪪 CNH</option>
+        </select>
+        <input class="field lr-label" placeholder="Descrição do link" value="${esc(label)}" style="flex:1">
+        <button class="btn-remove-link" onclick="this.closest('div[style]').remove()" title="Remover link">✕</button>
+      </div>
+      <input class="field lr-url" placeholder="https://…" value="${esc(url)}">`;
+    document.getElementById('links-list').appendChild(container);
+  };
+  addLinkRow();
+})();
+
+function saveOrgao(){
+  const estado=document.getElementById('f-estado').value.trim().toUpperCase();
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!estado||!nome){toast('Preencha Estado e Nome.','err');return}
+  const containers=document.querySelectorAll('#links-list > div[style]');
+  const links=[];
+  containers.forEach(c=>{
+    const tipo=c.querySelector('.lr-tipo').value;
+    const label=c.querySelector('.lr-label').value.trim();
+    const url=c.querySelector('.lr-url').value.trim();
+    if(url) links.push({tipo,label:label||url,url});
+  });
+  if(editingId){
+    const idx=data.findIndex(o=>o.id===editingId);
+    if(idx>-1) data[idx]={...data[idx],estado,nome,links};
+    toast('Órgão atualizado!','ok');
+  } else {
+    data.push({id:uid(),estado,nome,links});
+    toast('Órgão adicionado!','ok');
+  }
+  save(); resetForm(); renderCards(); renderOrgaosList();
+}
+
+function editOrgao(id){
+  const o=data.find(x=>x.id===id);
+  if(!o)return;
+  editingId=id;
+  document.getElementById('form-title').textContent='Editar Órgão';
+  document.getElementById('f-estado').value=o.estado;
+  document.getElementById('f-nome').value=o.nome;
+  document.getElementById('links-list').innerHTML='';
+  o.links.forEach(l=>addLinkRow(l.tipo,l.label,l.url));
+  if(!o.links.length) addLinkRow();
+  document.getElementById('pm-modal').scrollIntoView({behavior:'smooth',block:'start'});
+  if(!document.getElementById('pm-overlay').classList.contains('open')) openModal();
+}
+
+function deleteOrgao(id){
+  const o=data.find(x=>x.id===id);
+  if(!o)return;
+  if(!confirm(`Remover "${o.nome}"?`))return;
+  data=data.filter(x=>x.id!==id);
+  save(); renderCards(); renderOrgaosList();
+  toast('Órgão removido.','ok');
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='painel-multas-backup.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup exportado!','ok');
+}
+
+function importData(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      if(!Array.isArray(parsed))throw new Error();
+      // ensure IDs
+      parsed.forEach(o=>{if(!o.id)o.id=uid()});
+      if(!confirm(`Importar ${parsed.length} órgão(s)? Os dados atuais serão substituídos.`)){e.target.value='';return}
+      data=parsed; save(); renderCards();
+      toast(`${data.length} órgão(s) importado(s)!`,'ok');
+    }catch{toast('Arquivo inválido.','err')}
+    e.target.value='';
+  };
+  r.readAsText(file);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg,type='ok'){
+  const el=document.getElementById('pm-toast');
+  el.textContent=msg; el.className=`toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+renderCards();
+
+})();
+</script>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     DRAWER DO PAINEL (abre dentro do CRM)
+     ══════════════════════════════════════════ -->
+<div id="crmPainelOverlay" onclick="fecharCrmPainelDrawer()"></div>
+<div id="crmPainelDrawer">
+  <div class="cgd-header" style="background:linear-gradient(135deg,#5a320a,#8b4a0a);border-bottom:1px solid #a05a0f">
+    <span style="font-size:18px">🚦</span>
+    <div class="cgd-title">Painel de Consulta de Multas</div>
+    <button class="cgd-close" onclick="fecharCrmPainelDrawer()">✕ Fechar</button>
+  </div>
+  <div style="padding:10px 16px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Filtrado por UF:</span>
+    <span id="painelDrawerUFLabel" style="background:#1a4270;color:#91d8f5;font-family:monospace;font-size:11px;font-weight:700;padding:3px 10px;border-radius:5px;letter-spacing:1px">Todos</span>
+    <button id="painelDrawerClearFilter" onclick="renderPainelDrawer(null)" style="font-size:10px;background:transparent;border:1px solid #d1d5db;border-radius:5px;padding:2px 8px;cursor:pointer;color:#6b7280;display:none">Ver todos</button>
+  </div>
+  <div id="painelDrawerContent" style="padding:12px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px"></div>
+  <div style="padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid #e5e7eb;text-align:center">
+    <button onclick="fecharCrmPainelDrawer();switchModule('painel')" style="background:linear-gradient(135deg,#5a320a,#f5a623);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer">🚦 Abrir Painel Completo</button>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      BARRA DE NAVEGAÇÃO GLOBAL FLUTUANTE
      ══════════════════════════════════════════ -->
@@ -6564,6 +7064,8 @@ function cp(id,btn){
   <button class="gnav-btn" id="gnavRadar" onclick="switchModule('radar')" title="Radar CNH">📡 Radar</button>
   <button class="gnav-btn" id="gnavGuia" onclick="gnavAbrirGuia()" title="Guia Só Multas">📖 Guia</button>
   <button class="gnav-btn" id="gnavCrm" onclick="switchModule('crm')" title="CRM">👥 CRM</button>
+  <div class="gnav-sep"></div>
+  <button class="gnav-btn" id="gnavPainel" onclick="gnavAbrirPainel()" title="Painel de Multas">🚦 Painel</button>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -6915,6 +7417,7 @@ function cp(id,btn){
         <a id="md-walink" href="#" target="_blank" class="btn btn-success" style="text-decoration:none">💬 WhatsApp</a>
         <button class="btn btn-outline" onclick="closeLeadModal()">Fechar</button>
         <button class="btn" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none" onclick="closeLeadModal();abrirCrmGuiaDrawer('prosp')" title="Abrir Guia de scripts sem sair do CRM">📖 Guia</button>
+        <button class="btn" id="md-painelbtn" style="background:linear-gradient(135deg,#5a320a,#f5a623);color:#fff;border:none" onclick="abrirPainelFromLead()" title="Consultar órgãos do estado deste lead">🚦 Painel</button>
         <button class="btn btn-primary" style="background:#3A5F8C;margin-left:auto" onclick="analisarNoRadarModal()" title="Importar dados do lead para o Radar CNH">📡 Analisar no Radar</button>
       </div>
     </div>
@@ -8397,9 +8900,10 @@ function _updateGlobalNav(mod) {
     const el = document.getElementById(id);
     if (el) { el.classList.remove('gnav-active','gnav-guia-active'); }
   });
-  if (mod === 'radar') document.getElementById('gnavRadar')?.classList.add('gnav-active');
-  if (mod === 'guia')  document.getElementById('gnavGuia')?.classList.add('gnav-guia-active');
-  if (mod === 'crm')   document.getElementById('gnavCrm')?.classList.add('gnav-active');
+  if (mod === 'radar')  document.getElementById('gnavRadar')?.classList.add('gnav-active');
+  if (mod === 'guia')   document.getElementById('gnavGuia')?.classList.add('gnav-guia-active');
+  if (mod === 'crm')    document.getElementById('gnavCrm')?.classList.add('gnav-active');
+  if (mod === 'painel') document.getElementById('gnavPainel')?.classList.add('gnav-active');
   // No CRM, destaca botão do Guia na nav
   if (mod === 'crm') {
     const g = document.getElementById('gnavGuia');
@@ -8436,6 +8940,9 @@ function switchModule(mod) {
   home.style.display  = 'none';
   radar.style.display = 'none';
   crm.style.display   = 'none';
+  var _painel = document.getElementById('modulePainel');
+  if (_painel) _painel.style.display = 'none';
+  fecharCrmPainelDrawer();
 
   _updateGlobalNav(mod);
 
@@ -8469,6 +8976,15 @@ function switchModule(mod) {
       if (typeof renderImportStats === 'function') renderImportStats();
       if (typeof syncInit === 'function') syncInit();
     }, 100);
+    return;
+  }
+
+  if (mod === 'painel') {
+    var painel = document.getElementById('modulePainel');
+    if (painel) painel.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    // init painel if needed
+    setTimeout(function(){ if (typeof pm_renderCards === 'function') pm_renderCards(); }, 50);
     return;
   }
 }
@@ -9106,6 +9622,117 @@ function _doTopbarExport(cfg, cb) {
   };
   if (cfg.gistId) { gistUpdate(cfg.token, cfg.gistId, payload, done); }
   else { gistCreate(cfg.token, payload, done); }
+}
+
+// ══════════════════════════════════════════════
+// DRAWER DO PAINEL DE MULTAS
+// ══════════════════════════════════════════════
+
+function abrirCrmPainelDrawer(filterUF) {
+  renderPainelDrawer(filterUF);
+  var drawer  = document.getElementById('crmPainelDrawer');
+  var overlay = document.getElementById('crmPainelOverlay');
+  if (drawer)  drawer.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+}
+
+function fecharCrmPainelDrawer() {
+  var drawer  = document.getElementById('crmPainelDrawer');
+  var overlay = document.getElementById('crmPainelOverlay');
+  if (drawer)  drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+}
+
+var _PAINEL_DEFAULT = [
+  {id:"pd001",estado:"SP",nome:"DETRAN-SP",links:[
+    {tipo:"veiculo",label:"Consultar Multas — Veículo",url:"https://www.detran.sp.gov.br/detransp/pb/servico/pilar/consultar_multas?id=carta_de_servico_consultar_multasDER"}
+  ]},
+  {id:"pd002",estado:"SP",nome:"DER-SP",links:[
+    {tipo:"veiculo",label:"Consultar Multas — Veículo",url:"https://www.multas1.der.sp.gov.br/der_multas_web/GERAL/PesquisaDetran"}
+  ]},
+  {id:"pd003",estado:"MG",nome:"DETRAN-MG",links:[
+    {tipo:"veiculo",label:"Infrações e Multas — Veículo",url:"https://www.detran.mg.gov.br/infracoes/multa/"},
+    {tipo:"veiculo",label:"Situação do Veículo",url:"https://www.detran.mg.gov.br/veiculos/situacao-do-veiculo/consulta-de-situacao-do-veiculo"}
+  ]},
+  {id:"pd004",estado:"MT",nome:"DETRAN-MT",links:[
+    {tipo:"veiculo",label:"Consultar Veículo",url:"https://www.detran.mt.gov.br/consulte-seu-veiculo"},
+    {tipo:"cnh",label:"Consultar Habilitação",url:"https://www.detran.mt.gov.br/consulte-sua-habilitacao"}
+  ]},
+  {id:"pd005",estado:"ES",nome:"DETRAN-ES",links:[
+    {tipo:"veiculo",label:"Dossiê Consolidado — Veículo",url:"https://servicos.detrannet.es.gov.br/CentralVeiculo?Servico=DossieConsolidadoVeiculo"}
+  ]},
+  {id:"pd006",estado:"RJ",nome:"DETRAN-RJ",links:[
+    {tipo:"cnh",label:"Consultar Pontuação — CNH",url:"https://multas.detran.rj.gov.br/gaideweb2/consultaPontuacao"},
+    {tipo:"veiculo",label:"Nada Consta — Veículo",url:"https://www.detran.rj.gov.br/consultas/consultas-drv/nada-consta.html"}
+  ]}
+];
+
+function renderPainelDrawer(filterUF) {
+  var orgaos = [];
+  try {
+    var raw = localStorage.getItem('sm_orgaos');
+    orgaos = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(_PAINEL_DEFAULT));
+  } catch(e) { orgaos = JSON.parse(JSON.stringify(_PAINEL_DEFAULT)); }
+
+  var lbl = document.getElementById('painelDrawerUFLabel');
+  var clearBtn = document.getElementById('painelDrawerClearFilter');
+  if (lbl) lbl.textContent = filterUF || 'Todos';
+  if (clearBtn) clearBtn.style.display = filterUF ? 'inline-block' : 'none';
+
+  var list = filterUF
+    ? orgaos.filter(function(o){ return o.estado && o.estado.toUpperCase() === filterUF.toUpperCase(); })
+    : orgaos;
+
+  var content = document.getElementById('painelDrawerContent');
+  if (!content) return;
+
+  if (!list.length) {
+    content.innerHTML = filterUF
+      ? '<div class="pd-empty">Nenhum órgão cadastrado para <b>' + filterUF + '</b>.<br><br>Adicione pelo <b>Painel Completo</b>.</div>'
+      : '<div class="pd-empty">Nenhum órgão cadastrado ainda.<br><br>Adicione pelo <b>Painel Completo</b>.</div>';
+    return;
+  }
+
+  function pdEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  content.innerHTML = list.map(function(o) {
+    var links = (o.links || []).map(function(l) {
+      return '<a class="pd-link-btn ' + l.tipo + '" href="' + pdEsc(l.url) + '" target="_blank" rel="noopener">' +
+        '<span>' + (l.tipo === 'veiculo' ? '🚗' : '🪪') + '</span>' +
+        '<span class="pd-link-lbl">' + pdEsc(l.label) + '</span>' +
+        '<span class="pd-link-tag">' + (l.tipo === 'veiculo' ? 'Veículo' : 'CNH') + '</span>' +
+        '<span style="font-size:10px;opacity:.5">↗</span>' +
+      '</a>';
+    }).join('');
+    return '<div class="pd-card">' +
+      '<div class="pd-card-header">' +
+        '<span class="pd-uf-badge">' + pdEsc(o.estado) + '</span>' +
+        '<span class="pd-orgao-name">' + pdEsc(o.nome) + '</span>' +
+      '</div>' +
+      '<div class="pd-links">' + (links || '<span style="font-size:12px;color:#9ca3af">Nenhum link cadastrado.</span>') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── gnavAbrirPainel ──
+function gnavAbrirPainel() {
+  var crm = document.getElementById('moduleCrm');
+  var crmVisible = crm && crm.style.display !== 'none';
+  if (crmVisible) {
+    abrirCrmPainelDrawer(null);
+  } else {
+    switchModule('painel');
+  }
+}
+
+// ── Abrir Painel drawer a partir do modal do lead ──
+function abrirPainelFromLead() {
+  var ufVei  = (document.getElementById('md-ufvei') || {}).textContent || '';
+  var ufLead = (document.getElementById('md-uf')    || {}).textContent || '';
+  var uf = (ufVei.trim() && ufVei.trim() !== '—') ? ufVei.trim()
+         : (ufLead.trim() && ufLead.trim() !== '—') ? ufLead.trim() : null;
+  if (typeof closeLeadModal === 'function') closeLeadModal();
+  setTimeout(function(){ abrirCrmPainelDrawer(uf); }, 80);
 }
 
 // ── Init ──────────────────────────────────────────────────────
