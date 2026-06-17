@@ -7034,6 +7034,18 @@ function toast(msg,type='ok'){
 // ── INIT ──────────────────────────────────────────────────────────────
 renderCards();
 
+// Expõe funções chamadas por onclick no HTML (necessário dentro de IIFE)
+window.addLinkRow           = addLinkRow;
+window.resetForm            = resetForm;
+window.saveOrgao            = saveOrgao;
+window.editOrgao            = editOrgao;
+window.deleteOrgao          = deleteOrgao;
+window.pm_openModal         = openModal;
+window.pm_closeModal        = closeModal;
+window.pm_closeModalOutside = closeModalOutside;
+window.pm_exportData        = exportData;
+window.pm_importData        = importData;
+
 })();
 </script>
 
@@ -7363,7 +7375,11 @@ renderCards();
       <div class="section">
         <div class="section-title">📋 CRM</div>
         <div class="fields">
-          <div class="field"><div class="fl">Status atual</div><div class="fv" id="md-status-badge">—</div></div>
+          <div class="field" style="padding:6px 11px">
+            <div class="fl" style="margin-bottom:4px">Status atual</div>
+            <select id="md-status-select" onchange="changeStatusModal(this.value)"
+              style="width:100%;border:none;border-radius:6px;padding:6px 8px;font-size:.82rem;font-weight:700;cursor:pointer;outline:none"></select>
+          </div>
           <div class="field"><div class="fl">Data primeiro contato</div><div class="fv" id="md-dtctt">—</div></div>
         </div>
         <div class="fields" style="margin-top:8px">
@@ -8194,6 +8210,36 @@ function updateObs(key, val) {
   if (data.leads[key]) { data.leads[key].obs = val; saveData(data); }
 }
 
+// Altera o status diretamente pelo cartão/modal do lead
+function changeStatusModal(ns) {
+  if (!S.modalLead) return;
+  const key = S.modalLead.key;
+  const data = loadData();
+  if (!data.leads[key]) return;
+  data.leads[key].status = ns;
+  if (!data.leads[key].dtContato && ns!=='Novo Lead')
+    data.leads[key].dtContato = new Date().toLocaleDateString('pt-BR');
+  saveData(data);
+  // sincroniza o lead em memória
+  S.modalLead.status = ns;
+  if (!S.modalLead.dtContato) S.modalLead.dtContato = data.leads[key].dtContato;
+  // recolore o select e atualiza o subtítulo + data de contato no modal
+  const sc = SC[ns]||SC["Novo Lead"];
+  const sel = document.getElementById('md-status-select');
+  if (sel) { sel.style.background = sc.bg; sel.style.color = sc.tc; }
+  const sub = document.getElementById('md-sub');
+  if (sub) sub.innerHTML =
+    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${ns}</span>` +
+    `&nbsp;&nbsp;Data: ${S.modalLead.data} &nbsp;·&nbsp; Placa: <b>${S.modalLead.placa}</b>`;
+  const dt = document.getElementById('md-dtctt');
+  if (dt) dt.innerHTML = S.modalLead.dtContato
+    ? `<span>${esc(S.modalLead.dtContato)}</span>`
+    : `<span class="placeholder">Não informado</span>`;
+  // atualiza a lista de leads por baixo (se a aba estiver montada)
+  if (typeof renderLeads === 'function') renderLeads();
+  crmShowToast(`✅ Status → "${ns}"`);
+}
+
 // ══════════════════════════════════════════════
 // FOLLOW-UP & PRAZOS
 // ══════════════════════════════════════════════
@@ -8493,8 +8539,13 @@ function openLeadModal(idx) {
   document.getElementById('md-edital').innerHTML  = l.edital ? `<span style="font-size:.8rem">${esc(l.edital)}</span>` : fv('');
 
   // CRM
-  document.getElementById('md-status-badge').innerHTML =
-    `<span class="status-badge-large" style="background:${sc.bg};color:${sc.tc}">${l.status}</span>`;
+  const stSel = document.getElementById('md-status-select');
+  if (stSel) {
+    stSel.innerHTML = STATUS_OPTIONS.map(s =>
+      `<option value="${s}"${s===l.status?' selected':''}>${s}</option>`).join('');
+    stSel.style.background = sc.bg;
+    stSel.style.color = sc.tc;
+  }
   document.getElementById('md-dtctt').innerHTML = fv(l.dtContato);
   // Meu número WA
   const mnEl = document.getElementById('md-meunumero');
@@ -8538,6 +8589,19 @@ function closeLeadModal() {
 // IMPORT
 // ══════════════════════════════════════════════
 
+// Gera chave normalizada e robusta: placa sem espaços/símbolos + edital limpo.
+// Se não houver placa, usa chassi → renavam → null (nunca colide em "||EDITAL").
+function makeKey(placa, edital, chassi, renavam) {
+  const p = (placa  ||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim();
+  const e = (edital ||'').toString().toUpperCase().replace(/\s+/g,' ').trim();
+  if (p) return p + '||' + e;
+  const c = (chassi ||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim();
+  if (c) return 'CHASSI_' + c;
+  const r = (renavam||'').toString().replace(/\D/g,'').trim();
+  if (r) return 'RENAVAM_' + r;
+  return null; // sem identificador válido → ignora a linha
+}
+
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('importZone').classList.remove('drag');
@@ -8563,13 +8627,15 @@ function importFile(file) {
       log.textContent += `📅 Data: ${fileDate}\n📋 ${rows.length} linhas encontradas\n`;
 
       const data = loadData();
-      let added=0, skipped=0;
+      let added=0, skipped=0, noid=0;
 
       rows.forEach(row => {
         const placa  = (row['PLACA'] ||'').toString().trim();
         const edital = (row['EDITAL']||'').toString().trim();
-        if (!placa && !edital) return;
-        const key = placa+'||'+edital;
+        const chassi = (row['CHASSI']||'').toString().trim();
+        const renavam= (row['RENAVAM']||'').toString().trim();
+        const key = makeKey(placa, edital, chassi, renavam);
+        if (!key) { noid++; return; }
         // Se já existe, verificar se é reimportação do próprio CRM (tem coluna STATUS)
         // → atualiza apenas campos CRM (status, dtContato, obs) se a planilha tiver esses dados
         const rowStatus   = (row['STATUS']       ||'').toString().trim();
@@ -8625,7 +8691,8 @@ function importFile(file) {
 
       saveData(data);
       log.textContent += `\n✅ ${added} leads novos adicionados!\n`;
-      log.textContent += `🔄 ${skipped} já existiam (status/obs preservados)\n`;
+      log.textContent += `🔄 ${skipped} já existiam no CRM (status/obs preservados)\n`;
+      if (noid) log.textContent += `⚠️ ${noid} linhas ignoradas (sem placa/chassi/renavam)\n`;
       log.textContent += `📦 Total no CRM: ${Object.keys(data.leads).length} leads\n`;
       renderImportStats();
       document.getElementById('fileInput').value = '';
@@ -8832,9 +8899,9 @@ function saveNewLead() {
   }
 
   const edital = g('nl-edital');
-  // Chave: placa+edital (mesmo padrão do import); se não tiver placa usa nome+tel
+  // Mesma chave normalizada do import; sem placa cai em chave manual única.
   const key = placa
-    ? (placa + '||' + (edital || 'MANUAL_' + Date.now()))
+    ? makeKey(placa, edital || 'MANUAL_' + Date.now(), g('nl-chassi'), g('nl-renavam'))
     : ('MANUAL_' + nome.replace(/\s/g,'_') + '_' + Date.now());
 
   const data = loadData();
