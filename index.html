@@ -812,6 +812,13 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .close-btn{margin-left:auto;cursor:pointer;background:#f0f2f5;border:none;border-radius:6px;padding:3px 9px;font-size:.76rem;color:#666}
 .close-btn:hover{background:#dde}
 .spot-wrap{overflow-x:auto;max-height:260px;overflow-y:auto;border:1px solid #f0f2f5;border-radius:8px}
+/* destaque suave para leads pagos (Bolsa de Leads) no spotlight */
+.spot-bolsa-row td{background:#eef6ff}
+.spot-bolsa-row:hover td{background:#e3eefb}
+.spot-bolsa-row td:first-child{box-shadow:inset 3px 0 0 #3A5F8C}
+.spot-bolsa-tag{display:inline-block;background:#dbeafe;color:#1e40af;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:7px;vertical-align:middle;white-space:nowrap}
+.spot-status-pill{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 7px;border-radius:7px;vertical-align:middle;white-space:nowrap}
+.lead-bolsa-tag{display:inline-block;background:#dbeafe;color:#1e40af;font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:7px;white-space:nowrap}
 
 /* DASH FILTERS */
 .dash-filters{display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap}
@@ -821,12 +828,102 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .ctx-badge{display:inline-flex;align-items:center;gap:6px;background:#1a2980;color:#fff;padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:700}
 .ctx-badge button{background:rgba(255,255,255,.2);border:none;border-radius:50%;width:17px;height:17px;color:#fff;cursor:pointer;font-size:.68rem;display:flex;align-items:center;justify-content:center}
 .ctx-badge button:hover{background:rgba(255,255,255,.35)}
+.bolsa-toggle-btn{border:1.5px solid #3A5F8C!important;color:#3A5F8C;background:#fff;font-weight:700}
+.bolsa-toggle-btn:hover{background:#eef4fb}
+.bolsa-toggle-btn.active{background:#3A5F8C;color:#fff;box-shadow:0 2px 8px rgba(58,95,140,.35)}
 
 /* CHARTS */
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
 .ccard{background:#fff;border-radius:11px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .ccard h3{font-size:.8rem;font-weight:700;color:#444;margin-bottom:9px;padding-bottom:7px;border-bottom:2px solid #f0f2f5}
 .cbox{position:relative;height:230px}
+
+/* ── FATURAMENTO ── */
+/* ── META & DESAFIO ── */
+.meta-section{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 4px 16px rgba(49,46,129,.22)}
+.meta-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.meta-head h3{font-size:.95rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.meta-mes{font-size:.72rem;font-weight:600;color:#c7d2fe;background:rgba(255,255,255,.1);padding:2px 10px;border-radius:9px;text-transform:capitalize}
+.meta-edit-btn{background:rgba(255,255,255,.12);border:1px solid #4f46e5;color:#e0e7ff;border-radius:8px;padding:5px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Titillium Web',sans-serif}
+.meta-edit-btn:hover{background:rgba(255,255,255,.2)}
+.meta-edit{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;background:rgba(0,0,0,.18);border-radius:10px;padding:12px 14px;margin-bottom:13px}
+.meta-edit-field{display:flex;flex-direction:column;gap:4px}
+.meta-edit-field label{font-size:.66rem;color:#c7d2fe;font-weight:700}
+.meta-edit-field input{width:150px;background:#1e1b4b;border:1px solid #4f46e5;border-radius:7px;color:#fff;font-size:.95rem;font-weight:700;padding:6px 9px;outline:none;font-family:'Titillium Web',sans-serif}
+.meta-edit-field input:focus{border-color:#818cf8}
+/* corpo da meta */
+.meta-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:14px;align-items:stretch}
+.meta-bar-wrap{background:rgba(255,255,255,.06);border:1px solid #4338ca;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center}
+.meta-bar-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.meta-realizado{font-size:1.5rem;font-weight:900;color:#fff;line-height:1}
+.meta-alvo{font-size:.74rem;color:#a5b4fc;font-weight:600}
+.meta-track{position:relative;height:22px;background:#1e1b4b;border-radius:12px;overflow:hidden;border:1px solid #3730a3}
+.meta-fill{position:absolute;inset:0 auto 0 0;border-radius:12px;transition:width .6s ease;background:linear-gradient(90deg,#22c55e,#16a34a)}
+.meta-fill.over{background:linear-gradient(90deg,#22c55e,#15803d)}
+.meta-fill.challenge{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.meta-marker{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fbbf24;z-index:2}
+.meta-marker-lbl{position:absolute;top:-16px;transform:translateX(-50%);font-size:.55rem;color:#fbbf24;font-weight:700;white-space:nowrap}
+.meta-pct-txt{font-size:.72rem;color:#c7d2fe;margin-top:7px;font-weight:600}
+.meta-kpi{background:rgba(255,255,255,.06);border:1px solid #4338ca;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center}
+.meta-kpi .mk-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#a5b4fc;font-weight:700;margin-bottom:5px}
+.meta-kpi .mk-num{font-size:1.15rem;font-weight:900;color:#fff;line-height:1.1}
+.meta-kpi .mk-num.green{color:#4ade80}
+.meta-kpi .mk-num.amber{color:#fbbf24}
+.meta-kpi .mk-rt{font-size:.62rem;color:#9ca3cf;margin-top:3px}
+.meta-insight{grid-column:1/-1;background:rgba(255,255,255,.05);border-left:3px solid #818cf8;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#e0e7ff;line-height:1.45}
+.meta-empty{color:#c7d2fe;font-size:.84rem;padding:6px 2px}
+@media(max-width:900px){.meta-grid{grid-template-columns:1fr}}
+.fat-section{background:linear-gradient(135deg,#0d1f3c,#14315c);border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 4px 16px rgba(13,31,60,.18)}
+.fat-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+.fat-head h3{font-size:.92rem;font-weight:800;color:#fff;letter-spacing:.3px}
+.fat-hint{font-size:.68rem;color:#7a9cc0}
+.fat-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.fat-kpi{background:rgba(255,255,255,.06);border:1px solid #244468;border-radius:11px;padding:12px 13px}
+.fat-kpi .fk-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#7a9cc0;font-weight:700;margin-bottom:5px}
+.fat-kpi .fk-num{font-size:1.32rem;font-weight:900;color:#fff;line-height:1.08}
+.fat-kpi .fk-num.green{color:#4ade80}
+.fat-kpi .fk-num.amber{color:#fbbf24}
+.fat-kpi .fk-rt{font-size:.62rem;color:#90b0d4;margin-top:3px}
+.fat-charts{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.fat-charts .ccard{background:#fff}
+/* Saldo Bolsa de Leads */
+.bolsa-saldo-wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:10px;margin-bottom:14px;align-items:stretch}
+.bolsa-saldo-card{background:rgba(255,255,255,.06);border:1px solid #244468;border-radius:11px;padding:12px 13px;display:flex;flex-direction:column;justify-content:center}
+.bolsa-saldo-card.saldo{background:linear-gradient(135deg,#0a6e49,#0c8a5c);border-color:#0c8a5c}
+.bolsa-saldo-card .bs-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px;color:#7a9cc0}
+.bolsa-saldo-card.saldo .bs-lbl{color:#c9f5e3}
+.bolsa-saldo-card .bs-num{font-size:1.28rem;font-weight:900;color:#fff;line-height:1.08}
+.bolsa-saldo-card .bs-num.bs-num-lg{font-size:1.7rem}
+.bolsa-saldo-card .bs-num.red{color:#f87171}
+.bolsa-saldo-card .bs-num.green{color:#4ade80}
+.bolsa-saldo-card .bs-rt{font-size:.62rem;color:#90b0d4;margin-top:3px}
+.bolsa-saldo-card.saldo .bs-rt{color:#a7e8cd}
+/* depósito discreto */
+.bs-deposito-card{background:rgba(255,255,255,.03);border-style:dashed;border-color:#1e3a5f}
+.bs-dep-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.bs-dep-lbl{font-size:.66rem;color:#7a9cc0;font-weight:600;white-space:nowrap}
+#bsDeposito{width:96px;background:#0d1f3c;border:1px solid #244468;border-radius:6px;color:#cfe0f5;font-size:.86rem;font-weight:700;padding:4px 7px;outline:none;font-family:'Titillium Web',sans-serif;text-align:right}
+#bsDeposito:focus{border-color:#3A5F8C}
+@media(max-width:900px){.bolsa-saldo-wrap{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.bolsa-saldo-wrap{grid-template-columns:1fr 1fr}}
+
+/* ── SETOR EXCLUSIVO BOLSA DE LEADS ── */
+.bolsa-sector{background:#fff;border:1.5px solid #c5dcf2;border-top:4px solid #3A5F8C;border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.bolsa-sector-head{margin-bottom:13px}
+.bolsa-sector-head h3{font-size:.95rem;font-weight:800;color:#1a4d8c}
+.bls-sub{font-weight:400;color:#9bb4cf;font-size:.72rem}
+.bls-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.bls-kpi{background:#f4f8fd;border:1px solid #dbe7f4;border-radius:11px;padding:11px 13px}
+.bls-kpi .k-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#7591b3;font-weight:700;margin-bottom:5px}
+.bls-kpi .k-num{font-size:1.3rem;font-weight:900;color:#1a4d8c;line-height:1.05}
+.bls-kpi .k-num.green{color:#097A52}
+.bls-kpi .k-num.amber{color:#C47D0A}
+.bls-kpi .k-rt{font-size:.62rem;color:#9bb4cf;margin-top:3px}
+.bls-charts{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+@media(max-width:900px){.bls-kpis{grid-template-columns:repeat(2,1fr)}.bls-charts{grid-template-columns:1fr}}
+@media(max-width:560px){.bls-kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.fat-kpis{grid-template-columns:repeat(2,1fr)}.fat-charts{grid-template-columns:1fr}}
+@media(max-width:560px){.fat-kpis{grid-template-columns:1fr 1fr}}
 
 /* ANALYTICS TABLES */
 .tables{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
@@ -933,6 +1030,36 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 #leadModal .field .fv.placeholder{color:#ccc;font-weight:400;font-style:italic}
 #leadModal .modal-foot{padding:14px 24px 20px;display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #f0f2f5;flex-shrink:0}
 /* ── Follow-up section ── */
+#leadModal .comercial-section{background:linear-gradient(135deg,#eafff6,#eaf7f1);border:1.5px solid #9FD9BF;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+#leadModal .comercial-section .section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #9FD9BF}
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cm-field{background:#fff;border-radius:8px;padding:8px 11px;border:1px solid #cdeadd}
+.cm-field .fl{font-size:.62rem;color:#0a6e49;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;font-weight:700}
+.cm-field select,.cm-field input{width:100%;border:1px solid #cfe7da;border-radius:6px;padding:6px 8px;font-size:.82rem;font-weight:600;color:#0d1f3c;outline:none;font-family:'Titillium Web',sans-serif;background:#fff}
+.cm-field select:focus,.cm-field input:focus{border-color:#097A52}
+.cm-resumo{margin-top:11px;background:#0d1f3c;border-radius:10px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cm-resumo-val{display:flex;flex-direction:column}
+.cm-resumo-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.6px;color:#7a9cc0;font-weight:700}
+.cm-resumo-num{font-size:1.25rem;font-weight:900;color:#4ade80;line-height:1.1}
+.cm-resumo-pgto{font-size:.74rem;color:#cfe0f5;text-align:right;font-weight:600;line-height:1.35}
+@media(max-width:560px){.cm-grid{grid-template-columns:1fr}}
+
+/* ── Toggle switch + Bolsa de Leads ── */
+.bolsa-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f0f4f8;border:1px solid #dde3ea;border-radius:9px;padding:10px 13px}
+.bolsa-toggle-label{font-size:.82rem;color:#374151}
+.bolsa-fields{margin-top:10px;background:#eef6ff;border:1px solid #c5dcf2;border-radius:9px;padding:11px 13px}
+.bolsa-fields .nl-field label{color:#1a5c9a}
+.switch{position:relative;display:inline-block;width:46px;height:25px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:25px;transition:.25s}
+.switch-slider:before{content:"";position:absolute;height:19px;width:19px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch input:checked+.switch-slider{background:#3A5F8C}
+.switch input:checked+.switch-slider:before{transform:translateX(21px)}
+/* Bolsa badge no modal de visualização do lead */
+.bolsa-badge{display:inline-flex;align-items:center;gap:4px;background:#3A5F8C;color:#fff;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:10px;letter-spacing:.3px}
+#leadModal .bolsa-section{background:linear-gradient(135deg,#eef6ff,#e3eefb);border:1.5px solid #c5dcf2;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+#leadModal .bolsa-section .section-title{color:#1a5c9a;border-bottom-color:#c5dcf2}
+.bolsa-tagpill{display:inline-block;background:#dbeafe;color:#1e40af;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:8px}
 #leadModal .followup-section{background:linear-gradient(135deg,#fffbeb,#fef9c3);border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:4px}
 #leadModal .followup-section .section-title{color:#92400e;border-bottom-color:#fde68a}
 .fu-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
@@ -7147,6 +7274,7 @@ window.pm_importData        = importData;
     <span class="flabel">até</span>
     <input type="date" id="dto" onchange="renderDashboard()">
     <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">✕ Limpar datas</button>
+    <button class="btn btn-sm bolsa-toggle-btn" id="bolsaOnlyBtn" onclick="toggleBolsaOnly()" title="Mostrar no dashboard apenas os leads pagos (Bolsa de Leads)">🎯 Só Bolsa de Leads</button>
     <div id="ctxBadge" style="display:none" class="ctx-badge">
       <span id="ctxLabel"></span>
       <button onclick="clearCtxFilter()">✕</button>
@@ -7167,6 +7295,78 @@ window.pm_importData        = importData;
     <h3>⏰ Follow-ups & Prazos Urgentes <span id="fuDashCount" style="background:#fbbf24;color:#92400e;font-size:.65rem;padding:1px 7px;border-radius:10px;margin-left:6px"></span></h3>
     <div class="fu-dash-list" id="fuDashList"></div>
   </div>
+
+  <!-- ═══ META & DESAFIO ═══ -->
+  <div class="meta-section" id="metaSection">
+    <div class="meta-head">
+      <h3>🎯 Meta do Mês <span class="meta-mes" id="metaMesLabel"></span></h3>
+      <button class="meta-edit-btn" id="metaEditBtn" onclick="toggleMetaEdit()" title="Editar meta e desafio deste mês">✏️ Editar</button>
+    </div>
+
+    <!-- Edição (oculto por padrão) -->
+    <div class="meta-edit" id="metaEditBox" style="display:none">
+      <div class="meta-edit-field">
+        <label>🎯 Meta (R$)</label>
+        <input type="number" id="metaInput" step="500" min="0" placeholder="0,00">
+      </div>
+      <div class="meta-edit-field">
+        <label>🚀 Desafio (R$)</label>
+        <input type="number" id="desafioInput" step="500" min="0" placeholder="0,00">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="salvarMeta()">Salvar</button>
+      <button class="btn btn-outline btn-sm" onclick="toggleMetaEdit()">Cancelar</button>
+    </div>
+
+    <!-- Visualização -->
+    <div class="meta-body" id="metaBody"></div>
+  </div>
+
+  <!-- ═══ FATURAMENTO ═══ -->
+  <div class="fat-section" id="fatSection">
+    <div class="fat-head">
+      <h3>💰 Faturamento &amp; Comercial</h3>
+      <span class="fat-hint">com base nos serviços lançados nos leads</span>
+    </div>
+    <div class="fat-kpis" id="fatKpis"></div>
+
+    <!-- Saldo Bolsa de Leads -->
+    <div class="bolsa-saldo-wrap" id="bolsaSaldoWrap" style="display:none">
+      <div class="bolsa-saldo-card saldo bs-destaque">
+        <div class="bs-lbl">💼 Saldo disponível na plataforma</div>
+        <div class="bs-num bs-num-lg" id="bsSaldo">R$ 0,00</div>
+        <div class="bs-rt" id="bsSaldoRt">—</div>
+      </div>
+      <div class="bolsa-saldo-card">
+        <div class="bs-lbl">Total pago em leads</div>
+        <div class="bs-num red" id="bsPago">R$ 0,00</div>
+        <div class="bs-rt" id="bsPagoRt">0 leads comprados</div>
+      </div>
+      <div class="bolsa-saldo-card">
+        <div class="bs-lbl">Custo médio por lead</div>
+        <div class="bs-num" id="bsCustoMedio">—</div>
+        <div class="bs-rt" id="bsQtdLeads">0 leads comprados</div>
+      </div>
+      <div class="bolsa-saldo-card bs-deposito-card">
+        <div class="bs-dep-row">
+          <span class="bs-dep-lbl">Total depositado</span>
+          <input type="number" id="bsDeposito" step="50" min="0" placeholder="0,00"
+            onchange="salvarDepositoBolsa(this.value)">
+        </div>
+        <div class="bs-rt">valor já colocado na conta · usado p/ calcular o saldo</div>
+      </div>
+    </div>
+
+    <div class="fat-charts">
+      <div class="ccard">
+        <h3>💵 Receita por Serviço <small style="font-weight:400;color:#bbb;font-size:.68rem">— vendas realizadas</small></h3>
+        <div class="cbox"><canvas id="revServiceChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <h3>💳 Forma de Pagamento</h3>
+        <div class="cbox"><canvas id="payChart"></canvas></div>
+      </div>
+    </div>
+  </div>
   <div class="charts">
     <div class="ccard"><h3>📊 Funil de Vendas</h3><div class="cbox"><canvas id="funnelChart"></canvas></div></div>
     <div class="ccard"><h3>📅 Leads por Dia</h3><div class="cbox"><canvas id="dailyChart"></canvas></div></div>
@@ -7179,6 +7379,34 @@ window.pm_importData        = importData;
     <div class="tcard">
       <h3>📋 Por Edital <small style="font-weight:400;color:#bbb;font-size:.68rem">— clique para filtrar</small></h3>
       <div class="tw"><table><thead><tr><th>Edital</th><th>Total</th><th>Conf.</th><th>% Conf.</th><th>Vendas</th></tr></thead><tbody id="edBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ═══ BOLSA DE LEADS (setor exclusivo) ═══ -->
+  <div class="bolsa-sector" id="bolsaSector" style="display:none">
+    <div class="bolsa-sector-head">
+      <h3>🎯 Bolsa de Leads <span class="bls-sub">— desempenho exclusivo dos leads pagos</span></h3>
+    </div>
+    <div class="bls-kpis" id="blsKpis"></div>
+    <div class="bls-charts">
+      <div class="ccard">
+        <h3>🔄 Funil de Conversão <small style="font-weight:400;color:#bbb;font-size:.68rem">— leads pagos</small></h3>
+        <div class="cbox"><canvas id="blsFunnelChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <h3>📊 Situação dos Leads Pagos</h3>
+        <div class="cbox"><canvas id="blsStatusChart"></canvas></div>
+      </div>
+    </div>
+    <div class="bls-charts" style="margin-top:13px">
+      <div class="ccard">
+        <h3>🏷️ Leads por Tag <small style="font-weight:400;color:#bbb;font-size:.68rem">— qtd e conversão</small></h3>
+        <div class="cbox"><canvas id="blsTagChart"></canvas></div>
+      </div>
+      <div class="ccard">
+        <h3>💸 Investimento vs. Retorno</h3>
+        <div class="cbox"><canvas id="blsRoiChart"></canvas></div>
+      </div>
     </div>
   </div>
 </div>
@@ -7197,6 +7425,11 @@ window.pm_importData        = importData;
     <select id="ufFilter" onchange="renderLeads()"><option value="">Todos os Estados</option></select>
     <select id="dateFilter" onchange="renderLeads()"><option value="">Todas as Datas</option></select>
     <select id="meuWaFilter" onchange="renderLeads()" title="Filtrar por Meu WA (número usado para contatar)"><option value="">📱 Meu WA</option></select>
+    <select id="bolsaFilter" onchange="renderLeads()" title="Filtrar por origem (Bolsa de Leads)">
+      <option value="">🎯 Origem: todos</option>
+      <option value="bolsa">🎯 Só Bolsa de Leads</option>
+      <option value="nao">Sem Bolsa</option>
+    </select>
     <span class="badge-cnt" id="leadsCount">0</span>
   </div>
 
@@ -7391,6 +7624,80 @@ window.pm_importData        = importData;
         </div>
         <div class="fields cols1" style="margin-top:8px">
           <div class="field"><div class="fl">Observações</div><div class="fv" id="md-obs">—</div></div>
+        </div>
+      </div>
+
+      <!-- ── BOLSA DE LEADS ── -->
+      <div class="bolsa-section">
+        <div class="section-title">🎯 Bolsa de Leads</div>
+        <div class="bolsa-toggle-row" style="margin-bottom:10px">
+          <span class="bolsa-toggle-label">Lead pago (veio da Bolsa de Leads)?</span>
+          <label class="switch">
+            <input type="checkbox" id="md-isbolsa" onchange="saveBolsa()">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div id="md-bolsa-fields" style="display:none">
+          <div class="cm-grid">
+            <div class="cm-field">
+              <div class="fl">Código do lead</div>
+              <input type="text" id="md-bolsacod" placeholder="Ex: BL-48217" oninput="saveBolsa()">
+            </div>
+            <div class="cm-field">
+              <div class="fl">Valor pago (R$)</div>
+              <input type="number" id="md-bolsaval" step="0.5" min="0" placeholder="0,00" oninput="saveBolsa()">
+            </div>
+            <div class="cm-field" style="grid-column:1/-1">
+              <div class="fl">Tag</div>
+              <input type="text" id="md-bolsatag" placeholder="Ex: Lei Seca, Premium..." oninput="saveBolsa()">
+            </div>
+          </div>
+          <div id="md-bolsa-reembolso-info" style="display:none;margin-top:10px;background:#D1FAE5;border:1px solid #6EE7B7;border-radius:8px;padding:8px 12px;font-size:.76rem;color:#065F46;font-weight:600">
+            ✅ Status = Reembolso · o valor pago será devolvido ao seu saldo da Bolsa de Leads.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── COMERCIAL / VENDA ── -->
+      <div class="comercial-section">
+        <div class="section-title" style="color:#097A52;border-bottom-color:#9FD9BF">💰 Comercial / Venda</div>
+        <div class="cm-grid">
+          <div class="cm-field" style="grid-column:1/-1">
+            <div class="fl">Serviço contratado</div>
+            <select id="md-servico" onchange="saveComercial()">
+              <option value="">— Selecione o serviço —</option>
+            </select>
+          </div>
+          <div class="cm-field">
+            <div class="fl">Valor base (R$)</div>
+            <input type="number" id="md-valorbase" step="50" min="0" placeholder="0,00" oninput="saveComercial()">
+          </div>
+          <div class="cm-field">
+            <div class="fl">Desconto (%)</div>
+            <input type="number" id="md-descpct" step="1" min="0" max="100" placeholder="0" oninput="saveComercial()">
+          </div>
+          <div class="cm-field">
+            <div class="fl">Forma de pagamento</div>
+            <select id="md-forma" onchange="saveComercial()">
+              <option value="">—</option>
+              <option value="Pix">Pix</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Cartão">Cartão de crédito</option>
+            </select>
+          </div>
+          <div class="cm-field" id="md-parcelas-wrap" style="display:none">
+            <div class="fl">Parcelas (cartão)</div>
+            <select id="md-parcelas" onchange="saveComercial()">
+              <option value="1">À vista (1x)</option>
+            </select>
+          </div>
+        </div>
+        <div class="cm-resumo" id="md-cm-resumo">
+          <div class="cm-resumo-val">
+            <span class="cm-resumo-lbl">Valor final</span>
+            <span class="cm-resumo-num" id="md-valorfinal">R$ 0,00</span>
+          </div>
+          <div class="cm-resumo-pgto" id="md-cm-pgto"></div>
         </div>
       </div>
 
@@ -7640,6 +7947,7 @@ window.pm_importData        = importData;
               <option value="Perdido">Perdido</option>
               <option value="Sem Retorno">Sem Retorno</option>
               <option value="Não Pertence">Não Pertence</option>
+              <option value="Reembolso">Reembolso</option>
             </select>
           </div>
           <div class="nl-field">
@@ -7657,6 +7965,72 @@ window.pm_importData        = importData;
           <div class="nl-field">
             <label>Observações</label>
             <textarea id="nl-obs" placeholder="Anotações, origem do contato, detalhes importantes..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bolsa de Leads -->
+      <div class="nl-section">
+        <div class="nl-section-title">🎯 Origem do Lead</div>
+        <div class="bolsa-toggle-row">
+          <span class="bolsa-toggle-label">Este lead veio da <b>Bolsa de Leads</b> (lead pago)?</span>
+          <label class="switch">
+            <input type="checkbox" id="nl-isbolsa" onchange="nlToggleBolsa()">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div id="nl-bolsa-fields" class="bolsa-fields" style="display:none">
+          <div class="nl-grid g3">
+            <div class="nl-field">
+              <label>Código do lead</label>
+              <input type="text" id="nl-bolsacod" placeholder="Ex: BL-48217">
+            </div>
+            <div class="nl-field">
+              <label>Valor pago (R$)</label>
+              <input type="number" id="nl-bolsaval" step="0.5" min="0" placeholder="0,00">
+            </div>
+            <div class="nl-field">
+              <label>Tag</label>
+              <input type="text" id="nl-bolsatag" placeholder="Ex: Lei Seca, Premium...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comercial -->
+      <div class="nl-section">
+        <div class="nl-section-title">💰 Comercial / Venda <span style="font-weight:400;color:#aaa;font-size:.66rem">(opcional)</span></div>
+        <div class="nl-grid g1">
+          <div class="nl-field">
+            <label>Serviço</label>
+            <select id="nl-servico" onchange="nlServicoChange()">
+              <option value="">— Selecione o serviço —</option>
+            </select>
+          </div>
+        </div>
+        <div class="nl-grid g3" style="margin-top:8px">
+          <div class="nl-field">
+            <label>Valor base (R$)</label>
+            <input type="number" id="nl-valorbase" step="50" min="0" placeholder="0,00">
+          </div>
+          <div class="nl-field">
+            <label>Desconto (%)</label>
+            <input type="number" id="nl-descpct" step="1" min="0" max="100" placeholder="0">
+          </div>
+          <div class="nl-field">
+            <label>Forma de pagamento</label>
+            <select id="nl-forma" onchange="nlFormaChange()">
+              <option value="">—</option>
+              <option value="Pix">Pix</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Cartão">Cartão de crédito</option>
+            </select>
+          </div>
+        </div>
+        <div class="nl-grid g3" id="nl-parcelas-wrap" style="margin-top:8px;display:none">
+          <div class="nl-field">
+            <label>Parcelas (cartão)</label>
+            <select id="nl-parcelas"><option value="1">À vista (1x)</option></select>
           </div>
         </div>
       </div>
@@ -7680,7 +8054,7 @@ window.pm_importData        = importData;
 
 const STATUS_OPTIONS = [
   "Novo Lead","Contactado","Confirmado",
-  "Em Conversa/Negociação","Venda Realizada","Perdido","Sem Retorno","Não Pertence"
+  "Em Conversa/Negociação","Venda Realizada","Perdido","Sem Retorno","Não Pertence","Reembolso"
 ];
 
 const SC = {
@@ -7692,9 +8066,19 @@ const SC = {
   "Perdido":                {bg:"#E8D5F5",tc:"#6B21A8"},
   "Sem Retorno":            {bg:"#FFB3B3",tc:"#8B0000"},
   "Não Pertence":           {bg:"#D9D9D9",tc:"#555"},
+  "Reembolso":              {bg:"#D1FAE5",tc:"#065F46"},
 };
 
-const FUNNEL_BG = ["#e0e0e0","#BDD7EE","#FFFF00","#FFC000","#70AD47","#C084FC","#FFB3B3","#D9D9D9"];
+const FUNNEL_BG = ["#e0e0e0","#BDD7EE","#FFFF00","#FFC000","#70AD47","#C084FC","#FFB3B3","#D9D9D9","#34D399"];
+
+// Conjuntos cumulativos do funil: ao clicar num KPI, mostramos todos os leads
+// que atingiram AQUELA etapa ou além — assim a contagem do card bate com a lista.
+// "Em Conversa/Negociação" NÃO é cumulativo: conta apenas quem está ativamente
+// em conversa (vendas/perdidos/reembolsos já saíram dessa etapa).
+const FUNNEL_GROUPS = {
+  "Contactado":             ["Contactado","Confirmado","Em Conversa/Negociação","Venda Realizada","Perdido","Sem Retorno"],
+  "Confirmado":             ["Confirmado","Em Conversa/Negociação","Venda Realizada"],
+};
 const STORAGE_KEY = "crm_somultas_v3";
 
 // ══════════════════════════════════════════════
@@ -7706,11 +8090,14 @@ let S = {
   spotStatus: null,
   selectedKeys: new Set(),
   modalLead: null,
+  bolsaOnly: false,
 };
 
 let filteredLeads = [];
 let allLeadsCache = [];
 let funnelInst = null, dailyInst = null;
+let revServiceInst = null, payInst = null;
+let blsFunnelInst = null, blsStatusInst = null, blsTagInst = null, blsRoiInst = null;
 
 // ══════════════════════════════════════════════
 // STORAGE
@@ -7789,14 +8176,26 @@ function clearCtxFilter() {
 }
 
 function applyCtx(leads) {
+  // Filtro independente de Bolsa de Leads (combina com uf/edital)
+  if (S.bolsaOnly) leads = leads.filter(l => !!l.isBolsa);
   if (!S.ctxType) return leads;
   if (S.ctxType==='uf')     return leads.filter(l => l.uf===S.ctxValue);
   if (S.ctxType==='edital') return leads.filter(l => (l.edital||'').startsWith(S.ctxValue));
   return leads;
 }
 
+// Liga/desliga o modo "somente Bolsa de Leads" no dashboard
+function toggleBolsaOnly() {
+  S.bolsaOnly = !S.bolsaOnly;
+  S.spotStatus = null;
+  renderDashboard();
+}
+
 function updateCtxBadge() {
   const b = document.getElementById('ctxBadge');
+  // estado do botão "Só Bolsa de Leads"
+  const bb = document.getElementById('bolsaOnlyBtn');
+  if (bb) bb.classList.toggle('active', !!S.bolsaOnly);
   if (!S.ctxType) { b.style.display='none'; return; }
   b.style.display='inline-flex';
   document.getElementById('ctxLabel').textContent =
@@ -7837,9 +8236,16 @@ function renderSpotlight() {
   if (!S.spotStatus) return closeSpotlight();
   const data = loadData();
   let leads = applyCtx(Object.values(data.leads).filter(l => inDateRange(l)));
-  const list = leads.filter(l => S.spotStatus==='_all' ? true : l.status===S.spotStatus);
+  // Se o KPI for cumulativo (Contactado/Confirmado/Em Negociação), mostra todos
+  // os leads daquela etapa em diante — alinhado com a contagem do card.
+  const grupo = FUNNEL_GROUPS[S.spotStatus];
+  const list = leads.filter(l =>
+    S.spotStatus==='_all' ? true
+    : grupo ? grupo.includes(l.status)
+    : l.status===S.spotStatus);
   const sc = SC[S.spotStatus]||SC["Novo Lead"];
-  const labelTxt = S.spotStatus==='_all' ? 'Todos os Leads' : S.spotStatus;
+  const baseLabel = S.spotStatus==='_all' ? 'Todos os Leads' : S.spotStatus;
+  const labelTxt = grupo ? `${baseLabel} (ou além)` : baseLabel;
   document.getElementById('spotTitle').innerHTML =
     `<span style="background:${sc.bg};color:${sc.tc};padding:2px 10px;border-radius:9px;font-size:.78rem">${labelTxt}</span> — ${list.length} lead${list.length!==1?'s':''}`;
   list.sort((a,b)=>a.nome.localeCompare(b.nome));
@@ -7860,9 +8266,15 @@ function renderSpotlight() {
     const openBtn = idxInAll >= 0
       ? `<button onclick="spotOpenLead('${escAttr(l.key)}')" title="Ver ficha completa" style="background:var(--primary);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.67rem;cursor:pointer;white-space:nowrap">👁 Ficha</button>`
       : '';
-    return `<tr>
+    const bolsaMark = l.isBolsa
+      ? `<span class="spot-bolsa-tag" title="Lead pago — Bolsa de Leads${l.bolsaTag?(' · '+esc(l.bolsaTag)):''}">🎯 Bolsa</span>` : '';
+    // Quando a lista é cumulativa, mostra o status real de cada lead
+    const lsc = SC[l.status]||SC["Novo Lead"];
+    const statusPill = grupo
+      ? `<span class="spot-status-pill" style="background:${lsc.bg};color:${lsc.tc}">${esc(l.status)}</span>` : '';
+    return `<tr class="${l.isBolsa?'spot-bolsa-row':''}">
       <td style="color:#aaa;font-size:.7rem;white-space:nowrap">${l.data}</td>
-      <td><b style="font-size:.75rem">${esc(l.nome)}</b></td>
+      <td><b style="font-size:.75rem">${esc(l.nome)}</b> ${statusPill} ${bolsaMark}</td>
       <td style="font-size:.68rem;color:#999;white-space:nowrap">${esc(l.cpf||l.cnpj||'—')}</td>
       <td style="white-space:nowrap;font-size:.75rem">${esc(l.cidade)} <b>${l.uf}</b></td>
       <td>${telHtml}</td>
@@ -7891,6 +8303,13 @@ function renderDashboard() {
     ['ufBody','edBody','spotBody'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML='';});
     if(typeof funnelInst!=='undefined'&&funnelInst){funnelInst.destroy();funnelInst=null;}
     if(typeof dailyInst!=='undefined'&&dailyInst){dailyInst.destroy();dailyInst=null;}
+    if(revServiceInst){revServiceInst.destroy();revServiceInst=null;}
+    if(payInst){payInst.destroy();payInst=null;}
+    var fs=document.getElementById('fatSection'); if(fs)fs.style.display='none';
+    var bsec=document.getElementById('bolsaSector'); if(bsec)bsec.style.display='none';
+    [blsFunnelInst,blsStatusInst,blsTagInst,blsRoiInst].forEach(function(c){if(c)c.destroy();});
+    blsFunnelInst=blsStatusInst=blsTagInst=blsRoiInst=null;
+    renderMeta();
     return;
   }
 
@@ -7903,7 +8322,7 @@ function renderDashboard() {
 
   const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido")+gc("Sem Retorno");
   const conf   = gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
-  const neg    = gc("Em Conversa/Negociação")+gc("Venda Realizada");
+  const neg    = gc("Em Conversa/Negociação");
   const vendas = gc("Venda Realizada");
   const perdidos = gc("Perdido");
 
@@ -7947,6 +8366,12 @@ function renderDashboard() {
       scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'}},x:{grid:{display:false}}}}
   });
 
+  // Faturamento
+  renderFaturamento(leads);
+
+  // Meta & Desafio
+  renderMeta();
+
   // UF table
   const um={};
   leads.forEach(l=>{
@@ -7979,6 +8404,425 @@ function renderDashboard() {
       <td><span class="bar" style="width:${Math.min(r.t>0?r.c/r.t*100:0,100).toFixed(0)}px"></span>${pct(r.c,r.t)}%</td>
       <td class="${r.v>0?'green':'gray'}">${r.v}</td></tr>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════
+// FATURAMENTO / COMERCIAL  (dashboard)
+// ══════════════════════════════════════════════
+
+// Diferença em dias entre duas datas BR (dd/mm/yyyy). null se faltar alguma.
+function crmDaysBetween(d1, d2){
+  if(!d1||!d2) return null;
+  const a=brToIso(d1), b=brToIso(d2);
+  if(!a||!b||a.length<10||b.length<10) return null;
+  const diff=Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);
+  return isNaN(diff)?null:diff;
+}
+
+function fatMoney(v){ return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fatMoneyShort(v){
+  v=Number(v)||0;
+  if(v>=1000000) return 'R$ '+(v/1000000).toFixed(1).replace('.',',')+'M';
+  if(v>=1000)    return 'R$ '+(v/1000).toFixed(1).replace('.',',')+'k';
+  return 'R$ '+v.toFixed(0);
+}
+
+function renderFaturamento(leads){
+  const fs=document.getElementById('fatSection');
+  if(fs) fs.style.display='block';
+
+  const vendas = leads.filter(l=>l.status==='Venda Realizada');
+  // Pipeline = negociações em aberto com valor lançado (ainda não vendidas/perdidas)
+  const pipeline = leads.filter(l=>
+    ['Confirmado','Em Conversa/Negociação'].includes(l.status) && (Number(l.valorFinal)||0)>0);
+
+  const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+
+  const receitaRealizada = vendas.reduce((s,l)=>s+valOf(l),0);
+  const receitaPipeline  = pipeline.reduce((s,l)=>s+valOf(l),0);
+  const qtdVendas        = vendas.length;
+  const ticketMedio      = qtdVendas>0 ? receitaRealizada/qtdVendas : 0;
+
+  // Desconto médio concedido (sobre vendas com desconto informado)
+  const comDesc = vendas.filter(l=>(Number(l.descPct)||0)>0);
+  const descMedio = comDesc.length ? comDesc.reduce((s,l)=>s+Number(l.descPct),0)/comDesc.length : 0;
+
+  // Tempo médio contato → venda (dias)
+  const tempos = vendas.map(l=>crmDaysBetween(l.dtContato, l.saleDate)).filter(v=>v!=null && v>=0);
+  const tempoMedio = tempos.length ? (tempos.reduce((a,b)=>a+b,0)/tempos.length) : null;
+
+  // KPI cards
+  const kpis=[
+    {lbl:'Receita realizada', num:fatMoney(receitaRealizada), cls:'green', rt:`${qtdVendas} venda${qtdVendas!==1?'s':''}`},
+    {lbl:'Ticket médio',      num:fatMoney(ticketMedio),      cls:'',      rt:'por venda fechada'},
+    {lbl:'Em negociação',     num:fatMoney(receitaPipeline),  cls:'amber', rt:`${pipeline.length} lead${pipeline.length!==1?'s':''} c/ proposta`},
+    {lbl:'Tempo médio p/ venda', num: tempoMedio==null?'—':`${tempoMedio.toFixed(1)} dias`, cls:'', rt: tempoMedio==null?'sem dados de data':'contato → fechamento'},
+    {lbl:'Desconto médio',    num: descMedio>0?`${descMedio.toFixed(0)}%`:'0%', cls:'', rt:`em ${comDesc.length} venda${comDesc.length!==1?'s':''}`},
+  ];
+  const kEl=document.getElementById('fatKpis');
+  if(kEl) kEl.innerHTML = kpis.map(k=>
+    `<div class="fat-kpi"><div class="fk-lbl">${k.lbl}</div><div class="fk-num ${k.cls}">${k.num}</div><div class="fk-rt">${k.rt}</div></div>`
+  ).join('');
+
+  // ── Receita por serviço (vendas) ──
+  const svcMap={};
+  vendas.forEach(l=>{
+    const nome=l.servico||'(sem serviço)';
+    svcMap[nome]=(svcMap[nome]||0)+valOf(l);
+  });
+  const svcArr=Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(revServiceInst){revServiceInst.destroy();revServiceInst=null;}
+  const rsCanvas=document.getElementById('revServiceChart');
+  if(rsCanvas){
+    if(svcArr.length){
+      revServiceInst=new Chart(rsCanvas,{
+        type:'bar',
+        data:{labels:svcArr.map(s=>s[0].length>26?s[0].slice(0,26)+'…':s[0]),
+          datasets:[{data:svcArr.map(s=>s[1]),backgroundColor:'#097A52',borderRadius:5,borderWidth:0}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fatMoney(c.parsed.x)}}},
+          scales:{x:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{callback:v=>fatMoneyShort(v),font:{size:9}}},
+                  y:{grid:{display:false},ticks:{font:{size:9}}}}}
+      });
+    } else {
+      const ctx=rsCanvas.getContext('2d'); ctx.clearRect(0,0,rsCanvas.width,rsCanvas.height);
+      ctx.font='13px Titillium Web'; ctx.fillStyle='#aaa'; ctx.textAlign='center';
+      ctx.fillText('Nenhuma venda com serviço lançado', rsCanvas.width/2, rsCanvas.height/2);
+    }
+  }
+
+  // ── Forma de pagamento (vendas) ──
+  const payMap={'Pix':0,'Boleto':0,'Cartão':0};
+  vendas.forEach(l=>{ if(l.formaPgto && payMap[l.formaPgto]!=null) payMap[l.formaPgto]+=valOf(l); });
+  const payLabels=Object.keys(payMap).filter(k=>payMap[k]>0);
+  const payData=payLabels.map(k=>payMap[k]);
+  const payColors={'Pix':'#26d0ce','Boleto':'#3A5F8C','Cartão':'#C47D0A'};
+  if(payInst){payInst.destroy();payInst=null;}
+  const pCanvas=document.getElementById('payChart');
+  if(pCanvas){
+    if(payLabels.length){
+      payInst=new Chart(pCanvas,{
+        type:'doughnut',
+        data:{labels:payLabels,datasets:[{data:payData,backgroundColor:payLabels.map(k=>payColors[k]),borderWidth:2,borderColor:'#fff'}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+          plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,usePointStyle:true}},
+            tooltip:{callbacks:{label:c=>`${c.label}: ${fatMoney(c.parsed)}`}}}}
+      });
+    } else {
+      const ctx=pCanvas.getContext('2d'); ctx.clearRect(0,0,pCanvas.width,pCanvas.height);
+      ctx.font='13px Titillium Web'; ctx.fillStyle='#aaa'; ctx.textAlign='center';
+      ctx.fillText('Sem forma de pagamento registrada', pCanvas.width/2, pCanvas.height/2);
+    }
+  }
+
+  // ── Saldo Bolsa de Leads (sempre sobre TODOS os leads, ignora filtro de data) ──
+  const allLeads = Object.values(loadData().leads);
+  renderBolsaSaldo(allLeads);
+  renderBolsaCharts(allLeads);
+}
+
+// Calcula e renderiza o painel de saldo da Bolsa de Leads.
+// Saldo disponível = depositado − total pago + total reembolsado.
+function renderBolsaSaldo(leads){
+  const wrap=document.getElementById('bolsaSaldoWrap');
+  if(!wrap) return;
+  const bolsaLeads = leads.filter(l=>l.isBolsa);
+  if(!bolsaLeads.length){ wrap.style.display='none'; return; }
+  wrap.style.display='grid';
+
+  const valNum = l => Number(l.bolsaValor)||0;
+  const totalPago   = bolsaLeads.reduce((s,l)=>s+valNum(l),0);
+  const reembolsados= bolsaLeads.filter(l=>l.status==='Reembolso');
+  const totalReemb  = reembolsados.reduce((s,l)=>s+valNum(l),0);
+
+  // depósito vem da meta (global)
+  const data = loadData();
+  const deposito = Number(data.meta && data.meta.bolsaDeposito) || 0;
+  const saldoDisp = deposito - totalPago + totalReemb;
+
+  // custo médio por lead comprado
+  const qtd = bolsaLeads.length;
+  const custoMedio = qtd>0 ? totalPago/qtd : null;
+
+  const depEl = document.getElementById('bsDeposito');
+  if (depEl && document.activeElement!==depEl) depEl.value = deposito>0 ? deposito : '';
+
+  const saldoEl = document.getElementById('bsSaldo');
+  saldoEl.textContent = fatMoney(saldoDisp);
+  saldoEl.style.color = saldoDisp<0 ? '#fca5a5' : '#fff';
+  // reembolsado aparece aqui, no subtítulo do saldo
+  document.getElementById('bsSaldoRt').textContent =
+    totalReemb>0
+      ? `inclui ${fatMoney(totalReemb)} reembolsado${reembolsados.length>1?'s':''} (${reembolsados.length})`
+      : 'sem reembolsos no período';
+
+  document.getElementById('bsPago').textContent = fatMoney(totalPago);
+  document.getElementById('bsPagoRt').textContent = `${qtd} lead${qtd!==1?'s':''} comprado${qtd!==1?'s':''}`;
+  document.getElementById('bsCustoMedio').textContent = custoMedio==null ? '—' : fatMoney(custoMedio);
+  document.getElementById('bsQtdLeads').textContent = `${qtd} lead${qtd!==1?'s':''} · pago / qtd`;
+}
+
+// Salva o total depositado na Bolsa de Leads (global, em meta)
+function salvarDepositoBolsa(val){
+  const data = loadData();
+  if(!data.meta) data.meta = {};
+  data.meta.bolsaDeposito = parseFloat(val)||0;
+  saveData(data);
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// META & DESAFIO (por mês)
+// ══════════════════════════════════════════════
+
+// Chave do mês atual no formato YYYY-MM
+function metaMesKey(){ return new Date().toISOString().slice(0,7); }
+const META_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function metaMesNome(key){
+  const [y,m]=key.split('-'); return `${META_MESES[parseInt(m)-1]} de ${y}`;
+}
+
+// Lê {meta, desafio} do mês atual
+function getMetaMes(){
+  const data = loadData();
+  const metas = (data.meta && data.meta.metas) || {};
+  const m = metas[metaMesKey()] || {};
+  return { meta: Number(m.meta)||0, desafio: Number(m.desafio)||0 };
+}
+
+// Retorna a data ISO da venda de um lead (saleDate > dtContato > data)
+function leadSaleIso(l){
+  const d = l.saleDate || l.dtContato || l.data || '';
+  return brToIso(d);
+}
+
+// Soma o faturamento realizado no mês atual (vendas com saleDate no mês)
+function faturamentoMesAtual(){
+  const mes = metaMesKey();
+  const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+  return Object.values(loadData().leads)
+    .filter(l => l.status==='Venda Realizada' && leadSaleIso(l).slice(0,7)===mes)
+    .reduce((s,l)=>s+valOf(l),0);
+}
+
+// Quantas vendas no mês
+function vendasMesAtual(){
+  const mes = metaMesKey();
+  return Object.values(loadData().leads)
+    .filter(l => l.status==='Venda Realizada' && leadSaleIso(l).slice(0,7)===mes).length;
+}
+
+function toggleMetaEdit(){
+  const box = document.getElementById('metaEditBox');
+  const showing = box.style.display!=='none';
+  if(showing){ box.style.display='none'; return; }
+  const {meta,desafio} = getMetaMes();
+  document.getElementById('metaInput').value = meta>0 ? meta : '';
+  document.getElementById('desafioInput').value = desafio>0 ? desafio : '';
+  box.style.display='flex';
+}
+
+function salvarMeta(){
+  const meta = parseFloat(document.getElementById('metaInput').value)||0;
+  const desafio = parseFloat(document.getElementById('desafioInput').value)||0;
+  const data = loadData();
+  if(!data.meta) data.meta = {};
+  if(!data.meta.metas) data.meta.metas = {};
+  data.meta.metas[metaMesKey()] = { meta, desafio };
+  saveData(data);
+  document.getElementById('metaEditBox').style.display='none';
+  renderMeta();
+  crmShowToast('🎯 Meta atualizada!');
+}
+
+function renderMeta(){
+  const labelEl = document.getElementById('metaMesLabel');
+  if(labelEl) labelEl.textContent = metaMesNome(metaMesKey());
+
+  const {meta,desafio} = getMetaMes();
+  const realizado = faturamentoMesAtual();
+  const qtd = vendasMesAtual();
+  const body = document.getElementById('metaBody');
+  if(!body) return;
+
+  if(meta<=0 && desafio<=0){
+    body.innerHTML = `<div class="meta-empty">Nenhuma meta definida para ${metaMesNome(metaMesKey())}. Clique em <b>✏️ Editar</b> para definir sua meta e desafio do mês.</div>`;
+    return;
+  }
+
+  // Referência da barra: usa o desafio como topo se existir e for > meta; senão a meta
+  const topo = (desafio>meta) ? desafio : meta;
+  const pctMeta = meta>0 ? (realizado/meta*100) : 0;
+  const pctTopo = topo>0 ? Math.min(realizado/topo*100,100) : 0;
+  const metaMarkerPos = (desafio>meta && topo>0) ? (meta/topo*100) : 100;
+
+  const faltaMeta = Math.max(meta-realizado,0);
+  const batidaMeta = realizado>=meta && meta>0;
+  const batidaDesafio = desafio>0 && realizado>=desafio;
+
+  // projeção simples: ritmo diário × dias do mês
+  const hoje = new Date();
+  const diaAtual = hoje.getDate();
+  const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+  const diasRestantes = diasNoMes - diaAtual;
+  const ritmoDia = diaAtual>0 ? realizado/diaAtual : 0;
+  const projecao = ritmoDia*diasNoMes;
+
+  // cor da barra
+  let fillClass = 'meta-fill';
+  if(batidaDesafio) fillClass += ' challenge';
+  else if(batidaMeta) fillClass += ' over';
+
+  // insight
+  let insight = '';
+  if(batidaDesafio){
+    insight = `🏆 <b>Desafio batido!</b> Você já faturou ${fatMoney(realizado)} este mês, superando o desafio de ${fatMoney(desafio)}. Excelente!`;
+  } else if(batidaMeta){
+    const faltaDesafio = desafio>0 ? Math.max(desafio-realizado,0) : 0;
+    insight = desafio>0
+      ? `✅ <b>Meta atingida!</b> Faltam ${fatMoney(faltaDesafio)} para alcançar o desafio de ${fatMoney(desafio)}.`
+      : `✅ <b>Meta atingida!</b> Você já faturou ${fatMoney(realizado)} este mês.`;
+  } else {
+    let proj = '';
+    if(diaAtual>=3 && meta>0){
+      proj = projecao>=meta
+        ? ` No ritmo atual (${fatMoney(ritmoDia)}/dia), você deve fechar o mês em ~${fatMoney(projecao)} e <b>bater a meta</b>.`
+        : ` No ritmo atual (${fatMoney(ritmoDia)}/dia), a projeção é ~${fatMoney(projecao)} — <b>abaixo da meta</b>. Para virar, você precisa de ${fatMoney(diasRestantes>0?faltaMeta/diasRestantes:faltaMeta)}/dia nos ${diasRestantes} dias restantes.`;
+    }
+    insight = `Faltam <b>${fatMoney(faltaMeta)}</b> para a meta de ${fatMoney(meta)} (${pctMeta.toFixed(0)}% concluído).${proj}`;
+  }
+
+  body.innerHTML = `
+    <div class="meta-grid">
+      <div class="meta-bar-wrap">
+        <div class="meta-bar-top">
+          <span class="meta-realizado">${fatMoney(realizado)}</span>
+          <span class="meta-alvo">de ${fatMoney(meta)}${desafio>meta?` · desafio ${fatMoney(desafio)}`:''}</span>
+        </div>
+        <div class="meta-track">
+          <div class="${fillClass}" style="width:${pctTopo.toFixed(1)}%"></div>
+          ${desafio>meta?`<div class="meta-marker" style="left:${metaMarkerPos.toFixed(1)}%"><span class="meta-marker-lbl" style="left:0">meta</span></div>`:''}
+        </div>
+        <div class="meta-pct-txt">${pctMeta.toFixed(0)}% da meta${desafio>meta?` · ${(desafio>0?realizado/desafio*100:0).toFixed(0)}% do desafio`:''} · ${qtd} venda${qtd!==1?'s':''} no mês</div>
+      </div>
+      <div class="meta-kpi">
+        <div class="mk-lbl">${batidaMeta?'Acima da meta':'Falta p/ meta'}</div>
+        <div class="mk-num ${batidaMeta?'green':'amber'}">${batidaMeta?'+'+fatMoney(realizado-meta):fatMoney(faltaMeta)}</div>
+        <div class="mk-rt">${diasRestantes} dia${diasRestantes!==1?'s':''} restante${diasRestantes!==1?'s':''} no mês</div>
+      </div>
+      <div class="meta-kpi">
+        <div class="mk-lbl">Projeção do mês</div>
+        <div class="mk-num">${diaAtual>=3?fatMoneyShort(projecao):'—'}</div>
+        <div class="mk-rt">${diaAtual>=3?'no ritmo atual':'aguardando + dados'}</div>
+      </div>
+      <div class="meta-insight">${insight}</div>
+    </div>`;
+}
+
+// Setor exclusivo da Bolsa de Leads: KPIs + 4 gráficos.
+function renderBolsaCharts(allLeads){
+  const sector = document.getElementById('bolsaSector');
+  if(!sector) return;
+  const bl = allLeads.filter(l=>l.isBolsa);
+  if(!bl.length){
+    sector.style.display='none';
+    [blsFunnelInst,blsStatusInst,blsTagInst,blsRoiInst].forEach(c=>{if(c)c.destroy();});
+    blsFunnelInst=blsStatusInst=blsTagInst=blsRoiInst=null;
+    return;
+  }
+  sector.style.display='block';
+
+  const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+  const gc = s => bl.filter(l=>l.status===s).length;
+
+  const qtd        = bl.length;
+  const contatados = bl.filter(l=>['Contactado','Confirmado','Em Conversa/Negociação','Venda Realizada','Perdido','Sem Retorno'].includes(l.status)).length;
+  const confirmados= bl.filter(l=>['Confirmado','Em Conversa/Negociação','Venda Realizada'].includes(l.status)).length;
+  const negociacao = bl.filter(l=>['Em Conversa/Negociação','Venda Realizada'].includes(l.status)).length;
+  const vendas     = gc('Venda Realizada');
+  const reembolsos = gc('Reembolso');
+
+  const totalPago  = bl.reduce((s,l)=>s+(Number(l.bolsaValor)||0),0);
+  const totalReemb = bl.filter(l=>l.status==='Reembolso').reduce((s,l)=>s+(Number(l.bolsaValor)||0),0);
+  const investLiquido = totalPago - totalReemb;
+  const receitaGerada = bl.filter(l=>l.status==='Venda Realizada').reduce((s,l)=>s+valOf(l),0);
+  const taxaConv   = qtd>0 ? (vendas/qtd*100) : 0;
+  const taxaReemb  = qtd>0 ? (reembolsos/qtd*100) : 0;
+  const roi        = investLiquido>0 ? ((receitaGerada-investLiquido)/investLiquido*100) : null;
+
+  // KPIs
+  const kpis=[
+    {lbl:'Leads comprados', num:qtd, cls:'', rt:`${reembolsos} reembolsado${reembolsos!==1?'s':''}`},
+    {lbl:'Taxa de conversão', num:`${taxaConv.toFixed(1)}%`, cls:'green', rt:`${vendas} venda${vendas!==1?'s':''}`},
+    {lbl:'Receita gerada', num:fatMoneyShort(receitaGerada), cls:'green', rt:'vendas de leads pagos'},
+    {lbl:'Investimento líquido', num:fatMoneyShort(investLiquido), cls:'amber', rt:'pago − reembolsado'},
+    {lbl:'ROI', num: roi==null?'—':`${roi>=0?'+':''}${roi.toFixed(0)}%`, cls: roi!=null&&roi>=0?'green':'amber', rt:'retorno s/ investido'},
+  ];
+  const kEl=document.getElementById('blsKpis');
+  if(kEl) kEl.innerHTML = kpis.map(k=>
+    `<div class="bls-kpi"><div class="k-lbl">${k.lbl}</div><div class="k-num ${k.cls}">${k.num}</div><div class="k-rt">${k.rt}</div></div>`
+  ).join('');
+
+  // 1) Funil de conversão (barras)
+  const funLabels=['Comprados','Contactados','Confirmados','Negociação','Vendas'];
+  const funData=[qtd,contatados,confirmados,negociacao,vendas];
+  if(blsFunnelInst){blsFunnelInst.destroy();}
+  blsFunnelInst=new Chart(document.getElementById('blsFunnelChart'),{
+    type:'bar',
+    data:{labels:funLabels,datasets:[{data:funData,
+      backgroundColor:['#94a3b8','#60a5fa','#3A5F8C','#C47D0A','#097A52'],borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const p=qtd>0?(c.parsed.y/qtd*100).toFixed(1):0;return `${c.parsed.y} leads (${p}% do total)`;}}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{precision:0}},x:{grid:{display:false},ticks:{font:{size:10}}}}}
+  });
+
+  // 2) Situação dos leads pagos (doughnut por status)
+  const statusOrder=STATUS_OPTIONS.filter(s=>gc(s)>0);
+  const statusData=statusOrder.map(s=>gc(s));
+  const statusColors=statusOrder.map(s=>(SC[s]||SC['Novo Lead']).bg);
+  if(blsStatusInst){blsStatusInst.destroy();}
+  blsStatusInst=new Chart(document.getElementById('blsStatusChart'),{
+    type:'doughnut',
+    data:{labels:statusOrder,datasets:[{data:statusData,backgroundColor:statusColors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{position:'right',labels:{font:{size:10},padding:8,usePointStyle:true,boxWidth:8}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} (${qtd>0?(c.parsed/qtd*100).toFixed(0):0}%)`}}}}
+  });
+
+  // 3) Leads por Tag (qtd + conversão)
+  const tagMap={};
+  bl.forEach(l=>{
+    const t=(l.bolsaTag&&l.bolsaTag.trim())?l.bolsaTag.trim():'(sem tag)';
+    if(!tagMap[t]) tagMap[t]={total:0,vendas:0};
+    tagMap[t].total++;
+    if(l.status==='Venda Realizada') tagMap[t].vendas++;
+  });
+  const tagArr=Object.entries(tagMap).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  if(blsTagInst){blsTagInst.destroy();}
+  blsTagInst=new Chart(document.getElementById('blsTagChart'),{
+    type:'bar',
+    data:{labels:tagArr.map(t=>t[0].length>16?t[0].slice(0,16)+'…':t[0]),
+      datasets:[
+        {label:'Total',  data:tagArr.map(t=>t[1].total),  backgroundColor:'#60a5fa',borderRadius:5},
+        {label:'Vendas', data:tagArr.map(t=>t[1].vendas), backgroundColor:'#097A52',borderRadius:5},
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:10},usePointStyle:true,boxWidth:8,padding:10}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{precision:0}},x:{grid:{display:false},ticks:{font:{size:9}}}}}
+  });
+
+  // 4) Investimento vs Retorno (barras)
+  if(blsRoiInst){blsRoiInst.destroy();}
+  blsRoiInst=new Chart(document.getElementById('blsRoiChart'),{
+    type:'bar',
+    data:{labels:['Investido (líq.)','Receita gerada'],
+      datasets:[{data:[investLiquido,receitaGerada],backgroundColor:['#A32532','#097A52'],borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fatMoney(c.parsed.y)}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{callback:v=>fatMoneyShort(v),font:{size:9}}},
+              x:{grid:{display:false},ticks:{font:{size:10}}}}}
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -8028,13 +8872,15 @@ function renderLeads() {
   const uf = document.getElementById('ufFilter').value;
   const df = document.getElementById('dateFilter').value;
   const wf = (document.getElementById('meuWaFilter')||{}).value||'';
+  const bf = (document.getElementById('bolsaFilter')||{}).value||'';
 
   filteredLeads = allLeadsCache.filter(l => {
     const ts = (l.tels||[]).join(' ');
     const ms = !q || (l.nome||'').toLowerCase().includes(q) ||
       (l.placa||'').toLowerCase().includes(q) || (l.cidade||'').toLowerCase().includes(q) ||
       ts.includes(q) || (l.cpf||'').includes(q);
-    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf);
+    const bolsaOk = !bf || (bf==='bolsa' ? !!l.isBolsa : !l.isBolsa);
+    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf) && bolsaOk;
   });
   filteredLeads.sort((a,b)=>brToIso(b.data).localeCompare(brToIso(a.data))||a.nome.localeCompare(b.nome));
 
@@ -8056,7 +8902,7 @@ function renderLeads() {
       <td style="white-space:nowrap;color:#aaa;font-size:.69rem">${stale?'<span class="stale" title="Sem ação há mais de 3 dias"></span>':''} ${l.data}</td>
       <td style="max-width:150px">
         <span class="btn-view" onclick="openLeadModal(${idx})" title="Ver ficha completa" style="font-size:.68rem;padding:2px 6px;margin-bottom:3px;display:inline-block">👁 Ver</span><br>
-        <b style="font-size:.75rem">${l.manual?'<span title="Lead cadastrado manualmente" style="color:#26d0ce;font-size:.65rem;margin-right:2px">✏️</span>':''}${esc(l.nome)}</b><br>
+        <b style="font-size:.75rem">${l.manual?'<span title="Lead cadastrado manualmente" style="color:#26d0ce;font-size:.65rem;margin-right:2px">✏️</span>':''}${esc(l.nome)}</b>${l.isBolsa?' <span class="lead-bolsa-tag" title="Lead pago — Bolsa de Leads'+(l.bolsaTag?(' · '+esc(l.bolsaTag)):'')+'">🎯 Bolsa</span>':''}<br>
         <span style="color:#bbb;font-size:.67rem">${esc(l.cpf||l.cnpj||'')}</span>
       </td>
       <td style="white-space:nowrap">${esc(l.cidade)} <b>${l.uf}</b></td>
@@ -8199,6 +9045,8 @@ function updateStatus(key, ns, sel) {
   data.leads[key].status = ns;
   if (!data.leads[key].dtContato && ns!=='Novo Lead')
     data.leads[key].dtContato = new Date().toLocaleDateString('pt-BR');
+  if (ns==='Venda Realizada' && !data.leads[key].saleDate)
+    data.leads[key].saleDate = new Date().toLocaleDateString('pt-BR');
   saveData(data);
   const sc = SC[ns]||SC["Novo Lead"];
   sel.style.background = sc.bg;
@@ -8219,24 +9067,29 @@ function changeStatusModal(ns) {
   data.leads[key].status = ns;
   if (!data.leads[key].dtContato && ns!=='Novo Lead')
     data.leads[key].dtContato = new Date().toLocaleDateString('pt-BR');
+  if (ns==='Venda Realizada' && !data.leads[key].saleDate)
+    data.leads[key].saleDate = new Date().toLocaleDateString('pt-BR');
   saveData(data);
   // sincroniza o lead em memória
   S.modalLead.status = ns;
   if (!S.modalLead.dtContato) S.modalLead.dtContato = data.leads[key].dtContato;
+  if (data.leads[key].saleDate) S.modalLead.saleDate = data.leads[key].saleDate;
   // recolore o select e atualiza o subtítulo + data de contato no modal
   const sc = SC[ns]||SC["Novo Lead"];
   const sel = document.getElementById('md-status-select');
   if (sel) { sel.style.background = sc.bg; sel.style.color = sc.tc; }
-  const sub = document.getElementById('md-sub');
-  if (sub) sub.innerHTML =
-    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${ns}</span>` +
-    `&nbsp;&nbsp;Data: ${S.modalLead.data} &nbsp;·&nbsp; Placa: <b>${S.modalLead.placa}</b>`;
+  refreshLeadModalBadge();
+  // info de reembolso (apenas se for lead da bolsa)
+  const ri = document.getElementById('md-bolsa-reembolso-info');
+  if (ri) ri.style.display = (S.modalLead.isBolsa && ns==='Reembolso') ? 'block' : 'none';
   const dt = document.getElementById('md-dtctt');
   if (dt) dt.innerHTML = S.modalLead.dtContato
     ? `<span>${esc(S.modalLead.dtContato)}</span>`
     : `<span class="placeholder">Não informado</span>`;
   // atualiza a lista de leads por baixo (se a aba estiver montada)
   if (typeof renderLeads === 'function') renderLeads();
+  // atualiza dashboard (saldo da bolsa pode mudar com reembolso)
+  if (typeof renderDashboard === 'function') renderDashboard();
   crmShowToast(`✅ Status → "${ns}"`);
 }
 
@@ -8291,6 +9144,163 @@ function saveFollowup() {
     S.modalLead.followupDate = date;
     S.modalLead.followupNote = note;
   }
+}
+
+// ══════════════════════════════════════════════
+// COMERCIAL / VENDA  (serviço, valor, desconto, pagamento)
+// ══════════════════════════════════════════════
+
+function cmFmtMoney(v){ return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+
+// Preenche o <select> de serviços a partir do catálogo já existente
+function popularServicoSelect(){
+  const sel = document.getElementById('md-servico');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecione o serviço —</option>' +
+    CATALOGO_SERVICOS.map(s =>
+      `<option value="${escAttr(s.nome)}" data-preco="${s.preco==null?'':s.preco}">${esc(s.nome)}${s.preco!=null?` — R$ ${s.preco.toLocaleString('pt-BR')}`:' (valor manual)'}</option>`
+    ).join('');
+}
+
+// Preenche o <select> de parcelas (1x a 12x)
+function popularParcelasSelect(){
+  const sel = document.getElementById('md-parcelas');
+  if (!sel) return;
+  let html = '<option value="1">À vista (1x)</option>';
+  for (let i=2;i<=12;i++) html += `<option value="${i}">${i}x</option>`;
+  sel.innerHTML = html;
+}
+
+// Carrega os campos comerciais ao abrir o modal de um lead
+function fillComercial(l){
+  popularServicoSelect();
+  popularParcelasSelect();
+  const svcEl  = document.getElementById('md-servico');
+  const baseEl = document.getElementById('md-valorbase');
+  const descEl = document.getElementById('md-descpct');
+  const formaEl= document.getElementById('md-forma');
+  const parcEl = document.getElementById('md-parcelas');
+  if (svcEl)  svcEl.value  = l.servico || '';
+  // valor base: se já gravado usa-o; senão tenta puxar do catálogo
+  if (baseEl){
+    if (l.valorBase != null && l.valorBase !== '') baseEl.value = l.valorBase;
+    else {
+      const cat = CATALOGO_SERVICOS.find(c=>c.nome===l.servico);
+      baseEl.value = (cat && cat.preco!=null) ? cat.preco : '';
+    }
+  }
+  if (descEl)  descEl.value  = (l.descPct!=null && l.descPct!=='') ? l.descPct : '';
+  if (formaEl) formaEl.value = l.formaPgto || '';
+  if (parcEl)  parcEl.value  = l.parcelas || '1';
+  refreshComercialUI();
+}
+
+// Recalcula o resumo (valor final, parcela) sem gravar
+function refreshComercialUI(){
+  const base  = parseFloat(document.getElementById('md-valorbase').value) || 0;
+  const desc  = Math.min(Math.max(parseFloat(document.getElementById('md-descpct').value)||0,0),100);
+  const forma = document.getElementById('md-forma').value;
+  const parcelas = parseInt(document.getElementById('md-parcelas').value)||1;
+  const final = base * (1 - desc/100);
+  document.getElementById('md-valorfinal').textContent = cmFmtMoney(final);
+  // mostra/esconde parcelas conforme forma
+  document.getElementById('md-parcelas-wrap').style.display = (forma==='Cartão') ? 'block' : 'none';
+  // texto de pagamento
+  const pgEl = document.getElementById('md-cm-pgto');
+  let txt = '';
+  if (forma==='Cartão' && parcelas>1){
+    txt = `${forma} · ${parcelas}x de ${cmFmtMoney(final/parcelas)}`;
+  } else if (forma){
+    txt = `${forma} · à vista`;
+  } else {
+    txt = 'Forma de pagamento não definida';
+  }
+  if (desc>0) txt += `  ·  desconto ${desc}%`;
+  pgEl.textContent = txt;
+}
+
+// Grava os campos comerciais no lead
+function saveComercial(){
+  if (!S.modalLead) return;
+  const servico  = document.getElementById('md-servico').value;
+  const base     = document.getElementById('md-valorbase').value;
+  const desc     = document.getElementById('md-descpct').value;
+  const forma    = document.getElementById('md-forma').value;
+  const parcelas = document.getElementById('md-parcelas').value;
+
+  // Se selecionou um serviço com preço de catálogo e o campo base está vazio, preenche
+  if (servico){
+    const cat = CATALOGO_SERVICOS.find(c=>c.nome===servico);
+    const baseEl = document.getElementById('md-valorbase');
+    if (cat && cat.preco!=null && (!baseEl.value || baseEl.value==='')) baseEl.value = cat.preco;
+  }
+
+  refreshComercialUI();
+
+  const baseNum  = parseFloat(document.getElementById('md-valorbase').value)||0;
+  const descNum  = Math.min(Math.max(parseFloat(document.getElementById('md-descpct').value)||0,0),100);
+  const finalNum = baseNum*(1-descNum/100);
+
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if (!lead) return;
+  lead.servico    = servico;
+  lead.valorBase  = baseNum;
+  lead.descPct    = descNum;
+  lead.formaPgto  = forma;
+  lead.parcelas   = (forma==='Cartão') ? (parseInt(parcelas)||1) : 1;
+  lead.valorFinal = finalNum;
+  saveData(data);
+  // sincroniza em memória
+  Object.assign(S.modalLead, {servico, valorBase:baseNum, descPct:descNum, formaPgto:forma, parcelas:lead.parcelas, valorFinal:finalNum});
+}
+
+// ── Bolsa de Leads (modal de visualização) ──
+function fillBolsa(l){
+  const chk = document.getElementById('md-isbolsa');
+  const box = document.getElementById('md-bolsa-fields');
+  if (!chk) return;
+  chk.checked = !!l.isBolsa;
+  box.style.display = l.isBolsa ? 'block' : 'none';
+  document.getElementById('md-bolsacod').value = l.bolsaCodigo || '';
+  document.getElementById('md-bolsaval').value = (l.bolsaValor!=null && l.bolsaValor!=='') ? l.bolsaValor : '';
+  document.getElementById('md-bolsatag').value = l.bolsaTag || '';
+  // info de reembolso
+  const ri = document.getElementById('md-bolsa-reembolso-info');
+  if (ri) ri.style.display = (l.isBolsa && l.status==='Reembolso') ? 'block' : 'none';
+}
+
+function saveBolsa(){
+  if (!S.modalLead) return;
+  const isBolsa = document.getElementById('md-isbolsa').checked;
+  document.getElementById('md-bolsa-fields').style.display = isBolsa ? 'block' : 'none';
+  const cod = document.getElementById('md-bolsacod').value;
+  const val = parseFloat(document.getElementById('md-bolsaval').value)||0;
+  const tag = document.getElementById('md-bolsatag').value;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if (!lead) return;
+  lead.isBolsa     = isBolsa;
+  lead.bolsaCodigo = isBolsa ? cod : '';
+  lead.bolsaValor  = isBolsa ? val : 0;
+  lead.bolsaTag    = isBolsa ? tag : '';
+  saveData(data);
+  Object.assign(S.modalLead, {isBolsa, bolsaCodigo:lead.bolsaCodigo, bolsaValor:lead.bolsaValor, bolsaTag:lead.bolsaTag});
+  // atualiza info de reembolso e o cabeçalho (badge)
+  const ri = document.getElementById('md-bolsa-reembolso-info');
+  if (ri) ri.style.display = (isBolsa && S.modalLead.status==='Reembolso') ? 'block' : 'none';
+  refreshLeadModalBadge();
+}
+
+// Atualiza o subtítulo do modal incluindo a badge de Bolsa, se aplicável
+function refreshLeadModalBadge(){
+  const l = S.modalLead; if(!l) return;
+  const sub = document.getElementById('md-sub');
+  if (!sub) return;
+  const bolsaBadge = l.isBolsa ? ` &nbsp;<span class="bolsa-badge">🎯 Bolsa de Leads</span>` : '';
+  sub.innerHTML =
+    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${l.status}</span>` +
+    `&nbsp;&nbsp;Data: ${l.data} &nbsp;·&nbsp; Placa: <b>${l.placa}</b>` + bolsaBadge;
 }
 
 // Renderiza o card de follow-ups urgentes no Dashboard
@@ -8566,6 +9576,12 @@ function openLeadModal(idx) {
   if (fuDateEl) fuDateEl.value = l.followupDate || '';
   if (fuNoteEl) fuNoteEl.value = l.followupNote || '';
 
+  // Comercial / Venda
+  fillComercial(l);
+  // Bolsa de Leads
+  fillBolsa(l);
+  refreshLeadModalBadge();
+
   // WhatsApp link (primeiro telefone com número válido)
   const firstTel = (l.tels||[]).find(t => t.replace(/\D/g,'').length>=10);
   const waLink = document.getElementById('md-walink');
@@ -8839,7 +9855,7 @@ function closeModal(id)   { document.getElementById(id||'clearModal').classList.
 
 function clearAllData() {
   localStorage.removeItem(STORAGE_KEY);
-  S.selectedKeys.clear(); S.spotStatus=null; S.ctxType=null; S.ctxValue=null;
+  S.selectedKeys.clear(); S.spotStatus=null; S.ctxType=null; S.ctxValue=null; S.bolsaOnly=false;
   closeModal('clearModal');
   refreshHeader({leads:{},meta:{}});
   renderDashboard(); renderImportStats();
@@ -8862,17 +9878,67 @@ function openNewLeadModal() {
   ['nl-placa','nl-edital','nl-nome','nl-cpf','nl-cnpj','nl-nasc',
    'nl-tel1','nl-tel2','nl-tel3','nl-email','nl-cidade','nl-bairro',
    'nl-cep','nl-endereco','nl-numero','nl-infracao','nl-renavam',
-   'nl-chassi','nl-dtctt','nl-obs','nl-meunumero'].forEach(id => {
+   'nl-chassi','nl-dtctt','nl-obs','nl-meunumero',
+   'nl-bolsacod','nl-bolsaval','nl-bolsatag',
+   'nl-valorbase','nl-descpct'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['nl-sexo','nl-uf','nl-ufvei'].forEach(id => {
+  ['nl-sexo','nl-uf','nl-ufvei','nl-servico','nl-forma'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('nl-status').value = 'Novo Lead';
+  // Bolsa de Leads: reset toggle e campos
+  const bchk = document.getElementById('nl-isbolsa');
+  if (bchk) bchk.checked = false;
+  const bf = document.getElementById('nl-bolsa-fields');
+  if (bf) bf.style.display = 'none';
+  // Popular selects de serviço e parcelas
+  nlPopularServico();
+  nlPopularParcelas();
+  const pw = document.getElementById('nl-parcelas-wrap');
+  if (pw) pw.style.display = 'none';
   document.getElementById('newLeadModal').classList.add('open');
   setTimeout(() => document.getElementById('nl-placa').focus(), 100);
+}
+
+// Toggle dos campos de Bolsa de Leads no formulário manual
+function nlToggleBolsa() {
+  const on = document.getElementById('nl-isbolsa').checked;
+  document.getElementById('nl-bolsa-fields').style.display = on ? 'block' : 'none';
+}
+
+// Popular <select> de serviço no formulário manual
+function nlPopularServico() {
+  const sel = document.getElementById('nl-servico');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecione o serviço —</option>' +
+    CATALOGO_SERVICOS.map(s =>
+      `<option value="${escAttr(s.nome)}" data-preco="${s.preco==null?'':s.preco}">${esc(s.nome)}${s.preco!=null?` — R$ ${s.preco.toLocaleString('pt-BR')}`:' (valor manual)'}</option>`
+    ).join('');
+}
+
+function nlPopularParcelas() {
+  const sel = document.getElementById('nl-parcelas');
+  if (!sel) return;
+  let html = '<option value="1">À vista (1x)</option>';
+  for (let i=2;i<=12;i++) html += `<option value="${i}">${i}x</option>`;
+  sel.innerHTML = html;
+}
+
+// Ao escolher serviço, preenche valor base do catálogo (se vazio)
+function nlServicoChange() {
+  const nome = document.getElementById('nl-servico').value;
+  const cat = CATALOGO_SERVICOS.find(c=>c.nome===nome);
+  const baseEl = document.getElementById('nl-valorbase');
+  if (cat && cat.preco!=null && (!baseEl.value || baseEl.value==='')) baseEl.value = cat.preco;
+}
+
+// Mostra/esconde parcelas conforme forma de pagamento
+function nlFormaChange() {
+  const forma = document.getElementById('nl-forma').value;
+  document.getElementById('nl-parcelas-wrap').style.display = (forma==='Cartão') ? 'block' : 'none';
 }
 
 function closeNewLeadModal() {
@@ -8914,6 +9980,17 @@ function saveNewLead() {
   const status = g('nl-status') || 'Novo Lead';
   const hoje = new Date().toLocaleDateString('pt-BR');
 
+  // Comercial
+  const servico   = g('nl-servico');
+  const valorBase = parseFloat(g('nl-valorbase')) || 0;
+  const descPct   = Math.min(Math.max(parseFloat(g('nl-descpct'))||0,0),100);
+  const forma     = g('nl-forma');
+  const parcelas  = forma==='Cartão' ? (parseInt(g('nl-parcelas'))||1) : 1;
+  const valorFinal= valorBase * (1 - descPct/100);
+
+  // Bolsa de Leads
+  const isBolsa   = document.getElementById('nl-isbolsa').checked;
+
   data.leads[key] = {
     key,
     data:      hoje,
@@ -8941,6 +10018,19 @@ function saveNewLead() {
     meuNumero: g('nl-meunumero'),
     obs:       g('nl-obs'),
     manual:    true,
+    // Comercial
+    servico,
+    valorBase,
+    descPct,
+    formaPgto: forma,
+    parcelas,
+    valorFinal,
+    saleDate:  status==='Venda Realizada' ? hoje : '',
+    // Bolsa de Leads
+    isBolsa,
+    bolsaCodigo: isBolsa ? g('nl-bolsacod') : '',
+    bolsaValor:  isBolsa ? (parseFloat(g('nl-bolsaval'))||0) : 0,
+    bolsaTag:    isBolsa ? g('nl-bolsatag') : '',
   };
 
   saveData(data);
