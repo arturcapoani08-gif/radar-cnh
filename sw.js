@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════
 // Radar CNH — Service Worker v4
 // ═══════════════════════════════════════════════
-const CACHE = 'radar-cnh-v21';
+const CACHE = 'radar-cnh-v22';
 
 const LOCAL_ASSETS = [
   './index.html',
