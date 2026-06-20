@@ -887,7 +887,7 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .fat-charts{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .fat-charts .ccard{background:#fff}
 /* Saldo Bolsa de Leads */
-.bolsa-saldo-wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:10px;margin-bottom:14px;align-items:stretch}
+.bolsa-saldo-wrap{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;margin-bottom:14px;align-items:stretch}
 .bolsa-saldo-card{background:rgba(255,255,255,.06);border:1px solid #244468;border-radius:11px;padding:12px 13px;display:flex;flex-direction:column;justify-content:center}
 .bolsa-saldo-card.saldo{background:linear-gradient(135deg,#0a6e49,#0c8a5c);border-color:#0c8a5c}
 .bolsa-saldo-card .bs-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px;color:#7a9cc0}
@@ -899,11 +899,7 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .bolsa-saldo-card .bs-rt{font-size:.62rem;color:#90b0d4;margin-top:3px}
 .bolsa-saldo-card.saldo .bs-rt{color:#a7e8cd}
 /* depósito discreto */
-.bs-deposito-card{background:rgba(255,255,255,.03);border-style:dashed;border-color:#1e3a5f}
-.bs-dep-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
-.bs-dep-lbl{font-size:.66rem;color:#7a9cc0;font-weight:600;white-space:nowrap}
-#bsDeposito{width:96px;background:#0d1f3c;border:1px solid #244468;border-radius:6px;color:#cfe0f5;font-size:.86rem;font-weight:700;padding:4px 7px;outline:none;font-family:'Titillium Web',sans-serif;text-align:right}
-#bsDeposito:focus{border-color:#3A5F8C}
+
 @media(max-width:900px){.bolsa-saldo-wrap{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.bolsa-saldo-wrap{grid-template-columns:1fr 1fr}}
 
@@ -7273,7 +7269,7 @@ window.pm_importData        = importData;
     <input type="date" id="dfrom" onchange="renderDashboard()">
     <span class="flabel">até</span>
     <input type="date" id="dto" onchange="renderDashboard()">
-    <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">✕ Limpar datas</button>
+    <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">↺ Mês atual</button>
     <button class="btn btn-sm bolsa-toggle-btn" id="bolsaOnlyBtn" onclick="toggleBolsaOnly()" title="Mostrar no dashboard apenas os leads pagos (Bolsa de Leads)">🎯 Só Bolsa de Leads</button>
     <div id="ctxBadge" style="display:none" class="ctx-badge">
       <span id="ctxLabel"></span>
@@ -7332,7 +7328,14 @@ window.pm_importData        = importData;
     <!-- Saldo Bolsa de Leads -->
     <div class="bolsa-saldo-wrap" id="bolsaSaldoWrap" style="display:none">
       <div class="bolsa-saldo-card saldo bs-destaque">
-        <div class="bs-lbl">💼 Saldo disponível na plataforma</div>
+        <div class="bs-lbl">💼 Saldo disponível na plataforma
+          <button type="button" id="bsEditDeposito" onclick="editarDepositoBolsa()"
+            title="Corrigir / editar o saldo disponível"
+            style="background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;border-radius:6px;padding:2px 7px;margin-left:7px;font-size:.78rem;line-height:1;vertical-align:middle">✏️</button>
+          <button type="button" id="bsNovoDeposito" onclick="novoDepositoBolsa()"
+            title="Registrar novo depósito (soma ao saldo)"
+            style="background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;border-radius:6px;padding:2px 8px;margin-left:4px;font-size:.78rem;font-weight:700;line-height:1;vertical-align:middle">➕</button>
+        </div>
         <div class="bs-num bs-num-lg" id="bsSaldo">R$ 0,00</div>
         <div class="bs-rt" id="bsSaldoRt">—</div>
       </div>
@@ -7345,14 +7348,6 @@ window.pm_importData        = importData;
         <div class="bs-lbl">Custo médio por lead</div>
         <div class="bs-num" id="bsCustoMedio">—</div>
         <div class="bs-rt" id="bsQtdLeads">0 leads comprados</div>
-      </div>
-      <div class="bolsa-saldo-card bs-deposito-card">
-        <div class="bs-dep-row">
-          <span class="bs-dep-lbl">Total depositado</span>
-          <input type="number" id="bsDeposito" step="50" min="0" placeholder="0,00"
-            onchange="salvarDepositoBolsa(this.value)">
-        </div>
-        <div class="bs-rt">valor já colocado na conta · usado p/ calcular o saldo</div>
       </div>
     </div>
 
@@ -8148,7 +8143,8 @@ function backfillPrazoNA() {
   const data = loadData();
   let changed = 0;
   Object.values(data.leads || {}).forEach(l => {
-    if (!l.prazoNA) {
+    // Só preenche a NA automaticamente se não houver NP definida.
+    if (!l.prazoNA && !l.prazoNP) {
       const calc = addDays30FromBR(l.data);
       if (calc) { l.prazoNA = calc; changed++; }
     }
@@ -8217,9 +8213,22 @@ function inDateRange(l) {
   return true;
 }
 
+// Define o período do dashboard como o mês vigente: dia 01 até hoje.
+function setDashboardCurrentMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const primeiro = `${y}-${m}-01`;
+  const hoje = now.toISOString().slice(0,10);
+  const df = document.getElementById('dfrom');
+  const dt = document.getElementById('dto');
+  if (df) df.value = primeiro;
+  if (dt) dt.value = hoje;
+}
+
 function clearDateFilter() {
-  document.getElementById('dfrom').value = '';
-  document.getElementById('dto').value = '';
+  // "Limpar" volta ao mês vigente (dia 01 → hoje), não ao histórico inteiro.
+  setDashboardCurrentMonth();
   renderDashboard();
 }
 
@@ -8298,7 +8307,10 @@ function spotOpenLead(key) {
 function renderSpotlight() {
   if (!S.spotStatus) return closeSpotlight();
   const data = loadData();
-  let leads = applyCtx(Object.values(data.leads).filter(l => inDateRange(l)));
+  // "Em Negociação" sempre mostra o total real (ignora o filtro de período),
+  // alinhado com o card de KPI. Os demais respeitam o período selecionado.
+  const ignoraData = S.spotStatus === 'Em Conversa/Negociação';
+  let leads = applyCtx(Object.values(data.leads).filter(l => ignoraData || inDateRange(l)));
   // Se o KPI for cumulativo (Contactado/Confirmado/Em Negociação), mostra todos
   // os leads daquela etapa em diante — alinhado com a contagem do card.
   const grupo = FUNNEL_GROUPS[S.spotStatus];
@@ -8381,13 +8393,18 @@ function renderDashboard() {
   leads = leads.filter(l => inDateRange(l));
   leads = applyCtx(leads);
 
+  // "Em Negociação" deve refletir SEMPRE o total real, independente do período.
+  // Conta sobre todos os leads (aplicando só o contexto UF/edital/bolsa, não a data).
+  const leadsSemData = applyCtx(Object.values(data.leads));
+  const negTotal = leadsSemData.filter(l=>l.status==='Em Conversa/Negociação').length;
+
   const total = leads.length;
   const gc    = s => leads.filter(l=>l.status===s).length;
   const pct   = (n,d) => d>0 ? (n/d*100).toFixed(1) : '0.0';
 
   const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido")+gc("Sem Retorno");
   const conf   = gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
-  const neg    = gc("Em Conversa/Negociação");
+  const neg    = negTotal;
   const vendas = gc("Venda Realizada");
   const perdidos = gc("Perdido");
 
@@ -8395,7 +8412,7 @@ function renderDashboard() {
     {lbl:"Total Leads",   n:total,   rt:"base do período",              s:"_all"},
     {lbl:"Contactados",   n:cont,    rt:`${pct(cont,total)}% da base`,  s:"Contactado"},
     {lbl:"Confirmados",   n:conf,    rt:`${pct(conf,total)}% da base`,  s:"Confirmado"},
-    {lbl:"Em Negociação", n:neg,     rt:`${pct(neg,total)}% da base`,   s:"Em Conversa/Negociação"},
+    {lbl:"Em Negociação", n:neg,     rt:`total atual · todo período`,   s:"Em Conversa/Negociação"},
     {lbl:"Vendas",        n:vendas,  rt:`${pct(vendas,total)}% conv.`,  s:"Venda Realizada"},
     {lbl:"Perdidos",      n:perdidos,rt:`${pct(perdidos,cont||1)}% dos contactados`, s:"Perdido", extra:'perdido'},
   ].map(c => `<div class="card${S.spotStatus===c.s?' active-card':''}${c.extra?' card-perdido':''}" data-status="${c.s}"
@@ -8600,26 +8617,37 @@ function renderBolsaSaldo(leads){
   const reembolsados= bolsaLeads.filter(l=>l.status==='Reembolso');
   const totalReemb  = reembolsados.reduce((s,l)=>s+valNum(l),0);
 
-  // depósito vem da meta (global)
   const data = loadData();
-  const deposito = Number(data.meta && data.meta.bolsaDeposito) || 0;
-  const saldoDisp = deposito - totalPago + totalReemb;
+  if(!data.meta) data.meta = {};
+  // Migração: contas antigas usavam "bolsaDeposito" como total depositado.
+  // Convertendo para o novo modelo de saldo-base com marcos zerados.
+  if (data.meta.bolsaSaldoBase === undefined) {
+    const depAntigo = Number(data.meta.bolsaDeposito) || 0;
+    data.meta.bolsaSaldoBase  = depAntigo; // base = total depositado histórico
+    data.meta.bolsaPagoMarco  = 0;         // descontar todo o pago acumulado
+    data.meta.bolsaReembMarco = 0;
+    saveData(data);
+  }
+
+  const saldoBase  = Number(data.meta.bolsaSaldoBase)  || 0;
+  const pagoMarco  = Number(data.meta.bolsaPagoMarco)  || 0;
+  const reembMarco = Number(data.meta.bolsaReembMarco) || 0;
+
+  // Saldo = base corrigida, descontando gastos e somando reembolsos
+  // ocorridos APÓS o último ajuste manual / depósito.
+  const saldoDisp = saldoBase - (totalPago - pagoMarco) + (totalReemb - reembMarco);
 
   // custo médio por lead comprado
   const qtd = bolsaLeads.length;
   const custoMedio = qtd>0 ? totalPago/qtd : null;
 
-  const depEl = document.getElementById('bsDeposito');
-  if (depEl && document.activeElement!==depEl) depEl.value = deposito>0 ? deposito : '';
-
   const saldoEl = document.getElementById('bsSaldo');
   saldoEl.textContent = fatMoney(saldoDisp);
   saldoEl.style.color = saldoDisp<0 ? '#fca5a5' : '#fff';
-  // reembolsado aparece aqui, no subtítulo do saldo
-  document.getElementById('bsSaldoRt').textContent =
-    totalReemb>0
-      ? `inclui ${fatMoney(totalReemb)} reembolsado${reembolsados.length>1?'s':''} (${reembolsados.length})`
-      : 'sem reembolsos no período';
+  const parts = [];
+  if (totalReemb>0) parts.push(`inclui ${fatMoney(totalReemb)} reembolsado${reembolsados.length>1?'s':''} (${reembolsados.length})`);
+  parts.push('✏️ editar saldo · ➕ novo depósito');
+  document.getElementById('bsSaldoRt').textContent = parts.join(' · ');
 
   document.getElementById('bsPago').textContent = fatMoney(totalPago);
   document.getElementById('bsPagoRt').textContent = `${qtd} lead${qtd!==1?'s':''} comprado${qtd!==1?'s':''}`;
@@ -8627,13 +8655,67 @@ function renderBolsaSaldo(leads){
   document.getElementById('bsQtdLeads').textContent = `${qtd} lead${qtd!==1?'s':''} · pago / qtd`;
 }
 
-// Salva o total depositado na Bolsa de Leads (global, em meta)
-function salvarDepositoBolsa(val){
+// Snapshot dos totais atuais de pago/reembolso (marco), para que ajustes
+// manuais no saldo não re-descontem gastos já considerados.
+function _bolsaMarcoAtual(){
+  const data = loadData();
+  const bolsaLeads = Object.values(data.leads||{}).filter(l=>l.isBolsa);
+  const valNum = l => Number(l.bolsaValor)||0;
+  const pago  = bolsaLeads.reduce((s,l)=>s+valNum(l),0);
+  const reemb = bolsaLeads.filter(l=>l.status==='Reembolso').reduce((s,l)=>s+valNum(l),0);
+  return { pago, reemb };
+}
+
+// Edita (corrige) o saldo disponível diretamente. Define a base e fixa o marco
+// dos gastos atuais — assim só gastos/reembolsos FUTUROS ajustam o saldo.
+function editarDepositoBolsa(){
   const data = loadData();
   if(!data.meta) data.meta = {};
-  data.meta.bolsaDeposito = parseFloat(val)||0;
+  const atual = Number(data.meta.bolsaSaldoBase) || 0;
+  const entrada = prompt('Saldo disponível na plataforma (R$):', atual>0 ? String(atual) : '');
+  if (entrada === null) return;
+  const valor = _parseValorBR(entrada);
+  if (valor === null) { crmShowToast('Valor inválido.'); return; }
+  const marco = _bolsaMarcoAtual();
+  data.meta.bolsaSaldoBase  = valor;
+  data.meta.bolsaPagoMarco  = marco.pago;
+  data.meta.bolsaReembMarco = marco.reemb;
   saveData(data);
   renderDashboard();
+  crmShowToast(`💼 Saldo ajustado para ${fatMoney(valor)}`);
+}
+
+// Registra um novo depósito: soma ao saldo atual na hora.
+function novoDepositoBolsa(){
+  const entrada = prompt('Valor do novo depósito (R$):', '');
+  if (entrada === null) return;
+  const valor = _parseValorBR(entrada);
+  if (valor === null || valor <= 0) { crmShowToast('Valor inválido.'); return; }
+  const data = loadData();
+  if(!data.meta) data.meta = {};
+  // Soma ao saldo exibido atual e fixa o marco, preservando gastos já feitos.
+  const bolsaLeads = Object.values(data.leads||{}).filter(l=>l.isBolsa);
+  const valNum = l => Number(l.bolsaValor)||0;
+  const totalPago  = bolsaLeads.reduce((s,l)=>s+valNum(l),0);
+  const totalReemb = bolsaLeads.filter(l=>l.status==='Reembolso').reduce((s,l)=>s+valNum(l),0);
+  const saldoBase  = Number(data.meta.bolsaSaldoBase)  || 0;
+  const pagoMarco  = Number(data.meta.bolsaPagoMarco)  || 0;
+  const reembMarco = Number(data.meta.bolsaReembMarco) || 0;
+  const saldoAtual = saldoBase - (totalPago - pagoMarco) + (totalReemb - reembMarco);
+
+  data.meta.bolsaSaldoBase  = saldoAtual + valor;
+  data.meta.bolsaPagoMarco  = totalPago;
+  data.meta.bolsaReembMarco = totalReemb;
+  saveData(data);
+  renderDashboard();
+  crmShowToast(`➕ Depósito de ${fatMoney(valor)} registrado`);
+}
+
+// Converte texto de valor em BR/qualquer formato para número (null se inválido)
+function _parseValorBR(entrada){
+  const limpo = entrada.toString().trim().replace(/[^\d.,-]/g,'').replace(/\./g,'').replace(',', '.');
+  const v = parseFloat(limpo);
+  return (isNaN(v) || v < 0) ? null : v;
 }
 
 // ══════════════════════════════════════════════
@@ -9828,8 +9910,9 @@ function importFile(file) {
 
         if (data.leads[key]) {
           // É reimportação: preservar status/dtContato/obs que vierem da planilha exportada
-          // Backfill do prazo da NA se ainda não existir (leads antigos)
-          if (!data.leads[key].prazoNA) {
+          // Backfill do prazo da NA se ainda não existir (leads antigos).
+          // Só preenche automaticamente se também NÃO houver data de NP.
+          if (!data.leads[key].prazoNA && !data.leads[key].prazoNP) {
             const rowPrazoNAex = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
             data.leads[key].prazoNA = isoOrBrToIso(rowPrazoNAex) || addDays30FromBR(data.leads[key].data);
           }
@@ -9853,13 +9936,18 @@ function importFile(file) {
 
         // Data de publicação do edital (data da planilha / upload)
         const dataPub = (row['DATA PLANILHA']||'').toString().trim() || fileDate;
-        // Preenchimento automático do prazo limite da NA: 30 dias a partir da publicação.
-        // Respeita coluna PRAZO NA da planilha se já vier preenchida (reimportação).
+        // Prazos vindos da planilha (se houver)
         const rowPrazoNA = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
-        const prazoNA = isoOrBrToIso(rowPrazoNA) || addDays30FromBR(dataPub);
+        const rowPrazoNP = (row['PRAZO NP']||row['DATA LIMITE NP']||'').toString().trim();
+        const prazoNP = isoOrBrToIso(rowPrazoNP);
+        // Preenchimento automático do prazo limite da NA: 30 dias a partir da
+        // publicação — APENAS quando não há data de NP. Se a planilha já trouxer
+        // PRAZO NA, ele é respeitado em qualquer caso.
+        const prazoNAfromRow = isoOrBrToIso(rowPrazoNA);
+        const prazoNA = prazoNAfromRow || (prazoNP ? '' : addDays30FromBR(dataPub));
 
         data.leads[key] = {
-          key, data: dataPub, prazoNA,
+          key, data: dataPub, prazoNA, prazoNP,
           nome:    (row['NOME']           ||'').toString(),
           sexo:    (row['SEXO']           ||'').toString(),
           cpf:     (row['CPF']            ||'').toString(),
@@ -10226,6 +10314,7 @@ function saveNewLead() {
 (function init() {
   const data = loadData();
   refreshHeader(data);
+  setDashboardCurrentMonth();
   renderDashboard();
   renderImportStats();
 })();
