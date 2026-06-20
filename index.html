@@ -7287,7 +7287,7 @@ window.pm_importData        = importData;
       <button class="close-btn" onclick="closeSpotlight()">✕ Fechar</button>
     </h3>
     <div class="spot-wrap">
-      <table><thead><tr><th>Data</th><th>Nome</th><th>CPF/CNPJ</th><th>Cidade/UF</th><th>Telefone</th><th>Meu WA</th><th>Placa</th><th>Edital</th><th>Obs.</th><th></th></tr></thead>
+      <table><thead><tr><th>Data</th><th>Prazo NA/NP</th><th>Nome</th><th>CPF/CNPJ</th><th>Cidade/UF</th><th>Telefone</th><th>Meu WA</th><th>Placa</th><th>Edital</th><th>Obs.</th><th></th></tr></thead>
       <tbody id="spotBody"></tbody></table>
     </div>
   </div>
@@ -7433,6 +7433,26 @@ window.pm_importData        = importData;
     <span class="badge-cnt" id="leadsCount">0</span>
   </div>
 
+  <!-- FILTRO DE PRAZO DA NA (VENCIMENTO) -->
+  <div class="leads-toolbar" style="margin-top:-2px">
+    <span style="font-size:.72rem;font-weight:700;color:#92400e;white-space:nowrap;display:flex;align-items:center;gap:4px">⏳ Prazo NA:</span>
+    <select id="prazoPreset" onchange="applyPrazoPreset()" title="Filtrar leads pelo prazo limite da Notificação de Autuação" style="min-width:170px">
+      <option value="">Todos os prazos</option>
+      <option value="vencendo7">A vencer em 7 dias</option>
+      <option value="vencendo15">A vencer em 15 dias</option>
+      <option value="vencendo30">A vencer em 30 dias</option>
+      <option value="hoje">Vence hoje</option>
+      <option value="vencidos">Já vencidos</option>
+      <option value="semprazo">Sem prazo definido</option>
+      <option value="custom">Intervalo personalizado…</option>
+    </select>
+    <input type="date" id="prazoFrom" onchange="onPrazoRangeChange()" title="Vencendo a partir de" style="font-size:.74rem">
+    <span style="font-size:.72rem;color:#999">até</span>
+    <input type="date" id="prazoTo" onchange="onPrazoRangeChange()" title="Vencendo até" style="font-size:.74rem">
+    <button onclick="clearPrazoFilter()" title="Limpar filtro de prazo" style="padding:5px 9px;border:1.5px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:.72rem;color:#666;font-family:inherit">✕ Limpar</button>
+    <button onclick="selecionarPorPrazo()" title="Selecionar todos os leads filtrados por prazo (para gerar lista de disparo)" style="padding:5px 11px;border:none;border-radius:7px;background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;cursor:pointer;font-size:.72rem;font-weight:700;font-family:inherit;white-space:nowrap">☑ Selecionar p/ disparo</button>
+  </div>
+
   <!-- SELECTION CONTROLS -->
   <div class="sel-controls">
     <span class="sc-label">Selecionar:</span>
@@ -7450,7 +7470,7 @@ window.pm_importData        = importData;
         <thead>
           <tr>
             <th style="width:26px"><input type="checkbox" id="checkAll" onchange="toggleAll(this)" title="Selecionar/desselecionar visíveis"></th>
-            <th>Data</th><th>Nome / CPF</th><th>Cidade / UF</th>
+            <th>Data</th><th>Prazo NA/NP</th><th>Nome / CPF</th><th>Cidade / UF</th>
             <th>Telefones</th><th>Meu WA</th><th>Placa</th><th>Edital</th>
             <th>Status</th><th>Ações</th><th>Obs.</th>
           </tr>
@@ -8120,6 +8140,27 @@ function refreshHeader(data) {
     n > 0 ? `${n} leads · ${data.meta.lastUpdate}` : 'Nenhum dado';
 }
 
+// Preenche automaticamente o prazo da NA (publicação + 30 dias) nos leads que
+// ainda estão com prazoNA vazio. Mantém intactos os que já têm data e não toca
+// na NP. Idempotente: só grava se houver algo a preencher. Roda ao abrir as
+// páginas de leads/dashboard.
+function backfillPrazoNA() {
+  const data = loadData();
+  let changed = 0;
+  Object.values(data.leads || {}).forEach(l => {
+    if (!l.prazoNA) {
+      const calc = addDays30FromBR(l.data);
+      if (calc) { l.prazoNA = calc; changed++; }
+    }
+  });
+  if (changed) {
+    saveData(data);
+    if (typeof crmShowToast === 'function')
+      crmShowToast(`📅 ${changed} prazo${changed!==1?'s':''} de NA preenchido${changed!==1?'s':''} automaticamente`);
+  }
+  return changed;
+}
+
 // ══════════════════════════════════════════════
 // NAV
 // ══════════════════════════════════════════════
@@ -8142,6 +8183,28 @@ function brToIso(s) {
   if (!s) return '';
   const p = s.split('/');
   return p.length===3 ? `${p[2]}-${p[1]}-${p[0]}` : s;
+}
+
+// Aceita uma string em ISO (YYYY-MM-DD) ou BR (DD/MM/YYYY) e devolve sempre ISO ('' se vazio/ inválido)
+function isoOrBrToIso(s) {
+  if (!s) return '';
+  s = s.toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (s.includes('/')) {
+    const iso = brToIso(s);
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : '';
+  }
+  return '';
+}
+
+// Recebe data de publicação em BR (DD/MM/YYYY) e devolve ISO 30 dias depois ('' se inválida)
+function addDays30FromBR(brDate) {
+  const iso = isoOrBrToIso(brDate);
+  if (!iso) return '';
+  const d = new Date(iso + 'T12:00:00');
+  if (isNaN(d)) return '';
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0,10);
 }
 
 function inDateRange(l) {
@@ -8274,6 +8337,7 @@ function renderSpotlight() {
       ? `<span class="spot-status-pill" style="background:${lsc.bg};color:${lsc.tc}">${esc(l.status)}</span>` : '';
     return `<tr class="${l.isBolsa?'spot-bolsa-row':''}">
       <td style="color:#aaa;font-size:.7rem;white-space:nowrap">${l.data}</td>
+      <td style="white-space:nowrap">${prazoNAcell(l)}</td>
       <td><b style="font-size:.75rem">${esc(l.nome)}</b> ${statusPill} ${bolsaMark}</td>
       <td style="font-size:.68rem;color:#999;white-space:nowrap">${esc(l.cpf||l.cnpj||'—')}</td>
       <td style="white-space:nowrap;font-size:.75rem">${esc(l.cidade)} <b>${l.uf}</b></td>
@@ -8295,6 +8359,7 @@ function renderSpotlight() {
 // ══════════════════════════════════════════════
 
 function renderDashboard() {
+  backfillPrazoNA();
   const data  = loadData();
   let leads   = Object.values(data.leads);
   updateCtxBadge();
@@ -8857,7 +8922,64 @@ function populateLeadsFilters(all) {
     STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('');
 }
 
+// ══════════════════════════════════════════════
+// FILTRO DE PRAZO DA NA (vencimento da Notificação de Autuação)
+// ══════════════════════════════════════════════
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function isoPlusDays(n){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+// Decide se um lead passa no filtro de prazo da NA
+function matchPrazoNA(l, preset, from, to) {
+  const ativo = prazoAtivo(l);
+  const p = ativo ? ativo.iso : '';
+  if (preset === 'semprazo') return !p;
+  // Para qualquer outro modo, lead sem prazo não entra
+  if (!p) return !preset && !from && !to;
+  if (preset === 'vencidos') return p < todayIso();
+  if (preset === 'hoje')     return p === todayIso();
+  // intervalo (presets "vencendoN" já preenchem from/to; custom usa os inputs)
+  if (from && p < from) return false;
+  if (to   && p > to)   return false;
+  return true;
+}
+
+// Preset preenche os campos de data e re-renderiza
+function applyPrazoPreset() {
+  const preset = document.getElementById('prazoPreset').value;
+  const from = document.getElementById('prazoFrom');
+  const to   = document.getElementById('prazoTo');
+  if (preset === 'vencendo7')  { from.value = todayIso(); to.value = isoPlusDays(7);  }
+  else if (preset === 'vencendo15') { from.value = todayIso(); to.value = isoPlusDays(15); }
+  else if (preset === 'vencendo30') { from.value = todayIso(); to.value = isoPlusDays(30); }
+  else if (preset === 'custom') { /* mantém o que o usuário digitar */ }
+  else { from.value = ''; to.value = ''; } // vencidos / hoje / semprazo / todos não usam range
+  renderLeads();
+}
+
+// Se o usuário mexer manualmente nas datas, vira "intervalo personalizado"
+function onPrazoRangeChange() {
+  const sel = document.getElementById('prazoPreset');
+  if (['vencidos','hoje','semprazo',''].includes(sel.value)) sel.value = 'custom';
+  renderLeads();
+}
+
+function clearPrazoFilter() {
+  document.getElementById('prazoPreset').value = '';
+  document.getElementById('prazoFrom').value = '';
+  document.getElementById('prazoTo').value = '';
+  renderLeads();
+}
+
+// Seleciona todos os leads atualmente filtrados (incl. filtro de prazo) p/ gerar lista de disparo
+function selecionarPorPrazo() {
+  if (!filteredLeads.length) { crmShowToast('Nenhum lead no filtro atual.'); return; }
+  filteredLeads.forEach(l => S.selectedKeys.add(l.key));
+  renderLeads();
+  crmShowToast(`☑ ${filteredLeads.length} leads selecionados — clique em "Gerar Lista de Disparo"`);
+}
+
 function renderLeads() {
+  backfillPrazoNA();
   const data = loadData();
   allLeadsCache = Object.values(data.leads);
   const empty = document.getElementById('leads-empty');
@@ -8873,6 +8995,9 @@ function renderLeads() {
   const df = document.getElementById('dateFilter').value;
   const wf = (document.getElementById('meuWaFilter')||{}).value||'';
   const bf = (document.getElementById('bolsaFilter')||{}).value||'';
+  const pPreset = (document.getElementById('prazoPreset')||{}).value||'';
+  const pFrom   = (document.getElementById('prazoFrom')||{}).value||'';
+  const pTo     = (document.getElementById('prazoTo')||{}).value||'';
 
   filteredLeads = allLeadsCache.filter(l => {
     const ts = (l.tels||[]).join(' ');
@@ -8880,7 +9005,8 @@ function renderLeads() {
       (l.placa||'').toLowerCase().includes(q) || (l.cidade||'').toLowerCase().includes(q) ||
       ts.includes(q) || (l.cpf||'').includes(q);
     const bolsaOk = !bf || (bf==='bolsa' ? !!l.isBolsa : !l.isBolsa);
-    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf) && bolsaOk;
+    const prazoOk = matchPrazoNA(l, pPreset, pFrom, pTo);
+    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf) && bolsaOk && prazoOk;
   });
   filteredLeads.sort((a,b)=>brToIso(b.data).localeCompare(brToIso(a.data))||a.nome.localeCompare(b.nome));
 
@@ -8900,6 +9026,7 @@ function renderLeads() {
     return `<tr data-idx="${idx}" class="${sel?'row-sel':''}">
       <td><input type="checkbox" class="rck" data-key="${escAttr(l.key)}" ${sel?'checked':''} onchange="toggleRow(this)"></td>
       <td style="white-space:nowrap;color:#aaa;font-size:.69rem">${stale?'<span class="stale" title="Sem ação há mais de 3 dias"></span>':''} ${l.data}</td>
+      <td style="white-space:nowrap">${prazoNAcell(l)}</td>
       <td style="max-width:150px">
         <span class="btn-view" onclick="openLeadModal(${idx})" title="Ver ficha completa" style="font-size:.68rem;padding:2px 6px;margin-bottom:3px;display:inline-block">👁 Ver</span><br>
         <b style="font-size:.75rem">${l.manual?'<span title="Lead cadastrado manualmente" style="color:#26d0ce;font-size:.65rem;margin-right:2px">✏️</span>':''}${esc(l.nome)}</b>${l.isBolsa?' <span class="lead-bolsa-tag" title="Lead pago — Bolsa de Leads'+(l.bolsaTag?(' · '+esc(l.bolsaTag)):'')+'">🎯 Bolsa</span>':''}<br>
@@ -9096,6 +9223,46 @@ function changeStatusModal(ns) {
 // ══════════════════════════════════════════════
 // FOLLOW-UP & PRAZOS
 // ══════════════════════════════════════════════
+
+// Badge compacto do prazo da NA para a tabela de leads
+// Decide qual prazo é o "ativo" do lead: a NA, ou a NP quando a NA está
+// vazia ou já venceu. Retorna {iso, tipo} — tipo é 'NA' ou 'NP' — ou null.
+function prazoAtivo(l) {
+  const na = l.prazoNA || '';
+  const np = l.prazoNP || '';
+  const hoje = todayIso();
+  // NA válida e ainda não vencida → usa NA
+  if (na && na >= hoje) return { iso: na, tipo: 'NA' };
+  // NA vencida mas existe NP futura → recurso só tem prazo de NP agora
+  if (na && na < hoje && np && np >= hoje) return { iso: np, tipo: 'NP' };
+  // Sem NA → cai na NP (se houver)
+  if (!na && np) return { iso: np, tipo: 'NP' };
+  // Só sobrou a NA (vencida, sem NP) → mostra a NA mesmo vencida
+  if (na) return { iso: na, tipo: 'NA' };
+  // Só NP (qualquer situação)
+  if (np) return { iso: np, tipo: 'NP' };
+  return null;
+}
+
+// Badge compacto do prazo ativo (NA ou NP) para a tabela de leads
+function prazoNAcell(l) {
+  const p = (typeof l === 'object' && l) ? prazoAtivo(l)
+          : (l ? { iso: l, tipo: 'NA' } : null); // compat: aceita iso string solta
+  if (!p) return '<span style="font-size:.66rem;color:#ccc">—</span>';
+  const { iso, tipo } = p;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(iso + 'T00:00:00');
+  const diff = Math.round((d - today) / 86400000);
+  const br = (() => { const [y,m,dd]=iso.split('-'); return `${dd}/${m}/${y}`; })();
+  let bg, fg, txt;
+  if (diff < 0)        { bg='#fee2e2'; fg='#991b1b'; txt=`⚠️ venceu há ${Math.abs(diff)}d`; }
+  else if (diff === 0) { bg='#fee2e2'; fg='#991b1b'; txt='🔔 vence hoje'; }
+  else if (diff <= 7)  { bg='#fef3c7'; fg='#92400e'; txt=`⏳ ${diff}d`; }
+  else if (diff <= 30) { bg='#fef9c3'; fg='#854d0e'; txt=`${diff}d`; }
+  else                 { bg='#dcfce7'; fg='#166534'; txt=`${diff}d`; }
+  const tipoTag = `<span style="font-size:.55rem;font-weight:800;opacity:.75">${tipo}</span>`;
+  return `<span title="Prazo limite da ${tipo==='NA'?'Notificação de Autuação':'Notificação de Penalidade'}: ${br}" style="display:inline-block;font-size:.64rem;font-weight:700;padding:2px 6px;border-radius:6px;background:${bg};color:${fg}">${tipoTag} ${br}<br><span style="font-weight:600;font-size:.6rem">${txt}</span></span>`;
+}
 
 function fuDateBadge(dateStr) {
   if (!dateStr) return '<span class="fu-badge sem-prazo">Sem prazo</span>';
@@ -9314,8 +9481,8 @@ function renderFollowupDash() {
   const today = new Date(); today.setHours(0,0,0,0);
   const leads = Object.values(data.leads);
 
-  // Leads com prazos ou follow-ups relevantes (não vendidos nem perdidos)
-  const activeStatuses = new Set(['Contactado','Confirmado','Em Conversa/Negociação','Sem Retorno']);
+  // Apenas leads em negociação ativa entram nos alertas de prazos/follow-up
+  const activeStatuses = new Set(['Em Conversa/Negociação']);
   const items = [];
 
   leads.forEach(l => {
@@ -9661,6 +9828,11 @@ function importFile(file) {
 
         if (data.leads[key]) {
           // É reimportação: preservar status/dtContato/obs que vierem da planilha exportada
+          // Backfill do prazo da NA se ainda não existir (leads antigos)
+          if (!data.leads[key].prazoNA) {
+            const rowPrazoNAex = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
+            data.leads[key].prazoNA = isoOrBrToIso(rowPrazoNAex) || addDays30FromBR(data.leads[key].data);
+          }
           if (rowStatus && STATUS_OPTIONS.includes(rowStatus)) {
             data.leads[key].status    = rowStatus;
             data.leads[key].dtContato = rowDtCtt || data.leads[key].dtContato;
@@ -9679,8 +9851,15 @@ function importFile(file) {
         // Determinar status inicial: usa da planilha se válido, senão Novo Lead
         const initStatus = (rowStatus && STATUS_OPTIONS.includes(rowStatus)) ? rowStatus : 'Novo Lead';
 
+        // Data de publicação do edital (data da planilha / upload)
+        const dataPub = (row['DATA PLANILHA']||'').toString().trim() || fileDate;
+        // Preenchimento automático do prazo limite da NA: 30 dias a partir da publicação.
+        // Respeita coluna PRAZO NA da planilha se já vier preenchida (reimportação).
+        const rowPrazoNA = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
+        const prazoNA = isoOrBrToIso(rowPrazoNA) || addDays30FromBR(dataPub);
+
         data.leads[key] = {
-          key, data: (row['DATA PLANILHA']||'').toString().trim() || fileDate,
+          key, data: dataPub, prazoNA,
           nome:    (row['NOME']           ||'').toString(),
           sexo:    (row['SEXO']           ||'').toString(),
           cpf:     (row['CPF']            ||'').toString(),
