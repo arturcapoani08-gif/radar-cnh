@@ -910,6 +910,25 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 .bls-sub{font-weight:400;color:#9bb4cf;font-size:.72rem}
 .bls-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
 .bls-kpi{background:#f4f8fd;border:1px solid #dbe7f4;border-radius:11px;padding:11px 13px}
+/* Insights da Bolsa (no lugar do gráfico de pagamento) */
+.bli-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px}
+.bli-card{background:#f4f8fd;border:1px solid #dbe7f4;border-radius:10px;padding:10px 11px}
+.bli-card .bli-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.4px;color:#7591b3;font-weight:700;margin-bottom:4px}
+.bli-card .bli-num{font-size:1.12rem;font-weight:900;color:#1a4d8c;line-height:1.1}
+.bli-card .bli-num.green{color:#097A52}
+.bli-card .bli-num.amber{color:#C47D0A}
+.bli-card .bli-num.red{color:#A32532}
+.bli-card .bli-rt{font-size:.6rem;color:#9bb4cf;margin-top:3px;line-height:1.3}
+.bli-tbl-title{font-size:.62rem;text-transform:uppercase;letter-spacing:.5px;color:#7591b3;font-weight:700;margin:4px 0 6px}
+.bli-tbl{width:100%;border-collapse:collapse;font-size:.7rem}
+.bli-tbl th{text-align:left;color:#9bb4cf;font-weight:700;font-size:.6rem;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;border-bottom:1px solid #e8eef6}
+.bli-tbl td{padding:5px 6px;border-bottom:1px solid #f1f5fa;color:#445}
+.bli-tbl td.r,.bli-tbl th.r{text-align:right}
+.bli-tbl tr:last-child td{border-bottom:none}
+.bli-roi-pos{color:#097A52;font-weight:800}
+.bli-roi-neg{color:#A32532;font-weight:800}
+.bli-empty{text-align:center;color:#aaa;font-size:.78rem;padding:1.5rem 1rem}
+@media(max-width:560px){.bli-cards{grid-template-columns:1fr}}
 .bls-kpi .k-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#7591b3;font-weight:700;margin-bottom:5px}
 .bls-kpi .k-num{font-size:1.3rem;font-weight:900;color:#1a4d8c;line-height:1.05}
 .bls-kpi .k-num.green{color:#097A52}
@@ -7271,6 +7290,7 @@ window.pm_importData        = importData;
     <input type="date" id="dto" onchange="renderDashboard()">
     <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">↺ Mês atual</button>
     <button class="btn btn-sm bolsa-toggle-btn" id="bolsaOnlyBtn" onclick="toggleBolsaOnly()" title="Mostrar no dashboard apenas os leads pagos (Bolsa de Leads)">🎯 Só Bolsa de Leads</button>
+    <button class="btn btn-sm" onclick="gerarRelatorioPDF()" title="Gerar relatório gerencial em PDF (funil, meta e faturamento)" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none;font-weight:700;margin-left:auto">📄 Gerar Relatório PDF</button>
     <div id="ctxBadge" style="display:none" class="ctx-badge">
       <span id="ctxLabel"></span>
       <button onclick="clearCtxFilter()">✕</button>
@@ -7356,9 +7376,9 @@ window.pm_importData        = importData;
         <h3>💵 Receita por Serviço <small style="font-weight:400;color:#bbb;font-size:.68rem">— vendas realizadas</small></h3>
         <div class="cbox"><canvas id="revServiceChart"></canvas></div>
       </div>
-      <div class="ccard">
-        <h3>💳 Forma de Pagamento</h3>
-        <div class="cbox"><canvas id="payChart"></canvas></div>
+      <div class="ccard" id="blsInsightsCard">
+        <h3>🎯 Insights da Bolsa de Leads <small style="font-weight:400;color:#bbb;font-size:.68rem">— rentabilidade dos leads pagos</small></h3>
+        <div id="blsInsightsBody" style="padding:2px 2px 6px"></div>
       </div>
     </div>
   </div>
@@ -8573,34 +8593,126 @@ function renderFaturamento(leads){
     }
   }
 
-  // ── Forma de pagamento (vendas) ──
-  const payMap={'Pix':0,'Boleto':0,'Cartão':0};
-  vendas.forEach(l=>{ if(l.formaPgto && payMap[l.formaPgto]!=null) payMap[l.formaPgto]+=valOf(l); });
-  const payLabels=Object.keys(payMap).filter(k=>payMap[k]>0);
-  const payData=payLabels.map(k=>payMap[k]);
-  const payColors={'Pix':'#26d0ce','Boleto':'#3A5F8C','Cartão':'#C47D0A'};
+  // ── Insights da Bolsa de Leads (no lugar do gráfico de pagamento) ──
+  // Usa TODOS os leads pagos, ignorando o filtro de data, igual ao setor Bolsa.
   if(payInst){payInst.destroy();payInst=null;}
-  const pCanvas=document.getElementById('payChart');
-  if(pCanvas){
-    if(payLabels.length){
-      payInst=new Chart(pCanvas,{
-        type:'doughnut',
-        data:{labels:payLabels,datasets:[{data:payData,backgroundColor:payLabels.map(k=>payColors[k]),borderWidth:2,borderColor:'#fff'}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-          plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,usePointStyle:true}},
-            tooltip:{callbacks:{label:c=>`${c.label}: ${fatMoney(c.parsed)}`}}}}
-      });
-    } else {
-      const ctx=pCanvas.getContext('2d'); ctx.clearRect(0,0,pCanvas.width,pCanvas.height);
-      ctx.font='13px Titillium Web'; ctx.fillStyle='#aaa'; ctx.textAlign='center';
-      ctx.fillText('Sem forma de pagamento registrada', pCanvas.width/2, pCanvas.height/2);
-    }
-  }
+  renderBolsaInsights(Object.values(loadData().leads));
 
   // ── Saldo Bolsa de Leads (sempre sobre TODOS os leads, ignora filtro de data) ──
   const allLeads = Object.values(loadData().leads);
   renderBolsaSaldo(allLeads);
   renderBolsaCharts(allLeads);
+}
+
+// Painel de insights de rentabilidade da Bolsa de Leads.
+// Cards: CAC pago x receita por lead · Custo por venda · Lucro líquido real.
+// Tabela: ranking de tags/fontes por ROI.
+function renderBolsaInsights(allLeads){
+  const card = document.getElementById('blsInsightsCard');
+  const body = document.getElementById('blsInsightsBody');
+  if(!body) return;
+  const bl = (allLeads||[]).filter(l=>l.isBolsa);
+
+  if(!bl.length){
+    if(card) card.style.display='none';
+    body.innerHTML='';
+    return;
+  }
+  if(card) card.style.display='';
+
+  const valOf  = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+  const valPago= l => Number(l.bolsaValor)||0;
+
+  const qtd        = bl.length;
+  const vendasArr  = bl.filter(l=>l.status==='Venda Realizada');
+  const vendas     = vendasArr.length;
+  const reembArr   = bl.filter(l=>l.status==='Reembolso');
+
+  const totalPago     = bl.reduce((s,l)=>s+valPago(l),0);
+  const totalReemb    = reembArr.reduce((s,l)=>s+valPago(l),0);
+  const investLiquido = totalPago - totalReemb;
+  const receitaGerada = vendasArr.reduce((s,l)=>s+valOf(l),0);
+  // Multiplicador: quantos R$ de receita cada R$ investido em leads gerou
+  const retornoMult   = investLiquido>0 ? (receitaGerada/investLiquido) : null;
+
+  // CAC pago por lead (custo médio de aquisição) e receita média por lead comprado
+  const cacPorLead    = qtd>0 ? totalPago/qtd : 0;
+  const recPorLead    = qtd>0 ? receitaGerada/qtd : 0;
+  // Custo por venda: quanto investido (líquido) para cada venda fechada
+  const custoPorVenda = vendas>0 ? investLiquido/vendas : null;
+
+  const cards = [
+    { lbl:'Receita gerada (Bolsa)',
+      num: fatMoney(receitaGerada),
+      cls:'green',
+      rt: vendas>0 ? `${vendas} venda${vendas!==1?'s':''} de leads pagos` : 'sem vendas ainda' },
+    { lbl:'CAC pago × receita / lead',
+      num:`${fatMoneyShort(cacPorLead)} → ${fatMoneyShort(recPorLead)}`,
+      cls: recPorLead>=cacPorLead?'green':'amber',
+      rt:`custo médio vs receita média por lead comprado` },
+    { lbl:'Custo por venda',
+      num: custoPorVenda==null ? '—' : fatMoneyShort(custoPorVenda),
+      cls:'amber',
+      rt: vendas>0 ? `investido líq. ÷ ${vendas} venda${vendas!==1?'s':''}` : 'nenhuma venda ainda' },
+    { lbl:'Retorno por R$ investido',
+      num: retornoMult==null ? '—' : `${retornoMult.toFixed(1).replace('.',',')}×`,
+      cls: retornoMult!=null && retornoMult>=1 ? 'green' : 'amber',
+      rt:'receita gerada ÷ investido (bruto, s/ taxas)' },
+  ];
+
+  // Ranking de tags/fontes por ROI
+  const tagMap={};
+  bl.forEach(l=>{
+    const t=(l.bolsaTag&&l.bolsaTag.trim())?l.bolsaTag.trim():'(sem tag)';
+    if(!tagMap[t]) tagMap[t]={total:0,vendas:0,pago:0,reemb:0,receita:0};
+    const g=tagMap[t];
+    g.total++;
+    g.pago += valPago(l);
+    if(l.status==='Reembolso') g.reemb += valPago(l);
+    if(l.status==='Venda Realizada'){ g.vendas++; g.receita += valOf(l); }
+  });
+  const tagArr = Object.entries(tagMap).map(([tag,g])=>{
+    const investLiq = g.pago - g.reemb;
+    const roi = investLiq>0 ? ((g.receita-investLiq)/investLiq*100) : null;
+    const conv = g.total>0 ? (g.vendas/g.total*100) : 0;
+    return { tag, ...g, investLiq, roi, conv };
+  }).sort((a,b)=>{
+    // ordena por ROI desc; tags sem ROI (sem investimento ou sem venda) ao fim
+    if(a.roi==null && b.roi==null) return b.total-a.total;
+    if(a.roi==null) return 1;
+    if(b.roi==null) return -1;
+    return b.roi-a.roi;
+  }).slice(0,6);
+
+  const cardsHtml = `<div class="bli-cards">${cards.map(c=>
+    `<div class="bli-card"><div class="bli-lbl">${c.lbl}</div>
+       <div class="bli-num ${c.cls}">${c.num}</div>
+       <div class="bli-rt">${c.rt}</div></div>`).join('')}</div>`;
+
+  const rowsHtml = tagArr.map(t=>{
+    const roiTxt = t.roi==null ? '<span style="color:#bbb">—</span>'
+      : `<span class="${t.roi>=0?'bli-roi-pos':'bli-roi-neg'}">${t.roi>=0?'+':''}${t.roi.toFixed(0)}%</span>`;
+    return `<tr>
+      <td title="${esc(t.tag)}">${esc(t.tag.length>20?t.tag.slice(0,20)+'…':t.tag)}</td>
+      <td class="r">${t.total}</td>
+      <td class="r">${t.vendas}</td>
+      <td class="r">${t.conv.toFixed(0)}%</td>
+      <td class="r">${fatMoneyShort(t.receita)}</td>
+      <td class="r">${roiTxt}</td>
+    </tr>`;
+  }).join('');
+
+  const tblHtml = `
+    <div class="bli-tbl-title">🏆 Fontes / tags por ROI</div>
+    <table class="bli-tbl">
+      <thead><tr>
+        <th>Fonte</th><th class="r">Leads</th><th class="r">Vendas</th>
+        <th class="r">Conv.</th><th class="r">Receita</th><th class="r">ROI</th>
+      </tr></thead>
+      <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;color:#bbb;padding:10px">Sem tags registradas</td></tr>'}</tbody>
+    </table>`;
+
+  body.innerHTML = cardsHtml + tblHtml;
 }
 
 // Calcula e renderiza o painel de saldo da Bolsa de Leads.
@@ -8780,6 +8892,325 @@ function salvarMeta(){
   document.getElementById('metaEditBox').style.display='none';
   renderMeta();
   crmShowToast('🎯 Meta atualizada!');
+}
+
+// ══════════════════════════════════════════════
+// RELATÓRIO GERENCIAL (PDF via impressão)
+// ══════════════════════════════════════════════
+function gerarRelatorioPDF(){
+  const data = loadData();
+  const todos = Object.values(data.leads||{});
+  if(!todos.length){ crmShowToast('Sem dados para gerar relatório.'); return; }
+
+  // ── Paleta espelhando o dashboard ──
+  const C = {
+    headFrom:'#1a2980', headTo:'#26d0ce',
+    indigoFrom:'#1e1b4b', indigoTo:'#312e81',
+    navyFrom:'#0d1f3c', navyTo:'#14315c',
+    green:'#16a34a', greenL:'#4ade80', greenBar:'#22c55e',
+    amber:'#d97706', amberL:'#fbbf24',
+    red:'#ef4444', blue:'#4a90d9', teal:'#26d0ce',
+    ink:'#1f2937', muted:'#6b7280', line:'#e5e7eb', soft:'#f3f6fb',
+    cardBlue:'#3A5F8C'
+  };
+  // cores das etapas do funil (iguais aos cards do dashboard)
+  const STG = { gray:'#888', blue:'#4a90d9', amber:'#c49500', orange:'#d95a00', green:'#4a8a20' };
+
+  const dfrom = (document.getElementById('dfrom')||{}).value||'';
+  const dto   = (document.getElementById('dto')||{}).value||'';
+  const inRange = l => { const iso=brToIso(l.data); if(dfrom&&iso<dfrom)return false; if(dto&&iso>dto)return false; return true; };
+  const fmtBr = iso => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  const periodoTxt = (dfrom||dto) ? `${fmtBr(dfrom)} a ${fmtBr(dto)}` : 'Todo o período';
+
+  const leadsPeriodo = applyCtx(todos.filter(inRange));
+  const ctxLeads     = applyCtx(todos);
+
+  const gc = (arr,s) => arr.filter(l=>l.status===s).length;
+  const total    = leadsPeriodo.length;
+  const cont     = gc(leadsPeriodo,'Contactado')+gc(leadsPeriodo,'Confirmado')+gc(leadsPeriodo,'Em Conversa/Negociação')+gc(leadsPeriodo,'Venda Realizada')+gc(leadsPeriodo,'Perdido')+gc(leadsPeriodo,'Sem Retorno');
+  const conf     = gc(leadsPeriodo,'Confirmado')+gc(leadsPeriodo,'Em Conversa/Negociação')+gc(leadsPeriodo,'Venda Realizada');
+  const negTotal = gc(ctxLeads,'Em Conversa/Negociação');
+  const vendas   = gc(leadsPeriodo,'Venda Realizada');
+  const perdidos = gc(leadsPeriodo,'Perdido');
+  const semRet   = gc(leadsPeriodo,'Sem Retorno');
+  const pct = (n,d) => d>0 ? (n/d*100).toFixed(1) : '0.0';
+
+  const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+  const vendasArr = leadsPeriodo.filter(l=>l.status==='Venda Realizada');
+  const pipeline  = leadsPeriodo.filter(l=>['Confirmado','Em Conversa/Negociação'].includes(l.status) && (Number(l.valorFinal)||0)>0);
+  const receitaRealizada = vendasArr.reduce((s,l)=>s+valOf(l),0);
+  const receitaPipeline  = pipeline.reduce((s,l)=>s+valOf(l),0);
+  const ticketMedio = vendasArr.length>0 ? receitaRealizada/vendasArr.length : 0;
+  const comDesc = vendasArr.filter(l=>(Number(l.descPct)||0)>0);
+  const descMedio = comDesc.length ? comDesc.reduce((s,l)=>s+Number(l.descPct),0)/comDesc.length : 0;
+  const tempos = vendasArr.map(l=>crmDaysBetween(l.dtContato, l.saleDate)).filter(v=>v!=null && v>=0);
+  const tempoMedio = tempos.length ? (tempos.reduce((a,b)=>a+b,0)/tempos.length) : null;
+
+  const svcMap={};
+  vendasArr.forEach(l=>{ const s=(l.servico||'(sem serviço)').trim()||'(sem serviço)'; svcMap[s]=(svcMap[s]||0)+valOf(l); });
+  const svcArr = Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  const {meta,desafio} = getMetaMes();
+  const realizadoMes = faturamentoMesAtual();
+  const vendasMes = vendasMesAtual();
+  const pctMeta = meta>0 ? (realizadoMes/meta*100) : 0;
+  const pctDesafio = desafio>0 ? (realizadoMes/desafio*100) : 0;
+  const faltaMeta = Math.max(meta-realizadoMes,0);
+  const mesNome = metaMesNome(metaMesKey());
+
+  const bl = applyCtx(todos.filter(inRange)).filter(l=>l.isBolsa);
+  const blTotal = bl.length;
+  const blVendas = bl.filter(l=>l.status==='Venda Realizada');
+  const blPago = bl.reduce((s,l)=>s+(Number(l.bolsaValor)||0),0);
+  const blReemb = bl.filter(l=>l.status==='Reembolso').reduce((s,l)=>s+(Number(l.bolsaValor)||0),0);
+  const blInvest = blPago - blReemb;
+  const blReceita = blVendas.reduce((s,l)=>s+valOf(l),0);
+  const blRoi = blInvest>0 ? ((blReceita-blInvest)/blInvest*100) : null;
+  const blMult = blInvest>0 ? (blReceita/blInvest) : null;
+
+  const esc2 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // ════════ GRÁFICOS SVG ════════
+  // Funil (fundo branco)
+  function svgFunil(){
+    const steps=[
+      {l:'Total de Leads',v:total,c:STG.gray},
+      {l:'Contactados',v:cont,c:STG.blue},
+      {l:'Confirmados',v:conf,c:'#5a7faa'},
+      {l:'Em Negociação',v:negTotal,c:STG.orange},
+      {l:'Vendas',v:vendas,c:STG.green},
+    ];
+    const max=Math.max(...steps.map(s=>s.v),1);
+    const W=520,rowH=40,padL=118,barMaxW=330,top=6;const H=top+steps.length*rowH+4;let bars='';
+    steps.forEach((s,i)=>{const y=top+i*rowH;const w=Math.max(s.v/max*barMaxW,s.v>0?6:0);
+      const pctTxt=total>0?` (${(s.v/total*100).toFixed(0)}%)`:'';
+      bars+=`<text x="${padL-10}" y="${y+rowH/2+4}" text-anchor="end" font-size="12" font-weight="700" fill="${C.ink}">${esc2(s.l)}</text>`;
+      bars+=`<rect x="${padL}" y="${y+8}" width="${barMaxW}" height="${rowH-18}" rx="6" fill="${C.soft}"/>`;
+      bars+=`<rect x="${padL}" y="${y+8}" width="${w}" height="${rowH-18}" rx="6" fill="${s.c}"/>`;
+      bars+=`<text x="${padL+w+8}" y="${y+rowH/2+4}" font-size="12" font-weight="800" fill="${s.c}">${s.v}${pctTxt}</text>`;});
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">${bars}</svg>`;
+  }
+
+  // Donut status (fundo branco)
+  function svgDonut(){
+    const order=['Venda Realizada','Em Conversa/Negociação','Confirmado','Contactado','Sem Retorno','Perdido','Novo Lead','Não Pertence','Reembolso'];
+    const cmap={'Venda Realizada':STG.green,'Em Conversa/Negociação':STG.orange,'Confirmado':'#5a7faa','Contactado':STG.blue,'Sem Retorno':'#f0a0a0','Perdido':'#d95a5a','Novo Lead':'#cbd5e1','Não Pertence':'#9ca3af','Reembolso':C.teal};
+    const segs=order.map(s=>({s,v:gc(leadsPeriodo,s)})).filter(x=>x.v>0);
+    const sum=segs.reduce((a,b)=>a+b.v,0);
+    if(!sum) return '<p style="color:#9ca3af;font-style:italic;font-size:11px">Sem leads no período.</p>';
+    const cx=70,cy=70,r=58,rin=34;let ang=-90;let paths='';
+    segs.forEach(seg=>{let frac=seg.v/sum;if(frac>=0.9999)frac=0.9999;const a2=ang+frac*360;const large=frac>0.5?1:0;
+      const x1=cx+r*Math.cos(ang*Math.PI/180),y1=cy+r*Math.sin(ang*Math.PI/180);
+      const x2=cx+r*Math.cos(a2*Math.PI/180),y2=cy+r*Math.sin(a2*Math.PI/180);
+      const xi2=cx+rin*Math.cos(a2*Math.PI/180),yi2=cy+rin*Math.sin(a2*Math.PI/180);
+      const xi1=cx+rin*Math.cos(ang*Math.PI/180),yi1=cy+rin*Math.sin(ang*Math.PI/180);
+      paths+=`<path d="M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} L${xi2} ${yi2} A${rin} ${rin} 0 ${large} 0 ${xi1} ${yi1} Z" fill="${cmap[seg.s]||'#cbd5e1'}"/>`;ang=a2;});
+    const legend=segs.map(seg=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:10.5px"><span style="width:10px;height:10px;border-radius:2px;background:${cmap[seg.s]||'#cbd5e1'};display:inline-block"></span><span style="color:${C.ink};font-weight:600">${esc2(seg.s)}</span><span style="color:${C.muted};margin-left:auto">${seg.v} · ${(seg.v/sum*100).toFixed(0)}%</span></div>`).join('');
+    return `<div style="display:flex;align-items:center;gap:18px"><svg viewBox="0 0 140 140" width="140" height="140">${paths}<text x="70" y="66" text-anchor="middle" font-size="20" font-weight="900" fill="${C.indigoFrom}">${total}</text><text x="70" y="82" text-anchor="middle" font-size="9" fill="${C.muted}">leads</text></svg><div style="flex:1">${legend}</div></div>`;
+  }
+
+  // Barra de meta (sobre fundo indigo escuro -> texto claro)
+  function svgMeta(){
+    if(meta<=0 && desafio<=0) return '';
+    const topo=(desafio>meta&&desafio>0)?desafio:meta;
+    const W=520,H=58,padL=2,barW=516,barY=20,barH=22;
+    const fill=topo>0?Math.min(realizadoMes/topo*100,100):0;
+    const metaPos=(desafio>meta&&topo>0)?(meta/topo*100):100;
+    const fillCol=realizadoMes>=meta?C.greenBar:C.amberL;
+    let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">`;
+    s+=`<text x="${padL}" y="13" font-size="11" font-weight="700" fill="#c7d2fe">Realizado: <tspan fill="#fff" font-weight="900">${fatMoney(realizadoMes)}</tspan></text>`;
+    s+=`<text x="${W-padL}" y="13" text-anchor="end" font-size="11" font-weight="700" fill="#c7d2fe">Meta: <tspan fill="#fff" font-weight="900">${fatMoney(topo)}</tspan></text>`;
+    s+=`<rect x="${padL}" y="${barY}" width="${barW}" height="${barH}" rx="11" fill="#1e1b4b" stroke="#3730a3"/>`;
+    s+=`<rect x="${padL}" y="${barY}" width="${Math.max(fill/100*barW,fill>0?8:0)}" height="${barH}" rx="11" fill="${fillCol}"/>`;
+    if(desafio>meta&&desafio>0){const mx=padL+metaPos/100*barW;
+      s+=`<line x1="${mx}" y1="${barY-3}" x2="${mx}" y2="${barY+barH+3}" stroke="${C.amberL}" stroke-width="2" stroke-dasharray="3,2"/>`;
+      s+=`<text x="${mx}" y="${barY+barH+14}" text-anchor="middle" font-size="9" font-weight="700" fill="${C.amberL}">meta</text>`;}
+    s+=`<text x="${padL}" y="${barY+barH+14}" font-size="11" font-weight="800" fill="${realizadoMes>=meta?C.greenL:C.amberL}">${pctMeta.toFixed(0)}% da meta${realizadoMes>=meta?' ✓':''}</text>`;
+    s+=`</svg>`;return s;
+  }
+
+  // Receita por serviço (fundo branco)
+  function svgServico(){
+    if(!svcArr.length) return '<p style="color:#9ca3af;font-style:italic;font-size:11px">Nenhuma venda com serviço lançado no período.</p>';
+    const max=Math.max(...svcArr.map(s=>s[1]),1);
+    const W=520,rowH=34,padL=180,barMaxW=260,top=4;const H=top+svcArr.length*rowH+4;let bars='';
+    svcArr.forEach((s,i)=>{const y=top+i*rowH;const w=Math.max(s[1]/max*barMaxW,s[1]>0?6:0);
+      const nome=s[0].length>28?s[0].slice(0,28)+'…':s[0];
+      bars+=`<text x="${padL-10}" y="${y+rowH/2+4}" text-anchor="end" font-size="11" font-weight="600" fill="${C.ink}">${esc2(nome)}</text>`;
+      bars+=`<rect x="${padL}" y="${y+6}" width="${barMaxW}" height="${rowH-14}" rx="4" fill="${C.soft}"/>`;
+      bars+=`<rect x="${padL}" y="${y+6}" width="${w}" height="${rowH-14}" rx="4" fill="${C.green}"/>`;
+      bars+=`<text x="${padL+w+8}" y="${y+rowH/2+4}" font-size="11" font-weight="800" fill="${C.green}">${fatMoney(s[1])}</text>`;});
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">${bars}</svg>`;
+  }
+
+  // Investido vs receita Bolsa (fundo branco)
+  function svgBolsa(){
+    const items=[{l:'Investido (líq.)',v:blInvest,c:C.red},{l:'Receita gerada',v:blReceita,c:C.green}];
+    const max=Math.max(...items.map(i=>i.v),1);
+    const W=520,rowH=40,padL=128,barMaxW=300,top=6;const H=top+items.length*rowH+4;let bars='';
+    items.forEach((it,i)=>{const y=top+i*rowH;const w=Math.max(it.v/max*barMaxW,it.v>0?6:0);
+      bars+=`<text x="${padL-10}" y="${y+rowH/2+4}" text-anchor="end" font-size="11.5" font-weight="700" fill="${C.ink}">${esc2(it.l)}</text>`;
+      bars+=`<rect x="${padL}" y="${y+8}" width="${barMaxW}" height="${rowH-18}" rx="5" fill="${C.soft}"/>`;
+      bars+=`<rect x="${padL}" y="${y+8}" width="${w}" height="${rowH-18}" rx="5" fill="${it.c}"/>`;
+      bars+=`<text x="${padL+w+8}" y="${y+rowH/2+4}" font-size="11.5" font-weight="800" fill="${it.c}">${fatMoney(it.v)}</text>`;});
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">${bars}</svg>`;
+  }
+
+  const agora=new Date();
+  const dataEmissao=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // Cards de funil (estilo dashboard: branco, borda-topo colorida, número grande colorido)
+  const funilCards=[
+    {l:'Total de Leads',n:total,rt:'no período',c:STG.gray},
+    {l:'Contactados',n:cont,rt:`${pct(cont,total)}% do total`,c:STG.blue},
+    {l:'Confirmados',n:conf,rt:`${pct(conf,total)}% do total`,c:'#c49500'},
+    {l:'Em Negociação',n:negTotal,rt:'total atual',c:STG.orange},
+    {l:'Vendas',n:vendas,rt:`${pct(vendas,total)}% conv.`,c:STG.green},
+  ];
+
+  // KPIs de faturamento (estilo dashboard: sobre navy, números claros)
+  const fatCards=[
+    {l:'Receita realizada',v:fatMoney(receitaRealizada),rt:`${vendasArr.length} venda${vendasArr.length!==1?'s':''}`,cls:'green'},
+    {l:'Ticket médio',v:fatMoney(ticketMedio),rt:'por venda fechada',cls:''},
+    {l:'Em negociação',v:fatMoney(receitaPipeline),rt:`${pipeline.length} c/ proposta`,cls:'amber'},
+    {l:'Tempo médio p/ venda',v:tempoMedio==null?'—':`${tempoMedio.toFixed(1)} dias`,rt:'contato → fechamento',cls:''},
+    {l:'Desconto médio',v:descMedio>0?`${descMedio.toFixed(0)}%`:'0%',rt:`em ${comDesc.length} venda(s)`,cls:''},
+  ];
+
+  const metaSec = (meta>0||desafio>0) ? `
+    <div class="sec indigo avoid">
+      <h2>🎯 Meta &amp; Desafio <span class="badge-mes">${esc2(mesNome)}</span></h2>
+      <div class="chart-dark">${svgMeta()}</div>
+      <div class="kpi-row">
+        <div class="dkpi"><div class="dk-l">Realizado no mês</div><div class="dk-v green">${fatMoney(realizadoMes)}</div><div class="dk-r">${vendasMes} venda(s)</div></div>
+        <div class="dkpi"><div class="dk-l">Meta</div><div class="dk-v">${fatMoney(meta)}</div><div class="dk-r">${meta>0?pctMeta.toFixed(0)+'% atingido':'—'}</div></div>
+        ${desafio>0?`<div class="dkpi"><div class="dk-l">Desafio</div><div class="dk-v">${fatMoney(desafio)}</div><div class="dk-r">${pctDesafio.toFixed(0)}% atingido</div></div>`:''}
+        <div class="dkpi"><div class="dk-l">Falta p/ meta</div><div class="dk-v ${faltaMeta>0?'amber':'green'}">${faltaMeta>0?fatMoney(faltaMeta):'✓ Batida'}</div><div class="dk-r">${faltaMeta>0?'para atingir':'meta alcançada'}</div></div>
+      </div>
+    </div>` : `<div class="sec indigo"><h2>🎯 Meta &amp; Desafio</h2><p class="empty-d">Nenhuma meta definida para ${esc2(mesNome)}.</p></div>`;
+
+  const bolsaSec = blTotal ? `
+    <div class="sec bolsa avoid">
+      <h2 class="h-bolsa">🎯 Bolsa de Leads <small>— desempenho dos leads pagos</small></h2>
+      <div class="kpi-row light">
+        <div class="lkpi"><div class="lk-l">Leads comprados</div><div class="lk-v">${blTotal}</div><div class="lk-r">${bl.filter(l=>l.status==='Reembolso').length} reembolso(s)</div></div>
+        <div class="lkpi"><div class="lk-l">Investimento líq.</div><div class="lk-v" style="color:${C.amber}">${fatMoney(blInvest)}</div><div class="lk-r">pago − reembolso</div></div>
+        <div class="lkpi"><div class="lk-l">Receita gerada</div><div class="lk-v" style="color:${C.green}">${fatMoney(blReceita)}</div><div class="lk-r">${blVendas.length} venda(s)</div></div>
+        <div class="lkpi"><div class="lk-l">ROI</div><div class="lk-v" style="color:${blRoi!=null&&blRoi>=0?C.green:C.red}">${blRoi==null?'—':(blRoi>=0?'+':'')+blRoi.toFixed(0)+'%'}</div><div class="lk-r">${blMult==null?'':blMult.toFixed(1).replace('.',',')+'× retorno'}</div></div>
+      </div>
+      <div class="chart-box" style="margin-top:8px">${svgBolsa()}</div>
+    </div>` : '';
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+  <title>Relatório Gerencial — Só Multas</title>
+  <style>
+    @page{size:A4;margin:11mm 11mm}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:${C.ink};font-size:11.5px;line-height:1.5;background:#eef2f7}
+    .wrap{background:#eef2f7;padding:4px}
+    /* Cabeçalho estilo header do CRM */
+    .cover{background:linear-gradient(135deg,${C.headFrom},${C.headTo});color:#fff;border-radius:14px;padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 16px rgba(26,41,128,.25);position:relative;overflow:hidden}
+    .cover::after{content:'';position:absolute;right:-30px;top:-50px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .cover-l{display:flex;align-items:center;gap:14px;z-index:1}
+    .cover-logo{width:50px;height:50px;border-radius:13px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:26px;border:1.5px solid rgba(255,255,255,.3)}
+    .cover-title{font-size:21px;font-weight:800;letter-spacing:-.4px}
+    .cover-sub{font-size:11.5px;opacity:.9;margin-top:2px}
+    .cover-tag{display:inline-block;background:rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;margin-top:7px;border:1px solid rgba(255,255,255,.25)}
+    .cover-r{text-align:right;font-size:10.5px;opacity:.95;line-height:1.7;z-index:1}
+    .cover-r b{font-size:12px}
+    /* Cards de funil estilo dashboard */
+    .funil-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+    .fcard{background:#fff;border-radius:11px;padding:13px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.07);border-top:4px solid var(--ac)}
+    .fcard .lbl{font-size:.62rem;color:#666;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+    .fcard .n{font-size:1.8rem;font-weight:800;margin:5px 0;color:var(--ac);line-height:1}
+    .fcard .rt{font-size:.62rem;color:#999}
+    /* Seções */
+    .sec{border-radius:14px;padding:16px 18px;margin-bottom:16px;page-break-inside:avoid;background:#fff;border:1px solid ${C.line};box-shadow:0 2px 10px rgba(0,0,0,.05)}
+    .sec h2{font-size:14px;font-weight:800;color:${C.indigoFrom};display:flex;align-items:center;gap:9px;margin-bottom:13px}
+    .sec h2 small{font-weight:400;color:${C.muted};font-size:11px}
+    .sec.indigo{background:linear-gradient(135deg,${C.indigoFrom},${C.indigoTo});border:none;box-shadow:0 4px 16px rgba(49,46,129,.22)}
+    .sec.indigo h2{color:#fff}
+    .sec.navy{background:linear-gradient(135deg,${C.navyFrom},${C.navyTo});border:none;box-shadow:0 4px 16px rgba(13,31,60,.2)}
+    .sec.navy h2{color:#fff}
+    .sec.bolsa{background:#fff;border:1.5px solid #c5dcf2;border-top:4px solid ${C.cardBlue}}
+    .sec.bolsa h2.h-bolsa{color:#1a4d8c}
+    .badge-mes{font-size:.7rem;font-weight:600;color:#c7d2fe;background:rgba(255,255,255,.12);padding:2px 10px;border-radius:9px;text-transform:capitalize}
+    .two-col{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;align-items:start}
+    .chart-box{background:#fcfdfe;border:1px solid ${C.line};border-radius:11px;padding:14px 16px}
+    .chart-dark{background:rgba(255,255,255,.06);border:1px solid #4338ca;border-radius:12px;padding:14px 16px;margin-bottom:11px}
+    /* KPI rows */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .kpi-row.five{grid-template-columns:repeat(5,1fr)}
+    .kpi-row.light{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    /* dark kpi (indigo) */
+    .dkpi{background:rgba(255,255,255,.06);border:1px solid #4338ca;border-radius:12px;padding:11px 13px}
+    .dkpi .dk-l{font-size:.58rem;text-transform:uppercase;letter-spacing:.5px;color:#a5b4fc;font-weight:700;margin-bottom:5px}
+    .dkpi .dk-v{font-size:1.15rem;font-weight:900;color:#fff;line-height:1.1}
+    .dkpi .dk-v.green{color:${C.greenL}}.dkpi .dk-v.amber{color:${C.amberL}}
+    .dkpi .dk-r{font-size:.6rem;color:#9ca3cf;margin-top:3px}
+    /* navy kpi */
+    .nkpi{background:rgba(255,255,255,.06);border:1px solid #244468;border-radius:11px;padding:11px 13px}
+    .nkpi .nk-l{font-size:.58rem;text-transform:uppercase;letter-spacing:.5px;color:#7a9cc0;font-weight:700;margin-bottom:5px}
+    .nkpi .nk-v{font-size:1.25rem;font-weight:900;color:#fff;line-height:1.08}
+    .nkpi .nk-v.green{color:${C.greenL}}.nkpi .nk-v.amber{color:${C.amberL}}
+    .nkpi .nk-r{font-size:.6rem;color:#90b0d4;margin-top:3px}
+    /* light kpi (bolsa) */
+    .lkpi{background:${C.soft};border:1px solid #dbe7f4;border-radius:10px;padding:11px 13px}
+    .lkpi .lk-l{font-size:.58rem;text-transform:uppercase;letter-spacing:.4px;color:#7591b3;font-weight:700;margin-bottom:4px}
+    .lkpi .lk-v{font-size:1.2rem;font-weight:900;color:#1a4d8c;line-height:1.05}
+    .lkpi .lk-r{font-size:.6rem;color:#9bb4cf;margin-top:3px}
+    .sub-t{font-size:.65rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:.4px;margin:11px 0 8px}
+    .sec.navy .sub-t{color:#7a9cc0}
+    .empty,.empty-d{font-style:italic;font-size:11px;padding:6px 2px}.empty{color:#9ca3af}.empty-d{color:#c7d2fe}
+    .foot{margin-top:6px;padding-top:11px;border-top:2px solid ${C.line};display:flex;justify-content:space-between;font-size:9px;color:#9ca3af}
+    .avoid{page-break-inside:avoid}
+    @media print{ body,.wrap{background:#fff} body{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
+  </style></head><body><div class="wrap">
+    <div class="cover">
+      <div class="cover-l">
+        <div class="cover-logo">📊</div>
+        <div>
+          <div class="cover-title">Relatório Gerencial</div>
+          <div class="cover-sub">Só Multas · Gestão de Leads &amp; Comercial</div>
+          <span class="cover-tag">📅 ${esc2(periodoTxt)}</span>
+        </div>
+      </div>
+      <div class="cover-r"><div>Emitido em</div><b>${dataEmissao}</b><div style="margin-top:7px">Leads analisados</div><b>${total}</b></div>
+    </div>
+
+    <div class="funil-cards">
+      ${funilCards.map(c=>`<div class="fcard" style="--ac:${c.c}"><div class="lbl">${esc2(c.l)}</div><div class="n">${c.n}</div><div class="rt">${esc2(c.rt)}</div></div>`).join('')}
+    </div>
+
+    <div class="sec avoid">
+      <h2>📊 Funil de Conversão</h2>
+      <div class="two-col">
+        <div class="chart-box">${svgFunil()}</div>
+        <div class="chart-box">${svgDonut()}</div>
+      </div>
+    </div>
+
+    ${metaSec}
+
+    <div class="sec navy avoid">
+      <h2>💰 Faturamento &amp; Comercial <small style="color:#7a9cc0">— com base nos serviços lançados</small></h2>
+      <div class="kpi-row five">
+        ${fatCards.map(c=>`<div class="nkpi"><div class="nk-l">${esc2(c.l)}</div><div class="nk-v ${c.cls}">${c.v}</div><div class="nk-r">${esc2(c.rt)}</div></div>`).join('')}
+      </div>
+      <div class="sub-t">💵 Receita por Serviço</div>
+      <div class="chart-box">${svgServico()}</div>
+    </div>
+
+    ${bolsaSec}
+
+    <div class="foot"><span>Só Multas · Relatório gerado automaticamente pelo CRM</span><span>${dataEmissao}</span></div>
+  </div></body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ crmShowToast('Permita pop-ups para gerar o relatório.'); return; }
+  w.document.open(); w.document.write(html); w.document.close(); w.focus();
+  setTimeout(()=>{ try{ w.print(); }catch(e){} }, 600);
+  crmShowToast('📄 Relatório aberto — escolha "Salvar como PDF" na impressão');
 }
 
 function renderMeta(){
