@@ -1043,6 +1043,13 @@ header .sub{font-size:.75rem;opacity:.75;margin-top:2px}
 #leadModal .field .fl{font-size:.62rem;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 #leadModal .field .fv{font-size:.82rem;font-weight:600;color:#333;word-break:break-word}
 #leadModal .field .fv.placeholder{color:#ccc;font-weight:400;font-style:italic}
+/* Inputs editáveis dentro do cartão do lead */
+#leadModal .field input.fed, #leadModal .field select.fed{
+  width:100%;border:1px solid #e2e6ea;background:#fff;border-radius:6px;
+  padding:5px 8px;font-size:.82rem;font-weight:600;color:#333;outline:none;
+  font-family:'Titillium Web',sans-serif}
+#leadModal .field input.fed:focus, #leadModal .field select.fed:focus{border-color:#26d0ce;box-shadow:0 0 0 2px rgba(38,208,206,.15)}
+#leadModal .field input.fed::placeholder{color:#c4c9cf;font-weight:400;font-style:italic}
 #leadModal .modal-foot{padding:14px 24px 20px;display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #f0f2f5;flex-shrink:0}
 /* ── Follow-up section ── */
 #leadModal .comercial-section{background:linear-gradient(135deg,#eafff6,#eaf7f1);border:1.5px solid #9FD9BF;border-radius:12px;padding:14px 16px;margin-bottom:14px}
@@ -7558,6 +7565,7 @@ window.pm_importData        = importData;
   <button class="ba" onclick="applyBulkStatus()">✔ Aplicar em massa</button>
   <span class="bulk-info" id="bulkInfo"></span>
   <button class="ba" onclick="abrirModalDisparo()" style="background:linear-gradient(135deg,#0a5c3d,#097A52);margin-left:4px" title="Gerar lista de disparo com os selecionados">📲 Gerar Lista de Disparo</button>
+  <button class="ba" onclick="excluirSelecionados()" style="background:linear-gradient(135deg,#b91c1c,#dc2626)" title="Excluir permanentemente os leads selecionados">🗑️ Excluir selecionados</button>
   <button class="bc" onclick="clearSelection()">✕ Desselecionar</button>
 </div>
 
@@ -7600,44 +7608,50 @@ window.pm_importData        = importData;
       <div class="section">
         <div class="section-title">👤 Dados Pessoais</div>
         <div class="fields">
-          <div class="field"><div class="fl">CPF</div><div class="fv" id="md-cpf">—</div></div>
-          <div class="field"><div class="fl">CNPJ</div><div class="fv" id="md-cnpj">—</div></div>
-          <div class="field"><div class="fl">Sexo</div><div class="fv" id="md-sexo">—</div></div>
-          <div class="field"><div class="fl">Data de Nascimento</div><div class="fv" id="md-nasc">—</div></div>
+          <div class="field"><div class="fl">Nome</div><input class="fed" id="md-f-nome" oninput="saveLeadField('nome',this.value)" placeholder="Nome do lead"></div>
+          <div class="field"><div class="fl">CPF</div><input class="fed" id="md-cpf" oninput="saveLeadField('cpf',this.value)" placeholder="000.000.000-00"></div>
+          <div class="field"><div class="fl">CNPJ</div><input class="fed" id="md-cnpj" oninput="saveLeadField('cnpj',this.value)" placeholder="00.000.000/0000-00"></div>
+          <div class="field"><div class="fl">Sexo</div>
+            <select class="fed" id="md-sexo" onchange="saveLeadField('sexo',this.value)">
+              <option value="">—</option><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option><option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="field"><div class="fl">Data de Nascimento</div><input class="fed" id="md-nasc" oninput="saveLeadField('nasc',this.value)" placeholder="dd/mm/aaaa"></div>
         </div>
       </div>
       <div class="section">
         <div class="section-title">📞 Contato</div>
         <div class="fields cols3" id="md-tels-container"></div>
         <div class="fields" style="margin-top:8px">
-          <div class="field cols1"><div class="fl">Email</div><div class="fv" id="md-email">—</div></div>
+          <div class="field cols1"><div class="fl">Email</div><input class="fed" id="md-email" oninput="saveLeadField('email',this.value)" placeholder="email@exemplo.com"></div>
         </div>
       </div>
       <div class="section">
         <div class="section-title">📍 Endereço</div>
         <div class="fields cols3">
-          <div class="field"><div class="fl">Cidade</div><div class="fv" id="md-cidade">—</div></div>
-          <div class="field"><div class="fl">Bairro</div><div class="fv" id="md-bairro">—</div></div>
-          <div class="field"><div class="fl">UF</div><div class="fv" id="md-uf">—</div></div>
+          <div class="field"><div class="fl">Cidade</div><input class="fed" id="md-cidade" oninput="saveLeadField('cidade',this.value)" placeholder="Cidade"></div>
+          <div class="field"><div class="fl">Bairro</div><input class="fed" id="md-bairro" oninput="saveLeadField('bairro',this.value)" placeholder="Bairro"></div>
+          <div class="field"><div class="fl">UF</div><input class="fed" id="md-uf" oninput="saveLeadField('uf',this.value.toUpperCase())" maxlength="2" placeholder="UF"></div>
         </div>
-        <div class="fields" style="margin-top:8px">
-          <div class="field"><div class="fl">CEP</div><div class="fv" id="md-cep">—</div></div>
-          <div class="field"><div class="fl">Endereço / Nº</div><div class="fv" id="md-end">—</div></div>
+        <div class="fields cols3" style="margin-top:8px">
+          <div class="field"><div class="fl">CEP</div><input class="fed" id="md-cep" oninput="saveLeadField('cep',this.value)" placeholder="00000-000"></div>
+          <div class="field"><div class="fl">Endereço</div><input class="fed" id="md-endereco" oninput="saveLeadField('endereco',this.value)" placeholder="Logradouro"></div>
+          <div class="field"><div class="fl">Número</div><input class="fed" id="md-numero" oninput="saveLeadField('numero',this.value)" placeholder="Nº"></div>
         </div>
       </div>
       <div class="section">
         <div class="section-title">🚗 Veículo &amp; Infração</div>
         <div class="fields cols3">
-          <div class="field"><div class="fl">Placa</div><div class="fv" id="md-placa" style="font-size:1rem;letter-spacing:2px">—</div></div>
-          <div class="field"><div class="fl">UF do Veículo</div><div class="fv" id="md-ufvei">—</div></div>
-          <div class="field"><div class="fl">Cód. Infração</div><div class="fv" id="md-inf">—</div></div>
+          <div class="field"><div class="fl">Placa</div><input class="fed" id="md-placa" oninput="saveLeadField('placa',this.value.toUpperCase())" style="letter-spacing:1px;font-weight:700" placeholder="ABC1D23"></div>
+          <div class="field"><div class="fl">UF do Veículo</div><input class="fed" id="md-ufvei" oninput="saveLeadField('uf_vei',this.value.toUpperCase())" maxlength="2" placeholder="UF"></div>
+          <div class="field"><div class="fl">Cód. Infração</div><input class="fed" id="md-inf" oninput="saveLeadField('infracao',this.value)" placeholder="Código"></div>
         </div>
         <div class="fields" style="margin-top:8px">
-          <div class="field"><div class="fl">Chassi</div><div class="fv" id="md-chassi">—</div></div>
-          <div class="field"><div class="fl">RENAVAM</div><div class="fv" id="md-renavam">—</div></div>
+          <div class="field"><div class="fl">Chassi</div><input class="fed" id="md-chassi" oninput="saveLeadField('chassi',this.value.toUpperCase())" placeholder="Chassi"></div>
+          <div class="field"><div class="fl">RENAVAM</div><input class="fed" id="md-renavam" oninput="saveLeadField('renavam',this.value)" placeholder="RENAVAM"></div>
         </div>
         <div class="fields cols1" style="margin-top:8px">
-          <div class="field"><div class="fl">Edital</div><div class="fv" id="md-edital">—</div></div>
+          <div class="field"><div class="fl">Edital</div><input class="fed" id="md-edital" oninput="saveLeadField('edital',this.value)" placeholder="Edital"></div>
         </div>
       </div>
       <div class="section">
@@ -7648,17 +7662,17 @@ window.pm_importData        = importData;
             <select id="md-status-select" onchange="changeStatusModal(this.value)"
               style="width:100%;border:none;border-radius:6px;padding:6px 8px;font-size:.82rem;font-weight:700;cursor:pointer;outline:none"></select>
           </div>
-          <div class="field"><div class="fl">Data primeiro contato</div><div class="fv" id="md-dtctt">—</div></div>
+          <div class="field"><div class="fl">Data primeiro contato</div><input class="fed" id="md-dtctt" oninput="saveLeadField('dtContato',this.value)" placeholder="dd/mm/aaaa"></div>
         </div>
         <div class="fields" style="margin-top:8px">
           <div class="field" style="border-left:3px solid #d8b4fe">
             <div class="fl">📱 Meu número WA (Só Multas)</div>
-            <div class="fv" id="md-meunumero">—</div>
+            <input class="fed" id="md-meunumero" oninput="saveLeadField('meuNumero',this.value)" placeholder="Número do WhatsApp">
           </div>
           <div class="field"></div>
         </div>
         <div class="fields cols1" style="margin-top:8px">
-          <div class="field"><div class="fl">Observações</div><div class="fv" id="md-obs">—</div></div>
+          <div class="field"><div class="fl">Observações</div><input class="fed" id="md-obs" oninput="saveLeadField('obs',this.value)" placeholder="Observações"></div>
         </div>
       </div>
 
@@ -7793,6 +7807,11 @@ window.pm_importData        = importData;
         <button class="btn" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none" onclick="closeLeadModal();abrirCrmGuiaDrawer('prosp')" title="Abrir Guia de scripts sem sair do CRM">📖 Guia</button>
         <button class="btn" id="md-painelbtn" style="background:linear-gradient(135deg,#5a320a,#f5a623);color:#fff;border:none" onclick="abrirPainelFromLead()" title="Consultar órgãos do estado deste lead">🚦 Painel</button>
         <button class="btn btn-primary" style="background:#3A5F8C;margin-left:auto" onclick="analisarNoRadarModal()" title="Importar dados do lead para o Radar CNH">📡 Analisar no Radar</button>
+      </div>
+      <!-- Salvar / Excluir -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px dashed #e2e6ea;padding-top:10px">
+        <button class="btn" style="background:linear-gradient(135deg,#097A52,#0fa870);color:#fff;border:none;font-weight:700" onclick="salvarTudoModal()" title="Salvar todas as alterações deste cadastro">💾 Salvar alterações</button>
+        <button class="btn" style="background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border:none;margin-left:auto" onclick="excluirLeadModal()" title="Excluir permanentemente este lead">🗑️ Excluir este lead</button>
       </div>
     </div>
   </div>
@@ -9675,6 +9694,25 @@ function applyBulkStatus() {
   crmShowToast(`✅ ${count} lead${count!==1?'s':''} → "${ns}"`);
 }
 
+// Exclui permanentemente os leads selecionados
+function excluirSelecionados() {
+  const n = S.selectedKeys.size;
+  if (!n) { crmShowToast('Nenhum lead selecionado.'); return; }
+  const ok = confirm(`Excluir permanentemente ${n} lead${n!==1?'s':''} selecionado${n!==1?'s':''}?\n\nEsta ação não pode ser desfeita.`);
+  if (!ok) return;
+  const data = loadData();
+  let count = 0;
+  S.selectedKeys.forEach(k => {
+    if (data.leads[k]) { delete data.leads[k]; count++; }
+  });
+  saveData(data);
+  S.selectedKeys.clear();
+  renderLeads();
+  renderDashboard();
+  renderImportStats();
+  crmShowToast(`🗑️ ${count} lead${count!==1?'s':''} excluído${count!==1?'s':''}.`);
+}
+
 // ══════════════════════════════════════════════
 // STATUS / OBS
 // ══════════════════════════════════════════════
@@ -10174,59 +10212,193 @@ function fallbackCopy(text, cb) {
 // LEAD DETAIL MODAL
 // ══════════════════════════════════════════════
 
+// Salva um campo editável do cartão do lead direto no registro.
+// Salva TODOS os campos do cartão de uma vez (catch-all robusto).
+// Relê cada input/select e grava no lead, garantindo persistência mesmo que
+// algum handler individual não tenha disparado.
+function salvarTudoModal(){
+  if(!S.modalLead){ crmShowToast('Nenhum lead aberto.'); return; }
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead){ crmShowToast('Lead não encontrado.'); return; }
+  const gv = id => { const el=document.getElementById(id); return el ? el.value : undefined; };
+  const map = {
+    nome:'md-f-nome', cpf:'md-cpf', cnpj:'md-cnpj', sexo:'md-sexo', nasc:'md-nasc',
+    email:'md-email', cidade:'md-cidade', bairro:'md-bairro', uf:'md-uf', cep:'md-cep',
+    endereco:'md-endereco', numero:'md-numero', placa:'md-placa', uf_vei:'md-ufvei',
+    infracao:'md-inf', chassi:'md-chassi', renavam:'md-renavam', edital:'md-edital',
+    dtContato:'md-dtctt', meuNumero:'md-meunumero', obs:'md-obs',
+  };
+  Object.entries(map).forEach(([prop,id])=>{
+    const v = gv(id);
+    if(v!==undefined) lead[prop] = v;
+  });
+  // Telefones (recolhe os inputs renderizados)
+  const telInputs = document.querySelectorAll('#md-tels-container input');
+  if(telInputs.length){
+    lead.tels = Array.from(telInputs).map(i=>i.value.trim()).filter(Boolean);
+  }
+  // Status (select)
+  const st = gv('md-status-select');
+  if(st) lead.status = st;
+  // Comercial
+  const servico = gv('md-servico'); if(servico!==undefined) lead.servico = servico;
+  const vb = gv('md-valorbase'); if(vb!==undefined && vb!=='') lead.valorBase = parseFloat(vb)||0;
+  const dp = gv('md-descpct');   if(dp!==undefined && dp!=='') lead.descPct = Math.min(Math.max(parseFloat(dp)||0,0),100);
+  const fp = gv('md-forma');     if(fp!==undefined) lead.formaPgto = fp;
+  const pc = gv('md-parcelas');  if(pc!==undefined) lead.parcelas = (lead.formaPgto==='Cartão') ? (parseInt(pc)||1) : 1;
+  if(lead.valorBase!=null) lead.valorFinal = (Number(lead.valorBase)||0)*(1-(Number(lead.descPct)||0)/100);
+  // Bolsa
+  const isB = document.getElementById('md-isbolsa');
+  if(isB){ lead.isBolsa = isB.checked;
+    if(isB.checked){
+      const bc=gv('md-bolsacod'); if(bc!==undefined) lead.bolsaCod = bc;
+      const bv=gv('md-bolsaval'); if(bv!==undefined && bv!=='') lead.bolsaValor = parseFloat(bv)||0;
+      const bt=gv('md-bolsatag'); if(bt!==undefined) lead.bolsaTag = bt;
+    }
+  }
+  // Prazos
+  const pna=gv('md-prazo-na'); if(pna!==undefined) lead.prazoNA = pna;
+  const pnp=gv('md-prazo-np'); if(pnp!==undefined) lead.prazoNP = pnp;
+
+  S.modalLead = lead;
+  saveData(data);
+  renderLeads();
+  // Atualiza cabeçalho do modal
+  const h=document.getElementById('md-nome'); if(h) h.textContent = lead.nome||'—';
+  crmShowToast('💾 Alterações salvas!');
+}
+
+// Exclui o lead atualmente aberto no cartão
+function excluirLeadModal(){
+  if(!S.modalLead){ crmShowToast('Nenhum lead aberto.'); return; }
+  const nome = S.modalLead.nome || 'este lead';
+  if(!confirm(`Excluir permanentemente "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const data = loadData();
+  if(data.leads[S.modalLead.key]){ delete data.leads[S.modalLead.key]; saveData(data); }
+  S.selectedKeys.delete(S.modalLead.key);
+  closeLeadModal();
+  renderLeads();
+  renderDashboard();
+  renderImportStats();
+  crmShowToast(`🗑️ "${nome}" excluído.`);
+}
+
+function saveLeadField(prop, value){
+  if(!S.modalLead) return;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  lead[prop] = value;
+  S.modalLead[prop] = value;
+  saveData(data);
+  // Atualizações de UI que dependem de certos campos
+  if(prop==='nome'){
+    const h=document.getElementById('md-nome'); if(h) h.textContent = value || '—';
+  }
+  if(prop==='nome' || prop==='placa'){
+    const sub=document.getElementById('md-sub');
+    if(sub) sub.innerHTML =
+      `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${lead.status}</span>`+
+      `&nbsp;&nbsp;Data: ${lead.data} &nbsp;·&nbsp; Placa: <b>${lead.placa||'—'}</b>`;
+  }
+}
+
+// Renderiza inputs de telefone (até 5) + botão para adicionar.
+function renderTelInputs(tels){
+  const cont = document.getElementById('md-tels-container');
+  if(!cont) return;
+  const list = (tels && tels.length) ? tels.slice() : [''];
+  let html = list.map((t,i)=>{
+    const num=(t||'').replace(/\D/g,'');
+    const wa = num.length>=10 ? `<a href="https://wa.me/55${num}" target="_blank" title="Abrir no WhatsApp" style="color:#25D366;text-decoration:none;font-size:.9rem;margin-left:4px">📲</a>` : '';
+    return `<div class="field">
+      <div class="fl">Telefone ${i+1} ${wa}</div>
+      <input class="fed" value="${esc(t||'')}" oninput="saveTel(${i},this.value)" placeholder="(00) 00000-0000">
+    </div>`;
+  }).join('');
+  if(list.length<5){
+    html += `<div class="field" style="display:flex;align-items:flex-end;background:transparent;padding:0">
+      <button onclick="addTelField()" style="width:100%;border:1.5px dashed #c5dcf2;background:#f8fbff;color:#3A5F8C;border-radius:8px;padding:7px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">+ Telefone</button>
+    </div>`;
+  }
+  cont.innerHTML = html;
+}
+
+function saveTel(idx, value){
+  if(!S.modalLead) return;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  const tels = (lead.tels||[]).slice();
+  while(tels.length<=idx) tels.push('');
+  tels[idx] = value;
+  lead.tels = tels;
+  S.modalLead.tels = tels;
+  saveData(data);
+  // Atualiza link de WhatsApp principal
+  const firstTel = tels.find(t => t.replace(/\D/g,'').length>=10);
+  const waLink = document.getElementById('md-walink');
+  if(waLink){
+    if(firstTel){ waLink.href=`https://wa.me/55${firstTel.replace(/\D/g,'')}`; waLink.style.display='inline-flex'; }
+    else waLink.style.display='none';
+  }
+}
+
+function addTelField(){
+  if(!S.modalLead) return;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  const tels = (lead.tels||[]).slice();
+  if(tels.length>=5) return;
+  tels.push('');
+  lead.tels = tels;
+  S.modalLead.tels = tels;
+  saveData(data);
+  renderTelInputs(tels);
+}
+
 function openLeadModal(idx) {
   const l = filteredLeads[idx];
   if (!l) return;
   S.modalLead = l;
   S.modalLeadIdx = idx;
 
-  const fv = (v) => v && v.trim() && v.trim()!=='-' && v.trim()!=='None'
-    ? `<span>${esc(v)}</span>`
-    : `<span class="placeholder">Não informado</span>`;
+  const setV = (id,val) => { const el=document.getElementById(id); if(el) el.value = (val!=null?val:''); };
 
   document.getElementById('md-nome').textContent = l.nome || '—';
   const sc = SC[l.status]||SC["Novo Lead"];
   document.getElementById('md-sub').innerHTML =
     `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${l.status}</span>` +
-    `&nbsp;&nbsp;Data: ${l.data} &nbsp;·&nbsp; Placa: <b>${l.placa}</b>`;
+    `&nbsp;&nbsp;Data: ${l.data} &nbsp;·&nbsp; Placa: <b>${l.placa||'—'}</b>`;
 
-  // Pessoais
-  document.getElementById('md-cpf').innerHTML    = fv(l.cpf);
-  document.getElementById('md-cnpj').innerHTML   = fv(l.cnpj);
-  document.getElementById('md-sexo').innerHTML   = fv(l.sexo);
-  document.getElementById('md-nasc').innerHTML   = fv(l.nasc);
+  // Pessoais (editáveis)
+  setV('md-f-nome', l.nome);
+  setV('md-cpf',  l.cpf);
+  setV('md-cnpj', l.cnpj);
+  setV('md-sexo', l.sexo);
+  setV('md-nasc', l.nasc);
 
-  // Telefones
-  const telCont = document.getElementById('md-tels-container');
-  if (l.tels && l.tels.length) {
-    telCont.innerHTML = l.tels.map((t,i) => {
-      const num = t.replace(/\D/g,'');
-      const wa  = num.length>=10 ? `https://wa.me/55${num}` : null;
-      return `<div class="field">
-        <div class="fl">Telefone ${i+1}</div>
-        <div class="fv">${wa ? `<a href="${wa}" target="_blank" class="wa-link" style="color:#25D366;font-weight:700">${t}</a>` : esc(t)}</div>
-      </div>`;
-    }).join('');
-  } else {
-    telCont.innerHTML = '<div class="field"><div class="fl">Telefones</div><div class="fv placeholder">Não informado</div></div>';
-  }
-  document.getElementById('md-email').innerHTML  = fv(l.email);
+  // Telefones (editáveis)
+  renderTelInputs(l.tels||[]);
+  setV('md-email', l.email);
 
-  // Endereço
-  document.getElementById('md-cidade').innerHTML = fv(l.cidade);
-  document.getElementById('md-bairro').innerHTML  = fv(l.bairro);
-  document.getElementById('md-uf').innerHTML      = fv(l.uf);
-  document.getElementById('md-cep').innerHTML     = fv(l.cep);
-  const endStr = [l.endereco, l.numero].filter(Boolean).join(', ');
-  document.getElementById('md-end').innerHTML     = fv(endStr);
+  // Endereço (editáveis)
+  setV('md-cidade',   l.cidade);
+  setV('md-bairro',   l.bairro);
+  setV('md-uf',       l.uf);
+  setV('md-cep',      l.cep);
+  setV('md-endereco', l.endereco);
+  setV('md-numero',   l.numero);
 
-  // Veículo
-  document.getElementById('md-placa').innerHTML   = l.placa ? `<span style="font-size:1rem;letter-spacing:2px;font-weight:700">${l.placa}</span>` : fv('');
-  document.getElementById('md-ufvei').innerHTML   = fv(l.uf_vei);
-  document.getElementById('md-inf').innerHTML     = fv(l.infracao);
-  document.getElementById('md-chassi').innerHTML  = fv(l.chassi);
-  document.getElementById('md-renavam').innerHTML = fv(l.renavam);
-  document.getElementById('md-edital').innerHTML  = l.edital ? `<span style="font-size:.8rem">${esc(l.edital)}</span>` : fv('');
+  // Veículo (editáveis)
+  setV('md-placa',   l.placa);
+  setV('md-ufvei',   l.uf_vei);
+  setV('md-inf',     l.infracao);
+  setV('md-chassi',  l.chassi);
+  setV('md-renavam', l.renavam);
+  setV('md-edital',  l.edital);
 
   // CRM
   const stSel = document.getElementById('md-status-select');
@@ -10236,15 +10408,9 @@ function openLeadModal(idx) {
     stSel.style.background = sc.bg;
     stSel.style.color = sc.tc;
   }
-  document.getElementById('md-dtctt').innerHTML = fv(l.dtContato);
-  // Meu número WA
-  const mnEl = document.getElementById('md-meunumero');
-  if (l.meuNumero && l.meuNumero.trim()) {
-    mnEl.innerHTML = `<span class="meunr-badge">📱 ${esc(l.meuNumero)}</span>`;
-  } else {
-    mnEl.innerHTML = `<span class="placeholder" style="color:#c4b5fd;font-style:italic;font-size:.8rem">Não definido</span>`;
-  }
-  document.getElementById('md-obs').innerHTML   = fv(l.obs);
+  setV('md-dtctt', l.dtContato);
+  setV('md-meunumero', l.meuNumero);
+  setV('md-obs', l.obs);
 
   // Follow-up & Prazos
   const naEl = document.getElementById('md-prazo-na');
@@ -10287,7 +10453,7 @@ function closeLeadModal() {
 
 // Gera chave normalizada e robusta: placa sem espaços/símbolos + edital limpo.
 // Se não houver placa, usa chassi → renavam → null (nunca colide em "||EDITAL").
-function makeKey(placa, edital, chassi, renavam) {
+function makeKey(placa, edital, chassi, renavam, extra) {
   const p = (placa  ||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim();
   const e = (edital ||'').toString().toUpperCase().replace(/\s+/g,' ').trim();
   if (p) return p + '||' + e;
@@ -10295,7 +10461,24 @@ function makeKey(placa, edital, chassi, renavam) {
   if (c) return 'CHASSI_' + c;
   const r = (renavam||'').toString().replace(/\D/g,'').trim();
   if (r) return 'RENAVAM_' + r;
-  return null; // sem identificador válido → ignora a linha
+  // Sem identificador de veículo (ex.: clientes antigos). Usa identificadores
+  // ÚNICOS alternativos. NUNCA usar nome sozinho como chave: nomes se repetem
+  // (vários "Rafael"), o que faria leads diferentes colidirem e se sobrescreverem.
+  extra = extra || {};
+  const cpf  = (extra.cpf ||'').toString().replace(/\D/g,'').trim();
+  if (cpf)  return 'CPF_' + cpf;
+  const cnpj = (extra.cnpj||'').toString().replace(/\D/g,'').trim();
+  if (cnpj) return 'CNPJ_' + cnpj;
+  const nome = (extra.nome||'').toString().toUpperCase().replace(/\s+/g,' ').trim();
+  const tel  = (extra.tel ||'').toString().replace(/\D/g,'').trim();
+  // Nome + telefone é razoavelmente único
+  if (nome && tel) return 'NT_' + nome + '_' + tel;
+  // Nome + email também
+  const email = (extra.email||'').toString().toUpperCase().trim();
+  if (nome && email) return 'NE_' + nome + '_' + email;
+  // Só nome (ou nome+edital) NÃO é único → não retorna chave por nome aqui.
+  // O chamador deve gerar uma chave única por linha para não perder/colapsar leads.
+  return null;
 }
 
 function handleDrop(e) {
@@ -10303,6 +10486,99 @@ function handleDrop(e) {
   document.getElementById('importZone').classList.remove('drag');
   const f = e.dataTransfer.files[0];
   if (f) importFile(f);
+}
+
+// Aplica a um lead os campos comerciais e de Bolsa de Leads vindos de uma linha
+// da planilha importada. Só sobrescreve quando a coluna correspondente tem valor,
+// preservando dados já existentes no CRM.
+function aplicarComercialBolsa(lead, row){
+  if(!lead || !row) return;
+  const txt = k => (row[k]!=null ? row[k].toString().trim() : '');
+  // Aceita números reais (XLSX) ou strings em formato BR ("1.680,00", "R$ 2.360,50")
+  // ou US ("1680.00", "26.8"). Detecta o separador decimal pela presença de vírgula.
+  const num = k => {
+    const v0 = row[k];
+    if(v0==null || v0==='') return null;
+    if(typeof v0 === 'number') return isNaN(v0) ? null : v0;
+    let raw = v0.toString().trim();
+    if(raw==='') return null;
+    raw = raw.replace(/[^\d.,-]/g,''); // remove R$, espaços, etc.
+    if(raw==='') return null;
+    if(raw.includes(',')){
+      // formato BR: ponto é milhar, vírgula é decimal
+      raw = raw.replace(/\./g,'').replace(',', '.');
+    }
+    // formato US (só pontos): mantém o ponto como decimal
+    const v = parseFloat(raw);
+    return isNaN(v) ? null : v;
+  };
+
+  // ── Bolsa de Leads ──
+  const bolsaFlag = txt('BOLSA DE LEADS').toUpperCase();
+  const valorPago = num('VALOR PAGO LEAD');
+  const tagBolsa  = txt('TAG BOLSA');
+  if(['SIM','S','TRUE','1','X'].includes(bolsaFlag) || valorPago!=null || tagBolsa){
+    lead.isBolsa = true;
+    if(valorPago!=null) lead.bolsaValor = valorPago;
+    if(tagBolsa) lead.bolsaTag = tagBolsa;
+  } else if(bolsaFlag==='NAO' || bolsaFlag==='NÃO' || bolsaFlag==='N'){
+    lead.isBolsa = false;
+  }
+
+  // ── Comercial ──
+  const servico = txt('SERVIÇO') || txt('SERVICO');
+  if(servico) lead.servico = servico;
+  const vBase = num('VALOR BASE');
+  if(vBase!=null) lead.valorBase = vBase;
+  const desc = num('DESCONTO %') ?? num('DESCONTO');
+  if(desc!=null) lead.descPct = Math.min(Math.max(desc,0),100);
+  const forma = txt('FORMA PAGAMENTO') || txt('FORMA DE PAGAMENTO');
+  if(forma) lead.formaPgto = forma;
+  const parc = num('PARCELAS');
+  if(parc!=null) lead.parcelas = Math.max(parseInt(parc)||1,1);
+  const vFinal = num('VALOR FINAL');
+  const dtVenda = normalizeDateBR(row['DATA VENDA'] ?? row['DATA DA VENDA'] ?? '');
+  if(dtVenda) lead.saleDate = dtVenda;
+
+  // Recalcula o valor final a partir de base/desconto; usa o da planilha como fallback
+  if(lead.valorBase!=null && lead.valorBase!==''){
+    const b = Number(lead.valorBase)||0;
+    const d = Number(lead.descPct)||0;
+    lead.valorFinal = b*(1-d/100);
+  } else if(vFinal!=null){
+    lead.valorFinal = vFinal;
+  }
+}
+
+// Normaliza qualquer valor de data vindo do Excel para o formato dd/mm/aaaa.
+// Lida com objetos Date (células de data reais), strings ISO (aaaa-mm-dd),
+// formato US (m/d/aa ou mm/dd/aaaa) e o próprio dd/mm/aaaa.
+function normalizeDateBR(v){
+  if(v==null || v==='') return '';
+  // Objeto Date (cellDates:true converte células de data)
+  if(v instanceof Date && !isNaN(v)){
+    const d=String(v.getDate()).padStart(2,'0');
+    const m=String(v.getMonth()+1).padStart(2,'0');
+    return `${d}/${m}/${v.getFullYear()}`;
+  }
+  let s = v.toString().trim();
+  if(!s) return '';
+  // ISO aaaa-mm-dd (com ou sem hora)
+  let mIso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(mIso) return `${mIso[3]}/${mIso[2]}/${mIso[1]}`;
+  // Formatos com barra: pode ser dd/mm/aaaa (BR) ou m/d/aa (US, vindo do Excel)
+  let mSlash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(mSlash){
+    let a=parseInt(mSlash[1],10), b=parseInt(mSlash[2],10), y=mSlash[3];
+    if(y.length===2) y='20'+y; // 26 -> 2026
+    // Decide ordem: se o 1º campo > 12, é dia (BR). Se o 2º > 12, é US (m/d).
+    let dia, mes;
+    if(a>12){ dia=a; mes=b; }        // claramente dd/mm
+    else if(b>12){ dia=b; mes=a; }   // claramente m/d (US) -> inverte
+    else { dia=a; mes=b; }           // ambíguo: assume dd/mm (padrão BR do sistema)
+    return `${String(dia).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${y}`;
+  }
+  return s; // formato desconhecido: devolve como veio
 }
 
 function importFile(file) {
@@ -10323,19 +10599,33 @@ function importFile(file) {
       log.textContent += `📅 Data: ${fileDate}\n📋 ${rows.length} linhas encontradas\n`;
 
       const data = loadData();
-      let added=0, skipped=0, noid=0;
+      let added=0, skipped=0, noid=0, semId=0;
 
       rows.forEach(row => {
         const placa  = (row['PLACA'] ||'').toString().trim();
         const edital = (row['EDITAL']||'').toString().trim();
         const chassi = (row['CHASSI']||'').toString().trim();
         const renavam= (row['RENAVAM']||'').toString().trim();
-        const key = makeKey(placa, edital, chassi, renavam);
+        // Identificadores alternativos p/ clientes sem dados de veículo
+        const rowCpf  = (row['CPF'] ||'').toString().trim();
+        const rowCnpj = (row['CNPJ']||'').toString().trim();
+        const rowNome = (row['NOME']||'').toString().trim();
+        const rowTel1 = (row['TELEFONE 1']||row['TELEFONE1']||'').toString().trim();
+        const rowEmail= (row['EMAIL']||'').toString().trim();
+        let key = makeKey(placa, edital, chassi, renavam,
+          { cpf: rowCpf, cnpj: rowCnpj, nome: rowNome, tel: rowTel1, email: rowEmail });
+        // Sem identificador único, mas com nome (cliente antigo): cria um lead
+        // próprio para a linha — nunca colapsa com outro de mesmo nome.
+        let linhaSemIdUnico = false;
+        if (!key && rowNome) {
+          key = 'ROW_' + (Date.now().toString(36)) + '_' + Math.random().toString(36).slice(2,9);
+          linhaSemIdUnico = true;
+        }
         if (!key) { noid++; return; }
         // Se já existe, verificar se é reimportação do próprio CRM (tem coluna STATUS)
         // → atualiza apenas campos CRM (status, dtContato, obs) se a planilha tiver esses dados
         const rowStatus   = (row['STATUS']       ||'').toString().trim();
-        const rowDtCtt    = (row['DATA CONTATO']  ||'').toString().trim();
+        const rowDtCtt    = normalizeDateBR(row['DATA CONTATO']||'');
         const rowMeuNr    = (row['MEU NÚMERO WA']||row['MEU NUMERO WA']||'').toString().trim();
         const rowObs      = (row['OBSERVAÇÕES']||row['OBSERVACOES']||'').toString().trim();
 
@@ -10347,6 +10637,13 @@ function importFile(file) {
             const rowPrazoNAex = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
             data.leads[key].prazoNA = isoOrBrToIso(rowPrazoNAex) || addDays30FromBR(data.leads[key].data);
           }
+          // Atualiza prazos se vierem preenchidos na planilha
+          const rPrNA = isoOrBrToIso((row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim());
+          const rPrNP = isoOrBrToIso((row['PRAZO NP']||row['DATA LIMITE NP']||'').toString().trim());
+          if (rPrNA) data.leads[key].prazoNA = rPrNA;
+          if (rPrNP) data.leads[key].prazoNP = rPrNP;
+          // Aplica dados comerciais e de Bolsa que vierem na planilha
+          aplicarComercialBolsa(data.leads[key], row);
           if (rowStatus && STATUS_OPTIONS.includes(rowStatus)) {
             data.leads[key].status    = rowStatus;
             data.leads[key].dtContato = rowDtCtt || data.leads[key].dtContato;
@@ -10366,7 +10663,7 @@ function importFile(file) {
         const initStatus = (rowStatus && STATUS_OPTIONS.includes(rowStatus)) ? rowStatus : 'Novo Lead';
 
         // Data de publicação do edital (data da planilha / upload)
-        const dataPub = (row['DATA PLANILHA']||'').toString().trim() || fileDate;
+        const dataPub = normalizeDateBR(row['DATA PLANILHA']||'') || fileDate;
         // Prazos vindos da planilha (se houver)
         const rowPrazoNA = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
         const rowPrazoNP = (row['PRAZO NP']||row['DATA LIMITE NP']||'').toString().trim();
@@ -10390,7 +10687,7 @@ function importFile(file) {
           numero:  (row['NÚMERO']||row['NUMERO']||'').toString(),
           uf:      (row['UF']             ||'').toString(),
           email:   (row['EMAIL']          ||'').toString(),
-          nasc:    (row['DATA DE NASCIMENTO']||'').toString(),
+          nasc:    normalizeDateBR(row['DATA DE NASCIMENTO']||''),
           edital, placa,
           chassi:  (row['CHASSI']         ||'').toString(),
           renavam: (row['RENAVAM']        ||'').toString(),
@@ -10400,13 +10697,16 @@ function importFile(file) {
           status: initStatus, dtContato: rowDtCtt, meuNumero: rowMeuNr, obs: rowObs,
           manual: false,
         };
+        aplicarComercialBolsa(data.leads[key], row);
+        if (linhaSemIdUnico) semId++;
         added++;
       });
 
       saveData(data);
       log.textContent += `\n✅ ${added} leads novos adicionados!\n`;
       log.textContent += `🔄 ${skipped} já existiam no CRM (status/obs preservados)\n`;
-      if (noid) log.textContent += `⚠️ ${noid} linhas ignoradas (sem placa/chassi/renavam)\n`;
+      if (semId) log.textContent += `ℹ️ ${semId} sem placa/CPF (clientes antigos) — importados como novos registros. Atenção: reimportar a mesma planilha pode duplicá-los.\n`;
+      if (noid) log.textContent += `⚠️ ${noid} linhas ignoradas (sem nenhuma informação: nem nome, nem identificador)\n`;
       log.textContent += `📦 Total no CRM: ${Object.keys(data.leads).length} leads\n`;
       renderImportStats();
       document.getElementById('fileInput').value = '';
@@ -10451,6 +10751,13 @@ function exportXLSX() {
   const rows = leads.map(l => ({
     'DATA PLANILHA': l.data, 'STATUS': l.status,
     'DATA CONTATO':  l.dtContato||'', 'MEU NÚMERO WA': l.meuNumero||'', 'OBSERVAÇÕES': l.obs||'',
+    'PRAZO NA': l.prazoNA||'', 'PRAZO NP': l.prazoNP||'',
+    'BOLSA DE LEADS': l.isBolsa ? 'SIM' : '', 'VALOR PAGO LEAD': l.isBolsa ? (Number(l.bolsaValor)||0) : '',
+    'TAG BOLSA': l.bolsaTag||'',
+    'SERVIÇO': l.servico||'', 'VALOR BASE': (l.valorBase!=null && l.valorBase!=='') ? Number(l.valorBase) : '',
+    'DESCONTO %': (l.descPct!=null && l.descPct!=='') ? Number(l.descPct) : '',
+    'VALOR FINAL': (l.valorFinal!=null && l.valorFinal!=='') ? Number(l.valorFinal) : '',
+    'FORMA PAGAMENTO': l.formaPgto||'', 'PARCELAS': l.parcelas||'', 'DATA VENDA': l.saleDate||'',
     'NOME': l.nome, 'SEXO': l.sexo, 'CPF': l.cpf, 'CNPJ': l.cnpj,
     'CEP': l.cep, 'CIDADE': l.cidade, 'BAIRRO': l.bairro,
     'ENDEREÇO': l.endereco, 'NÚMERO': l.numero, 'UF': l.uf,
