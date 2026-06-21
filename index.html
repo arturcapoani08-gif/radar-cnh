@@ -7665,6 +7665,10 @@ window.pm_importData        = importData;
           <div class="field"><div class="fl">Data primeiro contato</div><input class="fed" id="md-dtctt" oninput="saveLeadField('dtContato',this.value)" placeholder="dd/mm/aaaa"></div>
         </div>
         <div class="fields" style="margin-top:8px">
+          <div class="field" style="border-left:3px solid #fdba74"><div class="fl" style="color:#9a3412">📅 Data do lead (origem)</div><input class="fed" id="md-data-origem" oninput="saveLeadField('data',this.value)" onchange="saveDataOrigem(this.value)" placeholder="dd/mm/aaaa"></div>
+          <div class="field" id="md-saledata-field" style="border-left:3px solid #9FD9BF"><div class="fl" style="color:#097A52">💰 Data da venda</div><input class="fed" id="md-saledata" oninput="saveLeadField('saleDate',this.value)" onchange="saveSaleDate(this.value)" placeholder="dd/mm/aaaa"></div>
+        </div>
+        <div class="fields" style="margin-top:8px">
           <div class="field" style="border-left:3px solid #d8b4fe">
             <div class="fl">📱 Meu número WA (Só Multas)</div>
             <input class="fed" id="md-meunumero" oninput="saveLeadField('meuNumero',this.value)" placeholder="Número do WhatsApp">
@@ -7992,7 +7996,7 @@ window.pm_importData        = importData;
         <div class="nl-grid g2">
           <div class="nl-field">
             <label>Status inicial</label>
-            <select id="nl-status">
+            <select id="nl-status" onchange="nlToggleSaleDate()">
               <option value="Novo Lead">Novo Lead</option>
               <option value="Contactado">Contactado</option>
               <option value="Confirmado">Confirmado</option>
@@ -8007,6 +8011,16 @@ window.pm_importData        = importData;
           <div class="nl-field">
             <label>Data de contato</label>
             <input type="text" id="nl-dtctt" placeholder="DD/MM/AAAA" maxlength="10">
+          </div>
+        </div>
+        <div class="nl-grid g2" style="margin-top:8px">
+          <div class="nl-field" style="background:#fff7ed;border-radius:8px;padding:7px 9px;border:1px solid #fed7aa">
+            <label style="color:#9a3412">📅 Data do lead (origem) <span style="font-weight:400;text-transform:none;letter-spacing:0">— deixe vazio para hoje</span></label>
+            <input type="text" id="nl-data" placeholder="DD/MM/AAAA" maxlength="10" style="border-color:#fdba74">
+          </div>
+          <div class="nl-field" id="nl-saledata-wrap" style="display:none">
+            <label>💰 Data da venda</label>
+            <input type="text" id="nl-saledata" placeholder="DD/MM/AAAA" maxlength="10">
           </div>
         </div>
         <div class="nl-grid g1" style="margin-top:8px">
@@ -10241,6 +10255,10 @@ function salvarTudoModal(){
   // Status (select)
   const st = gv('md-status-select');
   if(st) lead.status = st;
+  // Datas de origem e venda (normalizadas)
+  const dOri = gv('md-data-origem'); if(dOri!==undefined && dOri!=='') lead.data = normalizeDateBR(dOri);
+  const dSale= gv('md-saledata');    if(dSale!==undefined) lead.saleDate = dSale ? normalizeDateBR(dSale) : '';
+  const dCtt = gv('md-dtctt');        if(dCtt!==undefined && dCtt!=='') lead.dtContato = normalizeDateBR(dCtt);
   // Comercial
   const servico = gv('md-servico'); if(servico!==undefined) lead.servico = servico;
   const vb = gv('md-valorbase'); if(vb!==undefined && vb!=='') lead.valorBase = parseFloat(vb)||0;
@@ -10302,6 +10320,44 @@ function saveLeadField(prop, value){
       `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${lead.status}</span>`+
       `&nbsp;&nbsp;Data: ${lead.data} &nbsp;·&nbsp; Placa: <b>${lead.placa||'—'}</b>`;
   }
+}
+
+// Salva a data de origem do lead (normalizada) e atualiza relatórios, pois ela
+// define em qual mês o lead aparece no dashboard.
+function saveDataOrigem(value){
+  if(!S.modalLead) return;
+  const norm = normalizeDateBR(value) || value;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  lead.data = norm;
+  S.modalLead.data = norm;
+  saveData(data);
+  const el=document.getElementById('md-data-origem'); if(el) el.value = norm;
+  // Atualiza subtítulo e listas/relatórios
+  const sub=document.getElementById('md-sub');
+  if(sub) sub.innerHTML =
+    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${lead.status}</span>`+
+    `&nbsp;&nbsp;Data: ${lead.data} &nbsp;·&nbsp; Placa: <b>${lead.placa||'—'}</b>`;
+  renderLeads();
+  if(typeof Chart!=='undefined') renderDashboard();
+  crmShowToast('📅 Data de origem atualizada');
+}
+
+// Salva a data da venda (normalizada) — define o mês do faturamento.
+function saveSaleDate(value){
+  if(!S.modalLead) return;
+  const norm = normalizeDateBR(value) || value;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  lead.saleDate = norm;
+  S.modalLead.saleDate = norm;
+  saveData(data);
+  const el=document.getElementById('md-saledata'); if(el) el.value = norm;
+  renderLeads();
+  if(typeof Chart!=='undefined') renderDashboard();
+  crmShowToast('💰 Data da venda atualizada');
 }
 
 // Renderiza inputs de telefone (até 5) + botão para adicionar.
@@ -10409,6 +10465,8 @@ function openLeadModal(idx) {
     stSel.style.color = sc.tc;
   }
   setV('md-dtctt', l.dtContato);
+  setV('md-data-origem', l.data);
+  setV('md-saledata', l.saleDate);
   setV('md-meunumero', l.meuNumero);
   setV('md-obs', l.obs);
 
@@ -10878,12 +10936,21 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
 // NEW LEAD MANUAL
 // ══════════════════════════════════════════════
 
+// Mostra o campo "Data da venda" no cadastro manual apenas quando o status
+// inicial é Venda Realizada (lead antigo já vendido).
+function nlToggleSaleDate(){
+  const st = document.getElementById('nl-status');
+  const wrap = document.getElementById('nl-saledata-wrap');
+  if(!st || !wrap) return;
+  wrap.style.display = (st.value==='Venda Realizada') ? '' : 'none';
+}
+
 function openNewLeadModal() {
   // Limpar todos os campos
   ['nl-placa','nl-edital','nl-nome','nl-cpf','nl-cnpj','nl-nasc',
    'nl-tel1','nl-tel2','nl-tel3','nl-email','nl-cidade','nl-bairro',
    'nl-cep','nl-endereco','nl-numero','nl-infracao','nl-renavam',
-   'nl-chassi','nl-dtctt','nl-obs','nl-meunumero',
+   'nl-chassi','nl-dtctt','nl-data','nl-saledata','nl-obs','nl-meunumero',
    'nl-bolsacod','nl-bolsaval','nl-bolsatag',
    'nl-valorbase','nl-descpct'].forEach(id => {
     const el = document.getElementById(id);
@@ -10894,6 +10961,7 @@ function openNewLeadModal() {
     if (el) el.value = '';
   });
   document.getElementById('nl-status').value = 'Novo Lead';
+  nlToggleSaleDate();
   // Bolsa de Leads: reset toggle e campos
   const bchk = document.getElementById('nl-isbolsa');
   if (bchk) bchk.checked = false;
@@ -10985,6 +11053,12 @@ function saveNewLead() {
   const status = g('nl-status') || 'Novo Lead';
   const hoje = new Date().toLocaleDateString('pt-BR');
 
+  // Datas reais informadas (lead antigo): origem, contato e venda.
+  // Caem para hoje apenas quando não informadas.
+  const dataLead   = normalizeDateBR(g('nl-data')) || hoje;
+  const dtContato  = normalizeDateBR(g('nl-dtctt')) || (status !== 'Novo Lead' ? dataLead : '');
+  const dataVenda  = normalizeDateBR(g('nl-saledata')); // pode ficar vazio
+
   // Comercial
   const servico   = g('nl-servico');
   const valorBase = parseFloat(g('nl-valorbase')) || 0;
@@ -10998,7 +11072,7 @@ function saveNewLead() {
 
   data.leads[key] = {
     key,
-    data:      hoje,
+    data:      dataLead,
     nome,
     sexo:      g('nl-sexo'),
     cpf:       g('nl-cpf'),
@@ -11019,7 +11093,7 @@ function saveNewLead() {
     infracao:  g('nl-infracao'),
     tels,
     status,
-    dtContato: g('nl-dtctt') || (status !== 'Novo Lead' ? hoje : ''),
+    dtContato: dtContato,
     meuNumero: g('nl-meunumero'),
     obs:       g('nl-obs'),
     manual:    true,
@@ -11030,7 +11104,7 @@ function saveNewLead() {
     formaPgto: forma,
     parcelas,
     valorFinal,
-    saleDate:  status==='Venda Realizada' ? hoje : '',
+    saleDate:  status==='Venda Realizada' ? (dataVenda || dataLead) : '',
     // Bolsa de Leads
     isBolsa,
     bolsaCodigo: isBolsa ? g('nl-bolsacod') : '',
