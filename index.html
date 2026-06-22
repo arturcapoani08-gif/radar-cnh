@@ -8627,14 +8627,17 @@ function renderFaturamento(leads){
   }
 
   // ── Insights da Bolsa de Leads (no lugar do gráfico de pagamento) ──
-  // Usa TODOS os leads pagos, ignorando o filtro de data, igual ao setor Bolsa.
+  // Acompanha o filtro de período: usa os leads já filtrados por data.
   if(payInst){payInst.destroy();payInst=null;}
-  renderBolsaInsights(Object.values(loadData().leads));
+  renderBolsaInsights(leads);
 
-  // ── Saldo Bolsa de Leads (sempre sobre TODOS os leads, ignora filtro de data) ──
+  // ── Saldo Bolsa de Leads ──
+  // O SALDO é o valor real da conta e NÃO deve ser filtrado por período
+  // (é um acumulado de todas as transações). Já os gráficos de desempenho
+  // acompanham o período selecionado.
   const allLeads = Object.values(loadData().leads);
-  renderBolsaSaldo(allLeads);
-  renderBolsaCharts(allLeads);
+  renderBolsaSaldo(allLeads, leads);
+  renderBolsaCharts(leads);
 }
 
 // Painel de insights de rentabilidade da Bolsa de Leads.
@@ -8749,27 +8752,36 @@ function renderBolsaInsights(allLeads){
 }
 
 // Calcula e renderiza o painel de saldo da Bolsa de Leads.
-// Saldo disponível = depositado − total pago + total reembolsado.
-function renderBolsaSaldo(leads){
+// - O SALDO usa SEMPRE todos os leads (allLeads): é o valor real da conta.
+// - Os indicadores de exibição (total pago, reembolsado, custo médio) seguem
+//   o PERÍODO selecionado (periodLeads).
+function renderBolsaSaldo(allLeads, periodLeads){
   const wrap=document.getElementById('bolsaSaldoWrap');
   if(!wrap) return;
-  const bolsaLeads = leads.filter(l=>l.isBolsa);
-  if(!bolsaLeads.length){ wrap.style.display='none'; return; }
+  // Para o saldo (acumulado real)
+  const allBolsa = allLeads.filter(l=>l.isBolsa);
+  // Para os indicadores do período (cai p/ allLeads se não vier período)
+  const periodBolsa = (periodLeads||allLeads).filter(l=>l.isBolsa);
+  // Esconde só se não houver Bolsa em lugar nenhum
+  if(!allBolsa.length){ wrap.style.display='none'; return; }
   wrap.style.display='grid';
 
   const valNum = l => Number(l.bolsaValor)||0;
-  const totalPago   = bolsaLeads.reduce((s,l)=>s+valNum(l),0);
-  const reembolsados= bolsaLeads.filter(l=>l.status==='Reembolso');
-  const totalReemb  = reembolsados.reduce((s,l)=>s+valNum(l),0);
+  // Totais ALL-TIME (para o cálculo do saldo)
+  const totalPagoAll  = allBolsa.reduce((s,l)=>s+valNum(l),0);
+  const totalReembAll = allBolsa.filter(l=>l.status==='Reembolso').reduce((s,l)=>s+valNum(l),0);
+  // Totais do PERÍODO (para exibir nos cards)
+  const reembolsadosP = periodBolsa.filter(l=>l.status==='Reembolso');
+  const totalPago     = periodBolsa.reduce((s,l)=>s+valNum(l),0);
+  const totalReemb    = reembolsadosP.reduce((s,l)=>s+valNum(l),0);
 
   const data = loadData();
   if(!data.meta) data.meta = {};
   // Migração: contas antigas usavam "bolsaDeposito" como total depositado.
-  // Convertendo para o novo modelo de saldo-base com marcos zerados.
   if (data.meta.bolsaSaldoBase === undefined) {
     const depAntigo = Number(data.meta.bolsaDeposito) || 0;
-    data.meta.bolsaSaldoBase  = depAntigo; // base = total depositado histórico
-    data.meta.bolsaPagoMarco  = 0;         // descontar todo o pago acumulado
+    data.meta.bolsaSaldoBase  = depAntigo;
+    data.meta.bolsaPagoMarco  = 0;
     data.meta.bolsaReembMarco = 0;
     saveData(data);
   }
@@ -8778,24 +8790,24 @@ function renderBolsaSaldo(leads){
   const pagoMarco  = Number(data.meta.bolsaPagoMarco)  || 0;
   const reembMarco = Number(data.meta.bolsaReembMarco) || 0;
 
-  // Saldo = base corrigida, descontando gastos e somando reembolsos
-  // ocorridos APÓS o último ajuste manual / depósito.
-  const saldoDisp = saldoBase - (totalPago - pagoMarco) + (totalReemb - reembMarco);
+  // Saldo = base corrigida, descontando gastos/somando reembolsos ALL-TIME
+  // ocorridos após o último ajuste manual / depósito.
+  const saldoDisp = saldoBase - (totalPagoAll - pagoMarco) + (totalReembAll - reembMarco);
 
-  // custo médio por lead comprado
-  const qtd = bolsaLeads.length;
+  // custo médio por lead comprado NO PERÍODO
+  const qtd = periodBolsa.length;
   const custoMedio = qtd>0 ? totalPago/qtd : null;
 
   const saldoEl = document.getElementById('bsSaldo');
   saldoEl.textContent = fatMoney(saldoDisp);
   saldoEl.style.color = saldoDisp<0 ? '#fca5a5' : '#fff';
   const parts = [];
-  if (totalReemb>0) parts.push(`inclui ${fatMoney(totalReemb)} reembolsado${reembolsados.length>1?'s':''} (${reembolsados.length})`);
+  if (totalReemb>0) parts.push(`período: ${fatMoney(totalReemb)} reembolsado${reembolsadosP.length>1?'s':''} (${reembolsadosP.length})`);
   parts.push('✏️ editar saldo · ➕ novo depósito');
   document.getElementById('bsSaldoRt').textContent = parts.join(' · ');
 
   document.getElementById('bsPago').textContent = fatMoney(totalPago);
-  document.getElementById('bsPagoRt').textContent = `${qtd} lead${qtd!==1?'s':''} comprado${qtd!==1?'s':''}`;
+  document.getElementById('bsPagoRt').textContent = `${qtd} lead${qtd!==1?'s':''} comprado${qtd!==1?'s':''} no período`;
   document.getElementById('bsCustoMedio').textContent = custoMedio==null ? '—' : fatMoney(custoMedio);
   document.getElementById('bsQtdLeads').textContent = `${qtd} lead${qtd!==1?'s':''} · pago / qtd`;
 }
@@ -8983,6 +8995,63 @@ function gerarRelatorioPDF(){
   vendasArr.forEach(l=>{ const s=(l.servico||'(sem serviço)').trim()||'(sem serviço)'; svcMap[s]=(svcMap[s]||0)+valOf(l); });
   const svcArr = Object.entries(svcMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
+  // ── Categoria de origem do lead (agregado, não por edital individual) ──
+  const catDe = l => {
+    if(l.isBolsa) return 'Bolsa de Leads';
+    const ed=(l.edital||'').trim();
+    if(!ed) return 'Indicação / Outros';
+    if(/indica/i.test(ed)) return 'Indicação';
+    if(/manual/i.test(ed)) return 'Indicação / Outros';
+    return 'Editais';
+  };
+  const catMap={};
+  leadsPeriodo.forEach(l=>{
+    const c=catDe(l);
+    if(!catMap[c]) catMap[c]={total:0,vendas:0,receita:0};
+    catMap[c].total++;
+    if(l.status==='Venda Realizada'){ catMap[c].vendas++; catMap[c].receita+=valOf(l); }
+  });
+  const catArr = Object.entries(catMap).map(([cat,g])=>({
+    cat, ...g, conv: g.total>0 ? (g.vendas/g.total*100) : 0
+  })).sort((a,b)=>b.receita-a.receita || b.total-a.total);
+
+  // ── Top serviços vendidos com ticket médio ──
+  const svcDetail={};
+  vendasArr.forEach(l=>{
+    const s=(l.servico||'(sem serviço)').trim()||'(sem serviço)';
+    if(!svcDetail[s]) svcDetail[s]={qtd:0,receita:0};
+    svcDetail[s].qtd++; svcDetail[s].receita+=valOf(l);
+  });
+  const svcDetailArr = Object.entries(svcDetail).map(([nome,g])=>({
+    nome, qtd:g.qtd, receita:g.receita, ticket: g.qtd>0 ? g.receita/g.qtd : 0
+  })).sort((a,b)=>b.receita-a.receita).slice(0,6);
+
+  // ── Comparação com o período anterior (mesma duração imediatamente antes) ──
+  let cmp = null;
+  if(dfrom && dto){
+    const dF=new Date(dfrom+'T00:00:00'), dT=new Date(dto+'T00:00:00');
+    const durDias = Math.round((dT-dF)/86400000)+1;
+    const prevTo = new Date(dF); prevTo.setDate(prevTo.getDate()-1);
+    const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate()-(durDias-1));
+    const isoP = d => d.toISOString().slice(0,10);
+    const pFrom=isoP(prevFrom), pTo=isoP(prevTo);
+    const inPrev = l => { const i=brToIso(l.data); return i>=pFrom && i<=pTo; };
+    const prevLeads = applyCtx(todos.filter(inPrev));
+    const prevVendasArr = prevLeads.filter(l=>l.status==='Venda Realizada');
+    const prevReceita = prevVendasArr.reduce((s,l)=>s+valOf(l),0);
+    cmp = {
+      label: `${fmtBr(pFrom)} a ${fmtBr(pTo)}`,
+      leads:{atual:total, ant:prevLeads.length},
+      vendas:{atual:vendas, ant:prevVendasArr.length},
+      receita:{atual:receitaRealizada, ant:prevReceita},
+    };
+  }
+  const variation = (atual,ant) => {
+    if(ant===0) return atual>0 ? {pct:100,dir:'up'} : {pct:0,dir:'flat'};
+    const p=(atual-ant)/ant*100;
+    return {pct:Math.abs(p), dir: p>0.5?'up':(p<-0.5?'down':'flat'), raw:p};
+  };
+
   const {meta,desafio} = getMetaMes();
   const realizadoMes = faturamentoMesAtual();
   const vendasMes = vendasMesAtual();
@@ -9052,7 +9121,8 @@ function gerarRelatorioPDF(){
     const fillCol=realizadoMes>=meta?C.greenBar:C.amberL;
     let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">`;
     s+=`<text x="${padL}" y="13" font-size="11" font-weight="700" fill="#c7d2fe">Realizado: <tspan fill="#fff" font-weight="900">${fatMoney(realizadoMes)}</tspan></text>`;
-    s+=`<text x="${W-padL}" y="13" text-anchor="end" font-size="11" font-weight="700" fill="#c7d2fe">Meta: <tspan fill="#fff" font-weight="900">${fatMoney(topo)}</tspan></text>`;
+    const topoLbl = (desafio>meta&&desafio>0) ? 'Desafio' : 'Meta';
+    s+=`<text x="${W-padL}" y="13" text-anchor="end" font-size="11" font-weight="700" fill="#c7d2fe">${topoLbl}: <tspan fill="#fff" font-weight="900">${fatMoney(topo)}</tspan></text>`;
     s+=`<rect x="${padL}" y="${barY}" width="${barW}" height="${barH}" rx="11" fill="#1e1b4b" stroke="#3730a3"/>`;
     s+=`<rect x="${padL}" y="${barY}" width="${Math.max(fill/100*barW,fill>0?8:0)}" height="${barH}" rx="11" fill="${fillCol}"/>`;
     if(desafio>meta&&desafio>0){const mx=padL+metaPos/100*barW;
@@ -9091,6 +9161,71 @@ function gerarRelatorioPDF(){
 
   const agora=new Date();
   const dataEmissao=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // ── Tabela: desempenho por categoria de origem ──
+  const catCores={'Editais':C.blue,'Bolsa de Leads':C.teal,'Indicação':C.green,'Indicação / Outros':C.amber};
+  function tblOrigem(){
+    if(!catArr.length) return '<p class="empty">Sem leads no período.</p>';
+    const maxLeads=Math.max(...catArr.map(c=>c.total),1);
+    const rows=catArr.map(c=>{
+      const cor=catCores[c.cat]||C.muted;
+      const w=Math.round(c.total/maxLeads*100);
+      return `<tr>
+        <td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${cor};margin-right:7px"></span><b>${esc2(c.cat)}</b></td>
+        <td class="r">${c.total}</td>
+        <td><div style="background:${C.soft};border-radius:4px;height:11px;width:100%;min-width:60px"><div style="background:${cor};height:11px;border-radius:4px;width:${w}%"></div></div></td>
+        <td class="r">${c.vendas}</td>
+        <td class="r">${c.conv.toFixed(0)}%</td>
+        <td class="r"><b style="color:${C.green}">${fatMoney(c.receita)}</b></td>
+      </tr>`;
+    }).join('');
+    return `<table class="rtbl">
+      <thead><tr><th>Origem</th><th class="r">Leads</th><th>Volume</th><th class="r">Vendas</th><th class="r">Conv.</th><th class="r">Receita</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  }
+
+  // ── Tabela: top serviços com ticket médio ──
+  function tblServicos(){
+    if(!svcDetailArr.length) return '<p class="empty">Nenhuma venda com serviço lançado no período.</p>';
+    const maxRec=Math.max(...svcDetailArr.map(s=>s.receita),1);
+    const rows=svcDetailArr.map(s=>{
+      const w=Math.round(s.receita/maxRec*100);
+      const nome=s.nome.length>34?s.nome.slice(0,34)+'…':s.nome;
+      return `<tr>
+        <td><b>${esc2(nome)}</b></td>
+        <td class="r">${s.qtd}</td>
+        <td><div style="background:${C.soft};border-radius:4px;height:11px;width:100%;min-width:60px"><div style="background:${C.green};height:11px;border-radius:4px;width:${w}%"></div></div></td>
+        <td class="r">${fatMoney(s.receita)}</td>
+        <td class="r"><b style="color:${C.navyFrom}">${fatMoney(s.ticket)}</b></td>
+      </tr>`;
+    }).join('');
+    return `<table class="rtbl">
+      <thead><tr><th>Serviço</th><th class="r">Vendas</th><th>Receita</th><th class="r">Total</th><th class="r">Ticket médio</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  }
+
+  // ── Comparação período atual vs anterior ──
+  function cmpCards(){
+    if(!cmp) return '<p class="empty">Defina um período (data início e fim) para comparar com o período anterior.</p>';
+    const metricas=[
+      {l:'Leads',  ...cmp.leads,   money:false},
+      {l:'Vendas', ...cmp.vendas,  money:false},
+      {l:'Receita',...cmp.receita, money:true},
+    ];
+    const arrow = d => d==='up'?'▲':(d==='down'?'▼':'▬');
+    const col   = d => d==='up'?C.green:(d==='down'?C.red:C.muted);
+    return `<p style="font-size:10px;color:${C.muted};margin-bottom:9px">Comparando com período anterior de mesma duração: <b>${esc2(cmp.label)}</b></p>
+    <div class="cmp-row">${metricas.map(m=>{
+      const v=variation(m.atual,m.ant);
+      const fmt=x=> m.money?fatMoney(x):x;
+      return `<div class="cmp-card">
+        <div class="cmp-l">${esc2(m.l)}</div>
+        <div class="cmp-v">${fmt(m.atual)}</div>
+        <div class="cmp-d" style="color:${col(v.dir)}">${arrow(v.dir)} ${v.pct.toFixed(0)}%</div>
+        <div class="cmp-r">ant.: ${fmt(m.ant)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
 
   // Cards de funil (estilo dashboard: branco, borda-topo colorida, número grande colorido)
   const funilCards=[
@@ -9169,6 +9304,18 @@ function gerarRelatorioPDF(){
     .sec.bolsa h2.h-bolsa{color:#1a4d8c}
     .badge-mes{font-size:.7rem;font-weight:600;color:#c7d2fe;background:rgba(255,255,255,.12);padding:2px 10px;border-radius:9px;text-transform:capitalize}
     .two-col{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;align-items:start}
+    .rtbl{width:100%;border-collapse:collapse;font-size:11px}
+    .rtbl th{background:#f3f6fb;color:#475569;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:7px 9px;border-bottom:1.5px solid ${C.line}}
+    .rtbl th.r,.rtbl td.r{text-align:right}
+    .rtbl td{padding:8px 9px;border-bottom:1px solid #f1f3f5;color:#374151;vertical-align:middle}
+    .rtbl tr:last-child td{border-bottom:none}
+    .rtbl td:nth-child(3){width:30%}
+    .cmp-row{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+    .cmp-card{background:#f9fafb;border:1px solid ${C.line};border-radius:11px;padding:12px 14px;text-align:center}
+    .cmp-card .cmp-l{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:${C.muted};font-weight:700;margin-bottom:5px}
+    .cmp-card .cmp-v{font-size:19px;font-weight:900;color:${C.navyFrom};line-height:1}
+    .cmp-card .cmp-d{font-size:12px;font-weight:800;margin-top:5px}
+    .cmp-card .cmp-r{font-size:9px;color:#9ca3af;margin-top:3px}
     .chart-box{background:#fcfdfe;border:1px solid ${C.line};border-radius:11px;padding:14px 16px}
     .chart-dark{background:rgba(255,255,255,.06);border:1px solid #4338ca;border-radius:12px;padding:14px 16px;margin-bottom:11px}
     /* KPI rows */
@@ -9216,11 +9363,18 @@ function gerarRelatorioPDF(){
     </div>
 
     <div class="sec avoid">
-      <h2>📊 Funil de Conversão</h2>
-      <div class="two-col">
-        <div class="chart-box">${svgFunil()}</div>
-        <div class="chart-box">${svgDonut()}</div>
-      </div>
+      <h2>📈 Comparativo vs Período Anterior</h2>
+      ${cmpCards()}
+    </div>
+
+    <div class="sec avoid">
+      <h2>🎯 Desempenho por Origem dos Leads</h2>
+      ${tblOrigem()}
+    </div>
+
+    <div class="sec avoid">
+      <h2>🏆 Top Serviços Vendidos</h2>
+      ${tblServicos()}
     </div>
 
     ${metaSec}
@@ -9230,8 +9384,6 @@ function gerarRelatorioPDF(){
       <div class="kpi-row five">
         ${fatCards.map(c=>`<div class="nkpi"><div class="nk-l">${esc2(c.l)}</div><div class="nk-v ${c.cls}">${c.v}</div><div class="nk-r">${esc2(c.rt)}</div></div>`).join('')}
       </div>
-      <div class="sub-t">💵 Receita por Serviço</div>
-      <div class="chart-box">${svgServico()}</div>
     </div>
 
     ${bolsaSec}
