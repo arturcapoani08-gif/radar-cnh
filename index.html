@@ -7297,6 +7297,7 @@ window.pm_importData        = importData;
     <input type="date" id="dto" onchange="renderDashboard()">
     <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">↺ Mês atual</button>
     <button class="btn btn-sm bolsa-toggle-btn" id="bolsaOnlyBtn" onclick="toggleBolsaOnly()" title="Mostrar no dashboard apenas os leads pagos (Bolsa de Leads)">🎯 Só Bolsa de Leads</button>
+    <button class="btn btn-sm" onclick="dashGoNegProposta()" title="Ver leads em negociação que já têm proposta enviada" style="background:#FFC000;color:#7a3800;border:none;font-weight:700">💬 Negociação c/ proposta</button>
     <button class="btn btn-sm" onclick="gerarRelatorioPDF()" title="Gerar relatório gerencial em PDF (funil, meta e faturamento)" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none;font-weight:700;margin-left:auto">📄 Gerar Relatório PDF</button>
     <div id="ctxBadge" style="display:none" class="ctx-badge">
       <span id="ctxLabel"></span>
@@ -7452,7 +7453,22 @@ window.pm_importData        = importData;
       <option value="bolsa">🎯 Só Bolsa de Leads</option>
       <option value="nao">Sem Bolsa</option>
     </select>
+    <select id="tagFilter" onchange="renderLeads()" title="Filtrar por tag">
+      <option value="">🏷️ Todas as Tags</option>
+    </select>
+    <select id="propostaFilter" onchange="renderLeads()" title="Filtrar por proposta enviada (leads com valor lançado)">
+      <option value="">📄 Proposta: todos</option>
+      <option value="com">📄 Com proposta enviada</option>
+      <option value="sem">Sem proposta</option>
+    </select>
     <span class="badge-cnt" id="leadsCount">0</span>
+  </div>
+
+  <!-- ATALHOS RÁPIDOS -->
+  <div class="leads-toolbar" style="margin-top:-2px;gap:8px">
+    <span style="font-size:.72rem;font-weight:700;color:#6B7280;white-space:nowrap">⚡ Atalhos:</span>
+    <button class="btn btn-sm" id="qf-negprop" onclick="quickFilterNegProposta()" title="Leads em negociação que já têm proposta enviada" style="background:#FFC000;color:#7a3800;border:none;font-weight:700;font-size:.72rem">💬 Negociação c/ proposta</button>
+    <button class="btn btn-sm" onclick="clearLeadFilters()" title="Limpar todos os filtros" style="background:#fff;border:1px solid var(--border);font-size:.72rem">↺ Limpar filtros</button>
   </div>
 
   <!-- FILTRO DE PRAZO DA NA (VENCIMENTO) -->
@@ -7674,6 +7690,13 @@ window.pm_importData        = importData;
             <input class="fed" id="md-meunumero" oninput="saveLeadField('meuNumero',this.value)" placeholder="Número do WhatsApp">
           </div>
           <div class="field"></div>
+        </div>
+        <div class="fields cols1" style="margin-top:8px">
+          <div class="field" style="border-left:3px solid #c4b5fd">
+            <div class="fl">🏷️ Tags <span style="font-weight:400;color:#aaa;font-size:.62rem">(separe por vírgula)</span></div>
+            <input class="fed" id="md-tags" oninput="saveTags(this.value)" placeholder="Ex: Premium, Lei Seca, Reabordar...">
+            <div id="md-tags-pills" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>
+          </div>
         </div>
         <div class="fields cols1" style="margin-top:8px">
           <div class="field"><div class="fl">Observações</div><input class="fed" id="md-obs" oninput="saveLeadField('obs',this.value)" placeholder="Observações"></div>
@@ -8027,6 +8050,12 @@ window.pm_importData        = importData;
           <div class="nl-field">
             <label>📱 Meu número WA (Só Multas usado)</label>
             <input type="text" id="nl-meunumero" placeholder="Ex: (14) 99999-0000 · Chip 1" style="border-color:#d8b4fe">
+          </div>
+        </div>
+        <div class="nl-grid g1" style="margin-top:8px">
+          <div class="nl-field">
+            <label>🏷️ Tags <span style="font-weight:400;color:#aaa;font-size:.66rem">(separe por vírgula)</span></label>
+            <input type="text" id="nl-tags" placeholder="Ex: Premium, Lei Seca, Reabordar...">
           </div>
         </div>
         <div class="nl-grid g1" style="margin-top:8px">
@@ -9615,6 +9644,14 @@ function populateLeadsFilters(all) {
     dates.map(d=>`<option value="${d}"${d===cv_d?' selected':''}>${d}</option>`).join('');
   if (wf) wf.innerHTML = '<option value="">📱 Meu WA</option>' +
     was.map(w=>`<option value="${w}"${w===cv_w?' selected':''}>${w}</option>`).join('');
+  // Tags universais (campo `tags` + bolsaTag legado)
+  const tfEl = document.getElementById('tagFilter');
+  if (tfEl) {
+    const cv_t = tfEl.value;
+    const allTags = [...new Set(all.flatMap(l=>leadTagList(l)))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    tfEl.innerHTML = '<option value="">🏷️ Todas as Tags</option>' +
+      allTags.map(t=>`<option value="${esc(t)}"${t===cv_t?' selected':''}>${esc(t)}</option>`).join('');
+  }
   document.getElementById('bulkStatus').innerHTML =
     '<option value="">— Alterar status —</option>' +
     STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('');
@@ -9676,6 +9713,62 @@ function selecionarPorPrazo() {
   crmShowToast(`☑ ${filteredLeads.length} leads selecionados — clique em "Gerar Lista de Disparo"`);
 }
 
+// ══════════════════════════════════════════════
+// TAGS & PROPOSTA (helpers)
+// ══════════════════════════════════════════════
+// Lista normalizada de tags de um lead (campo universal `tags` + bolsaTag legado).
+function leadTagList(l){
+  const out = [];
+  const push = s => { (s||'').split(',').forEach(t=>{ const v=t.trim(); if(v) out.push(v); }); };
+  push(l.tags);
+  push(l.bolsaTag);
+  // dedup preservando ordem
+  return [...new Set(out)];
+}
+// Lead com proposta enviada = tem valor comercial lançado (valorFinal ou valorBase > 0).
+function leadTemProposta(l){
+  const vf = Number(l.valorFinal)||0;
+  const vb = Number(l.valorBase)||0;
+  return vf>0 || vb>0;
+}
+// Salva o campo universal de tags do lead aberto na ficha.
+function saveTags(value){
+  if(!S.modalLead) return;
+  const data = loadData();
+  const lead = data.leads[S.modalLead.key];
+  if(!lead) return;
+  lead.tags = value;
+  S.modalLead.tags = value;
+  saveData(data);
+  renderTagPills(lead);
+}
+// Renderiza as pills de tag dentro da ficha do lead.
+function renderTagPills(l){
+  const box = document.getElementById('md-tags-pills');
+  if(!box) return;
+  const tags = leadTagList(l);
+  box.innerHTML = tags.map(t=>`<span class="bolsa-tagpill">${esc(t)}</span>`).join('');
+}
+function quickFilterNegProposta(){
+  clearLeadFilters(true);
+  const sf=document.getElementById('statusFilter'); if(sf) sf.value='Em Conversa/Negociação';
+  const pf=document.getElementById('propostaFilter'); if(pf) pf.value='com';
+  renderLeads();
+  crmShowToast('💬 Negociação com proposta enviada');
+}
+// Do dashboard: vai para a página de Leads já com o filtro aplicado.
+function dashGoNegProposta(){
+  const btn = document.querySelector(".nav button[onclick*=\"goPage('leads'\"]");
+  if(btn) goPage('leads', btn);
+  quickFilterNegProposta();
+}
+// Limpa todos os filtros da página de leads.
+function clearLeadFilters(silent){
+  ['searchInput','statusFilter','ufFilter','dateFilter','meuWaFilter','bolsaFilter','tagFilter','propostaFilter','prazoPreset','prazoFrom','prazoTo']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if(!silent){ renderLeads(); }
+}
+
 function renderLeads() {
   backfillPrazoNA();
   const data = loadData();
@@ -9693,6 +9786,8 @@ function renderLeads() {
   const df = document.getElementById('dateFilter').value;
   const wf = (document.getElementById('meuWaFilter')||{}).value||'';
   const bf = (document.getElementById('bolsaFilter')||{}).value||'';
+  const tf = (document.getElementById('tagFilter')||{}).value||'';
+  const propf = (document.getElementById('propostaFilter')||{}).value||'';
   const pPreset = (document.getElementById('prazoPreset')||{}).value||'';
   const pFrom   = (document.getElementById('prazoFrom')||{}).value||'';
   const pTo     = (document.getElementById('prazoTo')||{}).value||'';
@@ -9703,8 +9798,11 @@ function renderLeads() {
       (l.placa||'').toLowerCase().includes(q) || (l.cidade||'').toLowerCase().includes(q) ||
       ts.includes(q) || (l.cpf||'').includes(q);
     const bolsaOk = !bf || (bf==='bolsa' ? !!l.isBolsa : !l.isBolsa);
+    const tagOk = !tf || leadTagList(l).includes(tf);
+    const temProposta = leadTemProposta(l);
+    const propOk = !propf || (propf==='com' ? temProposta : !temProposta);
     const prazoOk = matchPrazoNA(l, pPreset, pFrom, pTo);
-    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf) && bolsaOk && prazoOk;
+    return ms && (!sf||l.status===sf) && (!uf||l.uf===uf) && (!df||l.data===df) && (!wf||(l.meuNumero||'')===wf) && bolsaOk && tagOk && propOk && prazoOk;
   });
   filteredLeads.sort((a,b)=>brToIso(b.data).localeCompare(brToIso(a.data))||a.nome.localeCompare(b.nome));
 
@@ -9729,6 +9827,7 @@ function renderLeads() {
         <span class="btn-view" onclick="openLeadModal(${idx})" title="Ver ficha completa" style="font-size:.68rem;padding:2px 6px;margin-bottom:3px;display:inline-block">👁 Ver</span><br>
         <b style="font-size:.75rem">${l.manual?'<span title="Lead cadastrado manualmente" style="color:#26d0ce;font-size:.65rem;margin-right:2px">✏️</span>':''}${esc(l.nome)}</b>${l.isBolsa?' <span class="lead-bolsa-tag" title="Lead pago — Bolsa de Leads'+(l.bolsaTag?(' · '+esc(l.bolsaTag)):'')+'">🎯 Bolsa</span>':''}<br>
         <span style="color:#bbb;font-size:.67rem">${esc(l.cpf||l.cnpj||'')}</span>
+        ${leadTagList(l).length?`<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">${leadTagList(l).map(t=>`<span style="display:inline-block;background:#ede9fe;color:#5b21b6;font-size:.56rem;font-weight:700;padding:1px 6px;border-radius:7px">${esc(t)}</span>`).join('')}</div>`:''}
       </td>
       <td style="white-space:nowrap">${esc(l.cidade)} <b>${l.uf}</b></td>
       <td>${tels}</td>
@@ -10621,6 +10720,8 @@ function openLeadModal(idx) {
   setV('md-saledata', l.saleDate);
   setV('md-meunumero', l.meuNumero);
   setV('md-obs', l.obs);
+  setV('md-tags', l.tags||'');
+  renderTagPills(l);
 
   // Follow-up & Prazos
   const naEl = document.getElementById('md-prazo-na');
@@ -10838,6 +10939,7 @@ function importFile(file) {
         const rowDtCtt    = normalizeDateBR(row['DATA CONTATO']||'');
         const rowMeuNr    = (row['MEU NÚMERO WA']||row['MEU NUMERO WA']||'').toString().trim();
         const rowObs      = (row['OBSERVAÇÕES']||row['OBSERVACOES']||'').toString().trim();
+        const rowTags     = (row['TAGS']||row['TAG']||'').toString().trim();
 
         if (data.leads[key]) {
           // É reimportação: preservar status/dtContato/obs que vierem da planilha exportada
@@ -10905,6 +11007,7 @@ function importFile(file) {
           infracao:(row['CODIGO INFRAÇÃO']||row['CODIGO INFRACAO']||'').toString(),
           tels,
           status: initStatus, dtContato: rowDtCtt, meuNumero: rowMeuNr, obs: rowObs,
+          tags: rowTags,
           manual: false,
         };
         aplicarComercialBolsa(data.leads[key], row);
@@ -10961,6 +11064,7 @@ function exportXLSX() {
   const rows = leads.map(l => ({
     'DATA PLANILHA': l.data, 'STATUS': l.status,
     'DATA CONTATO':  l.dtContato||'', 'MEU NÚMERO WA': l.meuNumero||'', 'OBSERVAÇÕES': l.obs||'',
+    'TAGS': l.tags||'',
     'PRAZO NA': l.prazoNA||'', 'PRAZO NP': l.prazoNP||'',
     'BOLSA DE LEADS': l.isBolsa ? 'SIM' : '', 'VALOR PAGO LEAD': l.isBolsa ? (Number(l.bolsaValor)||0) : '',
     'TAG BOLSA': l.bolsaTag||'',
@@ -11102,7 +11206,7 @@ function openNewLeadModal() {
   ['nl-placa','nl-edital','nl-nome','nl-cpf','nl-cnpj','nl-nasc',
    'nl-tel1','nl-tel2','nl-tel3','nl-email','nl-cidade','nl-bairro',
    'nl-cep','nl-endereco','nl-numero','nl-infracao','nl-renavam',
-   'nl-chassi','nl-dtctt','nl-data','nl-saledata','nl-obs','nl-meunumero',
+   'nl-chassi','nl-dtctt','nl-data','nl-saledata','nl-obs','nl-meunumero','nl-tags',
    'nl-bolsacod','nl-bolsaval','nl-bolsatag',
    'nl-valorbase','nl-descpct'].forEach(id => {
     const el = document.getElementById(id);
@@ -11248,6 +11352,7 @@ function saveNewLead() {
     dtContato: dtContato,
     meuNumero: g('nl-meunumero'),
     obs:       g('nl-obs'),
+    tags:      g('nl-tags'),
     manual:    true,
     // Comercial
     servico,
