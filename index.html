@@ -8336,6 +8336,20 @@ function inDateRange(l) {
   return true;
 }
 
+// Verdadeiro se a DATA DA VENDA do lead cai dentro do período do dashboard.
+// Usado para métricas financeiras/vendas, que devem ser atribuídas ao mês da
+// venda — não ao mês de criação/origem do lead. Sem saleDate, cai em dtContato>data.
+function saleInDateRange(l) {
+  const f = document.getElementById('dfrom').value;
+  const t = document.getElementById('dto').value;
+  if (!f && !t) return true;
+  const iso = brToIso(l.saleDate || l.dtContato || l.data || '');
+  if (!iso) return false;
+  if (f && iso < f) return false;
+  if (t && iso > t) return false;
+  return true;
+}
+
 // Define o período do dashboard como o mês vigente: dia 01 até hoje.
 function setDashboardCurrentMonth() {
   const now = new Date();
@@ -8528,7 +8542,8 @@ function renderDashboard() {
   const cont   = gc("Contactado")+gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada")+gc("Perdido")+gc("Sem Retorno");
   const conf   = gc("Confirmado")+gc("Em Conversa/Negociação")+gc("Venda Realizada");
   const neg    = negTotal;
-  const vendas = gc("Venda Realizada");
+  // VENDAS são contadas pelo período da DATA DA VENDA (saleDate), não da origem.
+  const vendas = leadsSemData.filter(l=>l.status==='Venda Realizada' && saleInDateRange(l)).length;
   const perdidos = gc("Perdido");
 
   document.getElementById('kpiCards').innerHTML = [
@@ -8636,8 +8651,13 @@ function renderFaturamento(leads){
   const fs=document.getElementById('fatSection');
   if(fs) fs.style.display='block';
 
-  const vendas = leads.filter(l=>l.status==='Venda Realizada');
-  // Pipeline = negociações em aberto com valor lançado (ainda não vendidas/perdidas)
+  // VENDAS são atribuídas ao período pela DATA DA VENDA (saleDate), não pela
+  // data de origem do lead. Recalculamos a partir de toda a base, aplicando o
+  // mesmo contexto (UF/edital/bolsa) e o filtro de período sobre a data da venda.
+  const data = loadData();
+  const vendas = applyCtx(Object.values(data.leads))
+    .filter(l => l.status==='Venda Realizada' && saleInDateRange(l));
+  // Pipeline = negociações em aberto com valor lançado (independe de data de venda).
   const pipeline = leads.filter(l=>
     ['Confirmado','Em Conversa/Negociação'].includes(l.status) && (Number(l.valorFinal)||0)>0);
 
@@ -9034,6 +9054,8 @@ function gerarRelatorioPDF(){
   const dfrom = (document.getElementById('dfrom')||{}).value||'';
   const dto   = (document.getElementById('dto')||{}).value||'';
   const inRange = l => { const iso=brToIso(l.data); if(dfrom&&iso<dfrom)return false; if(dto&&iso>dto)return false; return true; };
+  // Para vendas/financeiro: período pela DATA DA VENDA (saleDate > dtContato > data).
+  const inSaleRange = l => { const iso=brToIso(l.saleDate||l.dtContato||l.data||''); if(!iso) return false; if(dfrom&&iso<dfrom)return false; if(dto&&iso>dto)return false; return true; };
   const fmtBr = iso => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
   const periodoTxt = (dfrom||dto) ? `${fmtBr(dfrom)} a ${fmtBr(dto)}` : 'Todo o período';
 
@@ -9045,13 +9067,14 @@ function gerarRelatorioPDF(){
   const cont     = gc(leadsPeriodo,'Contactado')+gc(leadsPeriodo,'Confirmado')+gc(leadsPeriodo,'Em Conversa/Negociação')+gc(leadsPeriodo,'Venda Realizada')+gc(leadsPeriodo,'Perdido')+gc(leadsPeriodo,'Sem Retorno');
   const conf     = gc(leadsPeriodo,'Confirmado')+gc(leadsPeriodo,'Em Conversa/Negociação')+gc(leadsPeriodo,'Venda Realizada');
   const negTotal = gc(ctxLeads,'Em Conversa/Negociação');
-  const vendas   = gc(leadsPeriodo,'Venda Realizada');
+  // Vendas atribuídas ao período pela DATA DA VENDA, não pela origem do lead.
+  const vendasArr = ctxLeads.filter(l=>l.status==='Venda Realizada' && inSaleRange(l));
+  const vendas   = vendasArr.length;
   const perdidos = gc(leadsPeriodo,'Perdido');
   const semRet   = gc(leadsPeriodo,'Sem Retorno');
   const pct = (n,d) => d>0 ? (n/d*100).toFixed(1) : '0.0';
 
   const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
-  const vendasArr = leadsPeriodo.filter(l=>l.status==='Venda Realizada');
   const pipeline  = leadsPeriodo.filter(l=>['Confirmado','Em Conversa/Negociação'].includes(l.status) && (Number(l.valorFinal)||0)>0);
   const receitaRealizada = vendasArr.reduce((s,l)=>s+valOf(l),0);
   const receitaPipeline  = pipeline.reduce((s,l)=>s+valOf(l),0);
@@ -9079,7 +9102,13 @@ function gerarRelatorioPDF(){
     const c=catDe(l);
     if(!catMap[c]) catMap[c]={total:0,vendas:0,receita:0};
     catMap[c].total++;
-    if(l.status==='Venda Realizada'){ catMap[c].vendas++; catMap[c].receita+=valOf(l); }
+  });
+  // Vendas/receita por categoria seguem a data da venda (podem incluir leads cuja
+  // origem está fora do período, mas a venda ocorreu dentro dele).
+  vendasArr.forEach(l=>{
+    const c=catDe(l);
+    if(!catMap[c]) catMap[c]={total:0,vendas:0,receita:0};
+    catMap[c].vendas++; catMap[c].receita+=valOf(l);
   });
   const catArr = Object.entries(catMap).map(([cat,g])=>({
     cat, ...g, conv: g.total>0 ? (g.vendas/g.total*100) : 0
@@ -9106,8 +9135,9 @@ function gerarRelatorioPDF(){
     const isoP = d => d.toISOString().slice(0,10);
     const pFrom=isoP(prevFrom), pTo=isoP(prevTo);
     const inPrev = l => { const i=brToIso(l.data); return i>=pFrom && i<=pTo; };
+    const inPrevSale = l => { const i=brToIso(l.saleDate||l.dtContato||l.data||''); return !!i && i>=pFrom && i<=pTo; };
     const prevLeads = applyCtx(todos.filter(inPrev));
-    const prevVendasArr = prevLeads.filter(l=>l.status==='Venda Realizada');
+    const prevVendasArr = applyCtx(todos).filter(l=>l.status==='Venda Realizada' && inPrevSale(l));
     const prevReceita = prevVendasArr.reduce((s,l)=>s+valOf(l),0);
     cmp = {
       label: `${fmtBr(pFrom)} a ${fmtBr(pTo)}`,
@@ -9992,6 +10022,8 @@ function applyBulkStatus() {
       data.leads[k].status = ns;
       if (!data.leads[k].dtContato && ns!=='Novo Lead')
         data.leads[k].dtContato = new Date().toLocaleDateString('pt-BR');
+      if (ns==='Venda Realizada' && !data.leads[k].saleDate)
+        data.leads[k].saleDate = new Date().toLocaleDateString('pt-BR');
       count++;
     }
   });
