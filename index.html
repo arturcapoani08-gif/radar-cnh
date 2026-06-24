@@ -7443,7 +7443,7 @@ window.pm_importData        = importData;
   </div>
 
   <div class="leads-toolbar">
-    <input type="text" id="searchInput" placeholder="🔍 Nome, placa, cidade, telefone, CPF..." oninput="renderLeads()">
+    <input type="text" id="searchInput" placeholder="🔍 Código, nome, placa, cidade, telefone, CPF..." oninput="renderLeads()">
     <select id="statusFilter" onchange="renderLeads()"><option value="">Todos os Status</option></select>
     <select id="ufFilter" onchange="renderLeads()"><option value="">Todos os Estados</option></select>
     <select id="dateFilter" onchange="renderLeads()"><option value="">Todas as Datas</option></select>
@@ -7600,7 +7600,7 @@ window.pm_importData        = importData;
     ondrop="handleDrop(event)">
     <div class="icon">📂</div>
     <h3>Clique ou arraste a planilha diária (.xlsx)</h3>
-    <p>Leads novos são adicionados · Ao reimportar planilha exportada, <b>status, data de contato e obs são preservados</b></p>
+    <p>Leads novos são adicionados · Ao reimportar uma planilha exportada, <b>os leads existentes são atualizados com os dados da planilha</b> (todas as colunas presentes no arquivo)</p>
     <br>
     <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('fileInput').click()">📥 Selecionar arquivo .xlsx</button>
   </div>
@@ -8211,6 +8211,45 @@ function saveData(data) {
   refreshHeader(data);
 }
 
+// ══════════════════════════════════════════════
+// CÓDIGO DE CLIENTE (ID sequencial estável por lead)
+// ══════════════════════════════════════════════
+const CODIGO_PREFIX = 'SM-';
+// Extrai a parte numérica de um código "SM-00042" → 42 (0 se inválido).
+function codigoNum(cod){
+  const m = (cod||'').toString().match(/(\d+)\s*$/);
+  return m ? parseInt(m[1],10) : 0;
+}
+// Formata um número como código: 42 → "SM-00042".
+function fmtCodigo(n){ return CODIGO_PREFIX + String(n).padStart(5,'0'); }
+// Maior número de código já em uso (entre leads e o contador em meta).
+function maxCodigoNum(data){
+  let max = codigoNum((data.meta||{}).lastCodigo);
+  Object.values(data.leads||{}).forEach(l=>{ const n=codigoNum(l.codigo); if(n>max) max=n; });
+  return max;
+}
+// Gera o próximo código disponível e já avança o contador em meta.
+function nextCodigo(data){
+  if(!data.meta) data.meta = {};
+  const n = maxCodigoNum(data) + 1;
+  data.meta.lastCodigo = fmtCodigo(n);
+  return data.meta.lastCodigo;
+}
+// Garante que todo lead tenha um código. Retorna quantos foram preenchidos.
+function backfillCodigos(data){
+  if(!data || !data.leads) return 0;
+  let n = maxCodigoNum(data);
+  let filled = 0;
+  // Ordena por data (origem) para que códigos sigam aproximadamente a ordem de entrada.
+  const entries = Object.values(data.leads).sort((a,b)=>
+    (brToIso(a.data||'')).localeCompare(brToIso(b.data||'')));
+  entries.forEach(l=>{
+    if(!l.codigo){ n++; l.codigo = fmtCodigo(n); filled++; }
+  });
+  if(filled){ data.meta = data.meta||{}; data.meta.lastCodigo = fmtCodigo(n); }
+  return filled;
+}
+
 function refreshHeader(data) {
   const n = Object.keys(data.leads||{}).length;
   document.getElementById('lastUpdate').textContent =
@@ -8231,9 +8270,11 @@ function backfillPrazoNA() {
       if (calc) { l.prazoNA = calc; changed++; }
     }
   });
-  if (changed) {
+  // Garante código de cliente para todos os leads (leads antigos inclusos).
+  const codFilled = backfillCodigos(data);
+  if (changed || codFilled) {
     saveData(data);
-    if (typeof crmShowToast === 'function')
+    if (changed && typeof crmShowToast === 'function')
       crmShowToast(`📅 ${changed} prazo${changed!==1?'s':''} de NA preenchido${changed!==1?'s':''} automaticamente`);
   }
   return changed;
@@ -9796,7 +9837,7 @@ function renderLeads() {
     const ts = (l.tels||[]).join(' ');
     const ms = !q || (l.nome||'').toLowerCase().includes(q) ||
       (l.placa||'').toLowerCase().includes(q) || (l.cidade||'').toLowerCase().includes(q) ||
-      ts.includes(q) || (l.cpf||'').includes(q);
+      ts.includes(q) || (l.cpf||'').includes(q) || (l.codigo||'').toLowerCase().includes(q);
     const bolsaOk = !bf || (bf==='bolsa' ? !!l.isBolsa : !l.isBolsa);
     const tagOk = !tf || leadTagList(l).includes(tf);
     const temProposta = leadTemProposta(l);
@@ -9827,6 +9868,7 @@ function renderLeads() {
         <span class="btn-view" onclick="openLeadModal(${idx})" title="Ver ficha completa" style="font-size:.68rem;padding:2px 6px;margin-bottom:3px;display:inline-block">👁 Ver</span><br>
         <b style="font-size:.75rem">${l.manual?'<span title="Lead cadastrado manualmente" style="color:#26d0ce;font-size:.65rem;margin-right:2px">✏️</span>':''}${esc(l.nome)}</b>${l.isBolsa?' <span class="lead-bolsa-tag" title="Lead pago — Bolsa de Leads'+(l.bolsaTag?(' · '+esc(l.bolsaTag)):'')+'">🎯 Bolsa</span>':''}<br>
         <span style="color:#bbb;font-size:.67rem">${esc(l.cpf||l.cnpj||'')}</span>
+        ${l.codigo?`<span style="color:#8b5cf6;font-size:.6rem;font-family:monospace;font-weight:700;display:block" title="Código do cliente">🆔 ${esc(l.codigo)}</span>`:''}
         ${leadTagList(l).length?`<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">${leadTagList(l).map(t=>`<span style="display:inline-block;background:#ede9fe;color:#5b21b6;font-size:.56rem;font-weight:700;padding:1px 6px;border-radius:7px">${esc(t)}</span>`).join('')}</div>`:''}
       </td>
       <td style="white-space:nowrap">${esc(l.cidade)} <b>${l.uf}</b></td>
@@ -10567,9 +10609,7 @@ function saveLeadField(prop, value){
   }
   if(prop==='nome' || prop==='placa'){
     const sub=document.getElementById('md-sub');
-    if(sub) sub.innerHTML =
-      `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${lead.status}</span>`+
-      `&nbsp;&nbsp;Data: ${lead.data} &nbsp;·&nbsp; Placa: <b>${lead.placa||'—'}</b>`;
+    if(sub) sub.innerHTML = leadSubHtml(lead);
   }
 }
 
@@ -10587,9 +10627,7 @@ function saveDataOrigem(value){
   const el=document.getElementById('md-data-origem'); if(el) el.value = norm;
   // Atualiza subtítulo e listas/relatórios
   const sub=document.getElementById('md-sub');
-  if(sub) sub.innerHTML =
-    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${lead.status}</span>`+
-    `&nbsp;&nbsp;Data: ${lead.data} &nbsp;·&nbsp; Placa: <b>${lead.placa||'—'}</b>`;
+  if(sub) sub.innerHTML = leadSubHtml(lead);
   renderLeads();
   if(typeof Chart!=='undefined') renderDashboard();
   crmShowToast('📅 Data de origem atualizada');
@@ -10666,6 +10704,11 @@ function addTelField(){
   renderTelInputs(tels);
 }
 
+function leadSubHtml(l){
+  return `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${l.status}</span>` +
+    (l.codigo?`&nbsp;&nbsp;<span style="background:rgba(255,255,255,.15);padding:2px 8px;border-radius:8px;font-size:.72rem;font-family:monospace;letter-spacing:.5px" title="Código do cliente">🆔 ${esc(l.codigo)}</span>`:'') +
+    `&nbsp;&nbsp;Data: ${l.data} &nbsp;·&nbsp; Placa: <b>${l.placa||'—'}</b>`;
+}
 function openLeadModal(idx) {
   const l = filteredLeads[idx];
   if (!l) return;
@@ -10676,9 +10719,7 @@ function openLeadModal(idx) {
 
   document.getElementById('md-nome').textContent = l.nome || '—';
   const sc = SC[l.status]||SC["Novo Lead"];
-  document.getElementById('md-sub').innerHTML =
-    `<span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:10px;font-size:.74rem">${l.status}</span>` +
-    `&nbsp;&nbsp;Data: ${l.data} &nbsp;·&nbsp; Placa: <b>${l.placa||'—'}</b>`;
+  document.getElementById('md-sub').innerHTML = leadSubHtml(l);
 
   // Pessoais (editáveis)
   setV('md-f-nome', l.nome);
@@ -10802,9 +10843,12 @@ function handleDrop(e) {
 // Aplica a um lead os campos comerciais e de Bolsa de Leads vindos de uma linha
 // da planilha importada. Só sobrescreve quando a coluna correspondente tem valor,
 // preservando dados já existentes no CRM.
-function aplicarComercialBolsa(lead, row){
+function aplicarComercialBolsa(lead, row, cols){
   if(!lead || !row) return;
   const txt = k => (row[k]!=null ? row[k].toString().trim() : '');
+  // Quando `cols` (Set de cabeçalhos do arquivo) é passado, o modo "reimport" fica ativo:
+  // colunas presentes sobrescrevem o lead mesmo se vazias (refletindo edições/limpezas).
+  const present = (...names) => cols ? names.some(n=>cols.has(n)) : false;
   // Aceita números reais (XLSX) ou strings em formato BR ("1.680,00", "R$ 2.360,50")
   // ou US ("1680.00", "26.8"). Detecta o separador decimal pela presença de vírgula.
   const num = k => {
@@ -10828,25 +10872,38 @@ function aplicarComercialBolsa(lead, row){
   const bolsaFlag = txt('BOLSA DE LEADS').toUpperCase();
   const valorPago = num('VALOR PAGO LEAD');
   const tagBolsa  = txt('TAG BOLSA');
-  if(['SIM','S','TRUE','1','X'].includes(bolsaFlag) || valorPago!=null || tagBolsa){
+  const codBolsa  = txt('CÓDIGO BOLSA') || txt('CODIGO BOLSA');
+  if(['SIM','S','TRUE','1','X'].includes(bolsaFlag) || valorPago!=null || tagBolsa || codBolsa){
     lead.isBolsa = true;
     if(valorPago!=null) lead.bolsaValor = valorPago;
+    else if(present('VALOR PAGO LEAD')) lead.bolsaValor = 0;
     if(tagBolsa) lead.bolsaTag = tagBolsa;
-  } else if(bolsaFlag==='NAO' || bolsaFlag==='NÃO' || bolsaFlag==='N'){
+    else if(present('TAG BOLSA')) lead.bolsaTag = '';
+    if(codBolsa) lead.bolsaCodigo = codBolsa;
+    else if(present('CÓDIGO BOLSA','CODIGO BOLSA')) lead.bolsaCodigo = '';
+  } else if(bolsaFlag==='NAO' || bolsaFlag==='NÃO' || bolsaFlag==='N' || (present('BOLSA DE LEADS') && bolsaFlag==='')){
     lead.isBolsa = false;
+    if(present('VALOR PAGO LEAD')) lead.bolsaValor = 0;
+    if(present('TAG BOLSA')) lead.bolsaTag = '';
+    if(present('CÓDIGO BOLSA','CODIGO BOLSA')) lead.bolsaCodigo = '';
   }
 
   // ── Comercial ──
   const servico = txt('SERVIÇO') || txt('SERVICO');
   if(servico) lead.servico = servico;
+  else if(present('SERVIÇO','SERVICO')) lead.servico = '';
   const vBase = num('VALOR BASE');
   if(vBase!=null) lead.valorBase = vBase;
+  else if(present('VALOR BASE')) lead.valorBase = 0;
   const desc = num('DESCONTO %') ?? num('DESCONTO');
   if(desc!=null) lead.descPct = Math.min(Math.max(desc,0),100);
+  else if(present('DESCONTO %','DESCONTO')) lead.descPct = 0;
   const forma = txt('FORMA PAGAMENTO') || txt('FORMA DE PAGAMENTO');
   if(forma) lead.formaPgto = forma;
+  else if(present('FORMA PAGAMENTO','FORMA DE PAGAMENTO')) lead.formaPgto = '';
   const parc = num('PARCELAS');
   if(parc!=null) lead.parcelas = Math.max(parseInt(parc)||1,1);
+  else if(present('PARCELAS')) lead.parcelas = 1;
   const vFinal = num('VALOR FINAL');
   const dtVenda = normalizeDateBR(row['DATA VENDA'] ?? row['DATA DA VENDA'] ?? '');
   if(dtVenda) lead.saleDate = dtVenda;
@@ -10909,8 +10966,18 @@ function importFile(file) {
       const fileDate = extractDate(file.name);
       log.textContent += `📅 Data: ${fileDate}\n📋 ${rows.length} linhas encontradas\n`;
 
+      // Conjunto de colunas (cabeçalhos) realmente presentes no arquivo.
+      // Permite distinguir "coluna ausente" (não mexe) de "coluna vazia" (apaga o valor).
+      const fileCols = new Set();
+      rows.forEach(r => Object.keys(r).forEach(k => fileCols.add(k)));
+      // Verdadeiro se QUALQUER um dos nomes de coluna existir no arquivo.
+      const hasCol = (...names) => names.some(n => fileCols.has(n));
+
       const data = loadData();
-      let added=0, skipped=0, noid=0, semId=0;
+      // Índice CÓDIGO → key, para casar leads mesmo que placa/nome tenham mudado.
+      const codeIndex = {};
+      Object.entries(data.leads).forEach(([k,l])=>{ if(l.codigo) codeIndex[l.codigo.toString().trim().toUpperCase()] = k; });
+      let added=0, updated=0, noid=0, semId=0;
 
       rows.forEach(row => {
         const placa  = (row['PLACA'] ||'').toString().trim();
@@ -10923,8 +10990,19 @@ function importFile(file) {
         const rowNome = (row['NOME']||'').toString().trim();
         const rowTel1 = (row['TELEFONE 1']||row['TELEFONE1']||'').toString().trim();
         const rowEmail= (row['EMAIL']||'').toString().trim();
-        let key = makeKey(placa, edital, chassi, renavam,
-          { cpf: rowCpf, cnpj: rowCnpj, nome: rowNome, tel: rowTel1, email: rowEmail });
+        // CÓDIGO de cliente (âncora primária de reimportação).
+        const rowCodigo = (row['CÓDIGO']||row['CODIGO']||row['COD']||'').toString().trim();
+        let key = null;
+        let matchedByCode = false;
+        if (rowCodigo) {
+          const hit = codeIndex[rowCodigo.toUpperCase()];
+          if (hit) { key = hit; matchedByCode = true; }
+        }
+        // Sem código (ou código não encontrado): casa por dados, como antes.
+        if (!key) {
+          key = makeKey(placa, edital, chassi, renavam,
+            { cpf: rowCpf, cnpj: rowCnpj, nome: rowNome, tel: rowTel1, email: rowEmail });
+        }
         // Sem identificador único, mas com nome (cliente antigo): cria um lead
         // próprio para a linha — nunca colapsa com outro de mesmo nome.
         let linhaSemIdUnico = false;
@@ -10942,29 +11020,92 @@ function importFile(file) {
         const rowTags     = (row['TAGS']||row['TAG']||'').toString().trim();
 
         if (data.leads[key]) {
-          // É reimportação: preservar status/dtContato/obs que vierem da planilha exportada
-          // Backfill do prazo da NA se ainda não existir (leads antigos).
-          // Só preenche automaticamente se também NÃO houver data de NP.
-          if (!data.leads[key].prazoNA && !data.leads[key].prazoNP) {
+          // ═══ REIMPORTAÇÃO: atualiza o lead existente com os dados da planilha ═══
+          // Regra: se a COLUNA existe no arquivo, o valor da planilha sobrescreve
+          // o do CRM (inclusive vazio = você apagou de propósito). Se a coluna não
+          // existe no arquivo, o campo é preservado.
+          const ex = data.leads[key];
+
+          // helper: lê a 1ª coluna existente entre os nomes dados e devolve string
+          const cell = (...names) => {
+            for (const n of names) if (n in row) return (row[n]!=null ? row[n].toString() : '');
+            return undefined; // nenhuma das colunas veio no arquivo
+          };
+          // aplica em `ex[prop]` se ao menos uma das colunas existir no arquivo
+          const upd = (prop, names, transform) => {
+            if (!hasCol(...names)) return;          // coluna ausente → preserva
+            let v = cell(...names);
+            if (v===undefined) return;
+            v = v.toString();
+            ex[prop] = transform ? transform(v) : v;
+          };
+
+          // ── Pessoais ──
+          upd('nome',    ['NOME']);
+          upd('sexo',    ['SEXO']);
+          upd('cpf',     ['CPF']);
+          upd('cnpj',    ['CNPJ']);
+          upd('cep',     ['CEP']);
+          upd('cidade',  ['CIDADE']);
+          upd('bairro',  ['BAIRRO']);
+          upd('endereco',['ENDEREÇO','ENDERECO']);
+          upd('numero',  ['NÚMERO','NUMERO']);
+          upd('uf',      ['UF']);
+          upd('email',   ['EMAIL']);
+          upd('nasc',    ['DATA DE NASCIMENTO'], v=>normalizeDateBR(v));
+
+          // ── Veículo ──
+          upd('chassi',  ['CHASSI']);
+          upd('renavam', ['RENAVAM']);
+          upd('uf_vei',  ['UF VEÍCULO','UF VEICULO']);
+          upd('infracao',['CODIGO INFRAÇÃO','CODIGO INFRACAO']);
+
+          // ── Telefones (só sobrescreve se alguma coluna de telefone vier no arquivo) ──
+          if (hasCol('TELEFONE 1','TELEFONE1','TELEFONE 2','TELEFONE2','TELEFONE 3','TELEFONE3','TELEFONE 4','TELEFONE4','TELEFONE 5','TELEFONE5')) {
+            ex.tels = ['TELEFONE 1','TELEFONE 2','TELEFONE 3','TELEFONE 4','TELEFONE 5']
+              .map(k=>(row[k]||row[k.replace(' ','')]||'').toString().trim()).filter(Boolean);
+          }
+
+          // ── CRM ──
+          upd('dtContato', ['DATA CONTATO'], v=>normalizeDateBR(v));
+          upd('meuNumero', ['MEU NÚMERO WA','MEU NUMERO WA']);
+          upd('obs',       ['OBSERVAÇÕES','OBSERVACOES']);
+          upd('tags',      ['TAGS','TAG']);
+          upd('data',      ['DATA PLANILHA'], v=>normalizeDateBR(v) || ex.data);
+          upd('followupDate', ['FOLLOWUP DATA']);
+          upd('followupNote', ['FOLLOWUP NOTA']);
+
+          // ── Status (só aceita valores válidos; ignora vazio/ inválido) ──
+          if (hasCol('STATUS') && rowStatus && STATUS_OPTIONS.includes(rowStatus)) {
+            ex.status = rowStatus;
+          }
+
+          // ── Prazos ──
+          // Backfill automático da NA se ainda não existir (leads antigos).
+          if (!ex.prazoNA && !ex.prazoNP) {
             const rowPrazoNAex = (row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim();
-            data.leads[key].prazoNA = isoOrBrToIso(rowPrazoNAex) || addDays30FromBR(data.leads[key].data);
+            ex.prazoNA = isoOrBrToIso(rowPrazoNAex) || addDays30FromBR(ex.data);
           }
-          // Atualiza prazos se vierem preenchidos na planilha
-          const rPrNA = isoOrBrToIso((row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim());
-          const rPrNP = isoOrBrToIso((row['PRAZO NP']||row['DATA LIMITE NP']||'').toString().trim());
-          if (rPrNA) data.leads[key].prazoNA = rPrNA;
-          if (rPrNP) data.leads[key].prazoNP = rPrNP;
-          // Aplica dados comerciais e de Bolsa que vierem na planilha
-          aplicarComercialBolsa(data.leads[key], row);
-          if (rowStatus && STATUS_OPTIONS.includes(rowStatus)) {
-            data.leads[key].status    = rowStatus;
-            data.leads[key].dtContato = rowDtCtt || data.leads[key].dtContato;
-            data.leads[key].meuNumero = rowMeuNr  || data.leads[key].meuNumero;
-            data.leads[key].obs       = rowObs   || data.leads[key].obs;
-            skipped++; // conta como "já existia", mas agora atualiza CRM data
-          } else {
-            skipped++;
+          // Atualiza prazos se vierem na planilha (coluna presente e valor válido).
+          if (hasCol('PRAZO NA','DATA LIMITE NA')) {
+            const rPrNA = isoOrBrToIso((row['PRAZO NA']||row['DATA LIMITE NA']||'').toString().trim());
+            if (rPrNA) ex.prazoNA = rPrNA;
           }
+          if (hasCol('PRAZO NP','DATA LIMITE NP')) {
+            const rPrNP = isoOrBrToIso((row['PRAZO NP']||row['DATA LIMITE NP']||'').toString().trim());
+            if (rPrNP) ex.prazoNP = rPrNP;
+          }
+
+          // ── Comercial / Bolsa ──
+          aplicarComercialBolsa(ex, row, fileCols);
+
+          // ── Data da venda: se virou "Venda Realizada" e não tem data, define hoje ──
+          if (ex.status==='Venda Realizada' && !ex.saleDate) {
+            const rSale = normalizeDateBR(row['DATA VENDA']||row['DATA DA VENDA']||'');
+            ex.saleDate = rSale || new Date().toLocaleDateString('pt-BR');
+          }
+
+          updated++;
           return;
         }
 
@@ -10986,8 +11127,20 @@ function importFile(file) {
         const prazoNAfromRow = isoOrBrToIso(rowPrazoNA);
         const prazoNA = prazoNAfromRow || (prazoNP ? '' : addDays30FromBR(dataPub));
 
+        // Código: usa o da planilha se vier e ainda não estiver em uso; senão gera novo.
+        let novoCodigo;
+        if (rowCodigo && !codeIndex[rowCodigo.toUpperCase()]) {
+          novoCodigo = rowCodigo.toUpperCase().startsWith(CODIGO_PREFIX) ? rowCodigo : rowCodigo;
+          // mantém o contador à frente caso o código importado seja numérico maior
+          const n = codigoNum(novoCodigo);
+          if (n > codigoNum((data.meta||{}).lastCodigo)) { data.meta = data.meta||{}; data.meta.lastCodigo = fmtCodigo(n); }
+        } else {
+          novoCodigo = nextCodigo(data);
+        }
+        codeIndex[novoCodigo.toString().trim().toUpperCase()] = key;
+
         data.leads[key] = {
-          key, data: dataPub, prazoNA, prazoNP,
+          key, codigo: novoCodigo, data: dataPub, prazoNA, prazoNP,
           nome:    (row['NOME']           ||'').toString(),
           sexo:    (row['SEXO']           ||'').toString(),
           cpf:     (row['CPF']            ||'').toString(),
@@ -11015,15 +11168,16 @@ function importFile(file) {
         added++;
       });
 
+      backfillCodigos(data);
       saveData(data);
       log.textContent += `\n✅ ${added} leads novos adicionados!\n`;
-      log.textContent += `🔄 ${skipped} já existiam no CRM (status/obs preservados)\n`;
+      log.textContent += `🔄 ${updated} leads já existentes foram atualizados com os dados da planilha\n`;
       if (semId) log.textContent += `ℹ️ ${semId} sem placa/CPF (clientes antigos) — importados como novos registros. Atenção: reimportar a mesma planilha pode duplicá-los.\n`;
       if (noid) log.textContent += `⚠️ ${noid} linhas ignoradas (sem nenhuma informação: nem nome, nem identificador)\n`;
       log.textContent += `📦 Total no CRM: ${Object.keys(data.leads).length} leads\n`;
       renderImportStats();
       document.getElementById('fileInput').value = '';
-      crmShowToast(`✅ ${added} leads importados!`);
+      crmShowToast(`✅ ${added} novos · ${updated} atualizados`);
     } catch(err) { log.textContent += `❌ Erro: ${err.message}\n`; }
   };
   reader.readAsArrayBuffer(file);
@@ -11062,11 +11216,15 @@ function exportXLSX() {
   const leads = Object.values(data.leads);
   if (!leads.length) { crmShowToast('Nenhum lead para exportar.'); return; }
   const rows = leads.map(l => ({
+    'CÓDIGO': l.codigo||'',
     'DATA PLANILHA': l.data, 'STATUS': l.status,
     'DATA CONTATO':  l.dtContato||'', 'MEU NÚMERO WA': l.meuNumero||'', 'OBSERVAÇÕES': l.obs||'',
     'TAGS': l.tags||'',
     'PRAZO NA': l.prazoNA||'', 'PRAZO NP': l.prazoNP||'',
-    'BOLSA DE LEADS': l.isBolsa ? 'SIM' : '', 'VALOR PAGO LEAD': l.isBolsa ? (Number(l.bolsaValor)||0) : '',
+    'FOLLOWUP DATA': l.followupDate||'', 'FOLLOWUP NOTA': l.followupNote||'',
+    'BOLSA DE LEADS': l.isBolsa ? 'SIM' : 'NÃO',
+    'CÓDIGO BOLSA': l.bolsaCodigo||'',
+    'VALOR PAGO LEAD': (l.bolsaValor!=null && l.bolsaValor!=='') ? Number(l.bolsaValor) : '',
     'TAG BOLSA': l.bolsaTag||'',
     'SERVIÇO': l.servico||'', 'VALOR BASE': (l.valorBase!=null && l.valorBase!=='') ? Number(l.valorBase) : '',
     'DESCONTO %': (l.descPct!=null && l.descPct!=='') ? Number(l.descPct) : '',
@@ -11082,6 +11240,7 @@ function exportXLSX() {
     'TELEFONE 1': (l.tels||[])[0]||'', 'TELEFONE 2': (l.tels||[])[1]||'',
     'TELEFONE 3': (l.tels||[])[2]||'', 'TELEFONE 4': (l.tels||[])[3]||'',
     'TELEFONE 5': (l.tels||[])[4]||'',
+    'CADASTRO MANUAL': l.manual ? 'SIM' : 'NÃO',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
@@ -11328,6 +11487,7 @@ function saveNewLead() {
 
   data.leads[key] = {
     key,
+    codigo:    nextCodigo(data),
     data:      dataLead,
     nome,
     sexo:      g('nl-sexo'),
