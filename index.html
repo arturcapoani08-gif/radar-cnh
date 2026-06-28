@@ -1365,6 +1365,7 @@ body {
 .home-card-icon.guia   { background: linear-gradient(135deg, #1a4731, #097A52); box-shadow: 0 4px 20px rgba(9,122,82,.35); }
 .home-card-icon.crm    { background: linear-gradient(135deg, #4a1020, #A32532); box-shadow: 0 4px 20px rgba(163,37,50,.35); }
 .home-card-icon.painel { background: linear-gradient(135deg, #5a320a, #f5a623); box-shadow: 0 4px 20px rgba(245,166,35,.35); }
+.home-card-icon.financeiro { background: linear-gradient(135deg, #064e3b, #059669); box-shadow: 0 4px 20px rgba(5,150,105,.35); }
 
 .home-card-title {
   font-size: 1.1rem;
@@ -1678,6 +1679,12 @@ body {
       <div class="home-card-title">CRM</div>
       <div class="home-card-desc">Gestão de leads, funil de vendas e análise por Estado e Edital</div>
       <div class="home-card-badge">▶ Abrir CRM</div>
+    </div>
+    <div class="home-card" onclick="switchModule('financeiro')">
+      <div class="home-card-icon financeiro">💰</div>
+      <div class="home-card-title">Financeiro</div>
+      <div class="home-card-desc">Controle de despesas, faturamento, payback do investimento e saúde financeira da unidade</div>
+      <div class="home-card-badge">▶ Abrir Financeiro</div>
     </div>
     <div class="home-card" onclick="switchModule('painel')">
       <div class="home-card-icon painel">🚦</div>
@@ -7298,6 +7305,7 @@ window.pm_importData        = importData;
     <button class="btn btn-sm btn-outline" onclick="clearDateFilter()">↺ Mês atual</button>
     <button class="btn btn-sm bolsa-toggle-btn" id="bolsaOnlyBtn" onclick="toggleBolsaOnly()" title="Mostrar no dashboard apenas os leads pagos (Bolsa de Leads)">🎯 Só Bolsa de Leads</button>
     <button class="btn btn-sm" onclick="dashGoNegProposta()" title="Ver leads em negociação que já têm proposta enviada" style="background:#FFC000;color:#7a3800;border:none;font-weight:700">💬 Negociação c/ proposta</button>
+    <button class="btn btn-sm" onclick="switchModule('financeiro')" title="Abrir o painel de gestão financeira da unidade" style="background:linear-gradient(135deg,#059669,#34d399);color:#04241a;border:none;font-weight:700">💰 Gestão Financeira</button>
     <button class="btn btn-sm" onclick="gerarRelatorioPDF()" title="Gerar relatório gerencial em PDF (funil, meta e faturamento)" style="background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;border:none;font-weight:700;margin-left:auto">📄 Gerar Relatório PDF</button>
     <div id="ctxBadge" style="display:none" class="ctx-badge">
       <span id="ctxLabel"></span>
@@ -8144,6 +8152,219 @@ window.pm_importData        = importData;
 <div id="crm-toast"></div>
 </div>
 
+<!-- ══ MODULE: FINANCEIRO ══ -->
+<div id="moduleFinanceiro" style="display:none">
+<style>
+#moduleFinanceiro{position:fixed;inset:0;z-index:10;overflow:hidden auto;background:#F2F4F7;font-family:'Titillium Web',sans-serif;color:#0d1f3c}
+.fin-wrap{max-width:1180px;margin:0 auto;padding:0 16px 60px}
+.fin-top{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#0a5c3d,#097A52);padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(13,31,60,.12)}
+.fin-top h1{font-size:17px;font-weight:700;margin:0;flex:1;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;color:#fff}
+.fin-top .home-nav-btn{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.fin-top .home-nav-btn:hover{background:rgba(255,255,255,.26)}
+.fin-period{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+.fin-period select,.fin-period input{background:#fff;border:1px solid #E2E5EA;color:#0d1f3c;border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;box-shadow:0 1px 2px rgba(13,31,60,.04)}
+.fin-period label{font-size:11px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fin-sec-title{font-size:12px;font-weight:700;color:#097A52;text-transform:uppercase;letter-spacing:1px;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+.fin-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.fin-kpi{background:#fff;border:1px solid #E2E5EA;border-radius:12px;padding:15px 18px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(13,31,60,.07)}
+.fin-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#3A5F8C}
+.fin-kpi.green::before{background:#097A52}.fin-kpi.red::before{background:#dc2626}.fin-kpi.amber::before{background:#d97706}.fin-kpi.violet::before{background:#7c3aed}.fin-kpi.teal::before{background:#0d9488}.fin-kpi.bolsa::before{background:#A32532}
+.fin-kpi .fk-lbl{font-size:10.5px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fin-kpi .fk-num{font-size:23px;font-weight:800;margin:6px 0 2px;letter-spacing:-.5px;color:#0d1f3c}
+.fin-kpi .fk-rt{font-size:11.5px;color:#6B7280}
+.fin-kpi.green .fk-num{color:#097A52}.fin-kpi.red .fk-num{color:#dc2626}.fin-kpi.amber .fk-num{color:#d97706}.fin-kpi.violet .fk-num{color:#7c3aed}.fin-kpi.teal .fk-num{color:#0d9488}.fin-kpi.bolsa .fk-num{color:#A32532}
+.fin-card{background:#fff;border:1px solid #E2E5EA;border-radius:12px;padding:18px;margin-top:14px;box-shadow:0 1px 3px rgba(13,31,60,.07)}
+.fin-card h3{font-size:14px;font-weight:700;margin:0 0 4px;color:#0d1f3c}
+.fin-card .sub{font-size:11.5px;color:#6B7280;margin-bottom:14px}
+.fin-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.fin-grid2{grid-template-columns:1fr}}
+.fin-pb-bar{height:22px;background:#EAEDF1;border-radius:11px;overflow:hidden;position:relative;margin:10px 0}
+.fin-pb-fill{height:100%;background:linear-gradient(90deg,#097A52,#10b981);border-radius:11px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:800;color:#fff;min-width:34px}
+.fin-meta-bar{position:relative;height:26px;background:#EAEDF1;border-radius:13px;overflow:visible;margin:14px 0 8px}
+.fin-meta-fill{height:100%;border-radius:13px;transition:width .6s ease;background:linear-gradient(90deg,#3A5F8C,#4a90d9);min-width:2px}
+.fin-meta-fill.over{background:linear-gradient(90deg,#097A52,#10b981)}
+.fin-meta-fill.challenge{background:linear-gradient(90deg,#b8860b,#FFC000)}
+.fin-meta-marker{position:absolute;top:-4px;bottom:-4px;width:2px;background:#0d1f3c;z-index:2}
+.fin-meta-marker-lbl{position:absolute;top:-17px;transform:translateX(-50%);font-size:9px;color:#0d1f3c;font-weight:700;white-space:nowrap}
+.fin-meta-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:14px}
+.fin-meta-kpi{background:#FAFBFC;border:1px solid #EDEFF2;border-radius:9px;padding:10px 12px}
+.fin-meta-kpi .mk-l{font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.fin-meta-kpi .mk-v{font-size:16px;font-weight:800;color:#0d1f3c;margin-top:2px}
+.fin-meta-kpi .mk-r{font-size:10.5px;color:#9aa3b0;margin-top:1px}
+.fin-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.fin-tbl th{text-align:left;color:#6B7280;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;border-bottom:2px solid #E2E5EA;background:#FAFBFC}
+.fin-tbl td{padding:9px 10px;border-bottom:1px solid #EDEFF2}
+.fin-tbl td.r,.fin-tbl th.r{text-align:right}
+.fin-tbl tr:hover td{background:#F7F9FB}
+.fin-tbl input{background:#fff;border:1px solid #E2E5EA;color:#0d1f3c;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit;width:100%}
+.fin-tbl input:focus{outline:none;border-color:#097A52}
+.fin-tbl .del-btn{background:#FCEBEC;color:#dc2626;border:none;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;line-height:1}
+.fin-tbl .del-btn:hover{background:#f9d7da}
+.fin-add-btn{background:var(--green-bg,#EAF7F1);color:#097A52;border:1px solid var(--green-border,#9FD9BF);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px}
+.fin-add-btn:hover{background:#d8efe4}
+.fin-money-input{background:#fff;border:1px solid #E2E5EA;color:#097A52;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;font-family:inherit;width:160px}
+.fin-money-input:focus{outline:none;border-color:#097A52}
+.fin-insight{display:flex;gap:10px;padding:11px 13px;border-radius:10px;margin-bottom:9px;font-size:12.5px;line-height:1.5;border-left:3px solid}
+.fin-insight.good{background:#EAF7F1;border-color:#097A52;color:#0a5c3d}
+.fin-insight.warn{background:#FEF6E7;border-color:#d97706;color:#92590a}
+.fin-insight.bad{background:#FCEBEC;border-color:#dc2626;color:#991b1b}
+.fin-insight.info{background:#EAF1FB;border-color:#3A5F8C;color:#1e3a5f}
+.fin-insight .ic{font-size:16px;flex-shrink:0}
+.fin-health{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.fin-health-score{font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1}
+.fin-health-ring{width:96px;height:96px;flex-shrink:0}
+.fin-health-top{display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #EDEFF2;margin-bottom:14px}
+.fin-health-ringbox{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.fin-health-meta{display:flex;flex-direction:column;gap:2px}
+.fin-health-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px 18px;flex:1;min-width:240px}
+.fin-hm{padding:2px 0}
+.fin-hm .hm-lbl{font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.fin-hm .hm-num{font-size:17px;font-weight:800;color:#0d1f3c;line-height:1.2;margin-top:1px}
+.fin-hm .hm-sub{font-size:10.5px;color:#9aa3b0;margin-top:0}
+.fin-hm .hm-lbl-row{display:flex;align-items:center;gap:4px}
+.fin-help{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#E2E5EA;color:#6B7280;font-size:9px;font-weight:800;cursor:help;flex-shrink:0;font-style:normal}
+.fin-help:hover{background:#097A52;color:#fff}
+.fin-insights-head{font-size:12px;font-weight:700;color:#0d1f3c;margin-bottom:10px}
+.fin-insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:760px){.fin-insights-grid{grid-template-columns:1fr}}
+.fin-insights-grid .fin-insight{margin-bottom:0}
+.fin-badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.3px}
+.fin-cat-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#EEF1F5;color:#6B7280}
+.fin-mini-note{font-size:11px;color:#6B7280;margin-top:6px}
+.fin-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:opacity .25s;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.fin-toast.show{opacity:1}
+</style>
+
+  <header class="fin-top">
+    <h1>💰 Gestão Financeira <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:2px 9px;border-radius:10px">Só Multas · Bauru</span></h1>
+    <button class="home-nav-btn" onclick="finGerarPDF()" title="Gerar relatório financeiro em PDF para impressão" style="background:#fff;color:#097A52">📄 Gerar PDF</button>
+    <button class="home-nav-btn" onclick="switchModule('crm')">👥 CRM</button>
+    <button class="home-nav-btn" onclick="switchModule('home')">🏠 Central</button>
+  </header>
+
+  <div class="fin-wrap">
+    <div class="fin-period">
+      <label>Período</label>
+      <select id="fin-period-preset" onchange="finPeriodPreset()">
+        <option value="mesatual">Mês atual</option>
+        <option value="3m">Últimos 3 meses</option>
+        <option value="6m">Últimos 6 meses</option>
+        <option value="ano">Este ano</option>
+        <option value="tudo">Todo o período</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <input type="month" id="fin-from" onchange="finSetCustom()" style="display:none">
+      <span id="fin-period-sep" style="display:none;color:#6b7c98">até</span>
+      <input type="month" id="fin-to" onchange="finSetCustom()" style="display:none">
+      <span id="fin-period-label" style="margin-left:auto;font-size:12px;color:#6B7280;font-weight:700"></span>
+    </div>
+
+    <!-- KPIs principais -->
+    <div class="fin-sec-title">📊 Resultado do período</div>
+    <div class="fin-kpis" id="fin-kpis"></div>
+
+    <!-- Meta & Desafio do mês -->
+    <div class="fin-sec-title">🎯 Meta &amp; Desafio <span id="fin-meta-mes" style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0"></span></div>
+    <div class="fin-card" id="fin-meta-card">
+      <div class="sub">Meta e desafio de faturamento bruto do mês, sincronizados com o CRM. Edite no painel do CRM (Dashboard) ou aqui mesmo.</div>
+      <div id="fin-meta-body"></div>
+      <div id="fin-meta-edit" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #EDEFF2">
+        <div id="fin-meta-edit-title" style="font-size:11px;font-weight:700;color:#097A52;margin-bottom:8px"></div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+          <div><div style="font-size:11px;color:#6B7280;font-weight:700;margin-bottom:4px">Meta (R$)</div><input type="text" class="fin-money-input" id="fin-meta-input" placeholder="0,00"></div>
+          <div><div style="font-size:11px;color:#6B7280;font-weight:700;margin-bottom:4px">Desafio (R$)</div><input type="text" class="fin-money-input" id="fin-desafio-input" placeholder="0,00"></div>
+          <button class="fin-add-btn" style="margin:0;background:#097A52;color:#fff;border-color:#097A52" onclick="finSaveMeta()">💾 Salvar</button>
+          <button class="fin-add-btn" style="margin:0" onclick="finToggleMetaEdit()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bolsa de Leads (automático) -->
+    <div class="fin-sec-title">🎯 Bolsa de Leads <span style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0">· integrado automaticamente do CRM</span></div>
+    <div class="fin-card">
+      <div class="sub">Compras, reembolsos e vendas de leads pagos são puxados direto do CRM conforme você opera. Compras atribuídas ao mês de entrada do lead; receita ao mês da venda.</div>
+      <div id="fin-bolsa-box"></div>
+    </div>
+
+    <!-- Saúde financeira -->
+    <div class="fin-sec-title">🩺 Saúde financeira</div>
+    <div class="fin-card">
+      <div class="fin-health-top">
+        <div class="fin-health-ringbox">
+          <svg class="fin-health-ring" viewBox="0 0 36 36" id="fin-health-ring"></svg>
+          <div class="fin-health-meta">
+            <div id="fin-health-badge"></div>
+            <div class="fin-mini-note" id="fin-health-note" style="margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="fin-health-metrics" id="fin-health-metrics"></div>
+      </div>
+      <div class="fin-insights-head">💡 Insights profissionais</div>
+      <div class="fin-insights-grid" id="fin-insights"></div>
+    </div>
+
+    <!-- Payback -->
+    <div class="fin-sec-title">🎯 Retorno do investimento (Payback)</div>
+    <div class="fin-grid2">
+      <div class="fin-card">
+        <h3>Investimento inicial (franquia)</h3>
+        <div class="sub">Valor único pago para abrir a unidade</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-size:12px;color:#6B7280">R$</span>
+          <input type="text" class="fin-money-input" id="fin-invest-inicial" onchange="finSaveInvestInicial(this.value)" placeholder="0,00">
+          <input type="month" id="fin-invest-data" onchange="finSaveInvestData(this.value)" style="background:#fff;border:1px solid #E2E5EA;color:#0d1f3c;border-radius:8px;padding:7px 10px;font-size:12px" title="Mês do investimento inicial">
+        </div>
+        <div id="fin-pb-inicial-box" style="margin-top:14px"></div>
+      </div>
+      <div class="fin-card">
+        <h3>Payback total <span style="font-size:11px;color:#6b7c98;font-weight:400">(inicial + aportes)</span></h3>
+        <div class="sub">Considera todo o capital investido na unidade</div>
+        <div id="fin-pb-total-box"></div>
+      </div>
+    </div>
+
+    <!-- Aportes -->
+    <div class="fin-card">
+      <h3>💵 Aportes / investimentos adicionais</h3>
+      <div class="sub">Reinvestimentos, equipamentos, capital de giro injetado ao longo do tempo</div>
+      <table class="fin-tbl"><thead><tr><th style="width:130px">Mês</th><th>Descrição</th><th class="r" style="width:140px">Valor</th><th style="width:44px"></th></tr></thead>
+        <tbody id="fin-aportes-body"></tbody></table>
+      <button class="fin-add-btn" onclick="finAddAporte()">+ Adicionar aporte</button>
+    </div>
+
+    <!-- Despesas fixas -->
+    <div class="fin-sec-title">🏢 Despesas fixas mensais</div>
+    <div class="fin-card">
+      <div class="sub">Custos recorrentes que se repetem todo mês (aluguel, royalties, salários, software...)</div>
+      <table class="fin-tbl"><thead><tr><th>Descrição</th><th style="width:150px">Categoria</th><th class="r" style="width:140px">Valor / mês</th><th style="width:44px"></th></tr></thead>
+        <tbody id="fin-fixas-body"></tbody></table>
+      <button class="fin-add-btn" onclick="finAddFixa()">+ Adicionar despesa fixa</button>
+      <div class="fin-mini-note" id="fin-fixas-total"></div>
+    </div>
+
+    <!-- Despesas variáveis -->
+    <div class="fin-sec-title">📉 Despesas variáveis</div>
+    <div class="fin-card">
+      <div class="sub">Gastos pontuais lançados por data (marketing, taxas, deslocamento, eventuais...)</div>
+      <table class="fin-tbl"><thead><tr><th style="width:130px">Mês</th><th>Descrição</th><th style="width:150px">Categoria</th><th class="r" style="width:140px">Valor</th><th style="width:44px"></th></tr></thead>
+        <tbody id="fin-var-body"></tbody></table>
+      <button class="fin-add-btn" onclick="finAddVar()">+ Adicionar despesa variável</button>
+      <div class="fin-mini-note" id="fin-var-total"></div>
+    </div>
+
+    <!-- Repasse mensal da franqueadora -->
+    <div class="fin-sec-title">💵 Repasse da franqueadora <span style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0">· valor que a franqueadora te paga, por mês</span></div>
+    <div class="fin-card">
+      <div class="sub">O total vendido é o valor cheio pago pelo cliente (sua parte + parte da franqueadora). Informe aqui, mês a mês, o valor líquido que a franqueadora efetivamente te repassa. O resultado do negócio é <b>repasse − despesas</b>.</div>
+      <table class="fin-tbl"><thead><tr><th style="width:160px">Mês</th><th class="r" style="width:170px">Repasse recebido</th><th>Referência</th></tr></thead>
+        <tbody id="fin-repasse-body"></tbody></table>
+      <div class="fin-mini-note" id="fin-repasse-note"></div>
+    </div>
+
+  </div>
+  <div class="fin-toast" id="fin-toast"></div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════
 // CONSTANTS
@@ -8984,6 +9205,24 @@ function getMetaMes(){
   return { meta: Number(m.meta)||0, desafio: Number(m.desafio)||0 };
 }
 
+// Lê {meta, desafio} de um mês específico (YYYY-MM)
+function getMetaDeMes(ym){
+  const data = loadData();
+  const metas = (data.meta && data.meta.metas) || {};
+  const m = metas[ym] || {};
+  return { meta: Number(m.meta)||0, desafio: Number(m.desafio)||0 };
+}
+// Soma meta e desafio dos meses de um período financeiro (acompanha o filtro).
+function getMetaPeriodo(p){
+  let meta=0, desafio=0, mesesComMeta=0;
+  finMesesDoPeriodo(p).forEach(ym=>{
+    const x=getMetaDeMes(ym);
+    if(x.meta>0||x.desafio>0) mesesComMeta++;
+    meta+=x.meta; desafio+=x.desafio;
+  });
+  return { meta, desafio, mesesComMeta };
+}
+
 // Retorna a data ISO da venda de um lead (saleDate > dtContato > data)
 function leadSaleIso(l){
   const d = l.saleDate || l.dtContato || l.data || '';
@@ -9005,6 +9244,890 @@ function vendasMesAtual(){
   return Object.values(loadData().leads)
     .filter(l => l.status==='Venda Realizada' && leadSaleIso(l).slice(0,7)===mes).length;
 }
+
+// ══════════════════════════════════════════════════════════════
+// MÓDULO FINANCEIRO — controle e gestão da unidade
+// ══════════════════════════════════════════════════════════════
+const FIN_KEY = 'fin_somultas_v1';
+
+function finLoad(){
+  try{ const r = localStorage.getItem(FIN_KEY); const d = r?JSON.parse(r):{}; 
+    return Object.assign({
+      investInicial: 0, investInicialMes: '',
+      aportes: [],        // {id, mes:'YYYY-MM', desc, valor}
+      fixas: [],          // {id, desc, cat, valor}
+      variaveis: [],      // {id, mes:'YYYY-MM', desc, cat, valor}
+      repasse: {},        // { 'YYYY-MM': valor } repasse mensal da franqueadora (digitado)
+      liquidoManual: {}   // legado (não mais usado no cálculo principal)
+    }, d);
+  }catch(e){ return {investInicial:0,investInicialMes:'',aportes:[],fixas:[],variaveis:[],repasse:{},liquidoManual:{}}; }
+}
+function finSave(d){ localStorage.setItem(FIN_KEY, JSON.stringify(d)); }
+function finUID(){ return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function finMoney(v){ return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function finMoneyShort(v){ v=Number(v)||0; const a=Math.abs(v); const s=v<0?'-':'';
+  if(a>=1e6) return s+'R$ '+(a/1e6).toFixed(1).replace('.',',')+'M';
+  if(a>=1e3) return s+'R$ '+(a/1e3).toFixed(1).replace('.',',')+'k';
+  return finMoney(v); }
+function finParse(str){ if(str==null) return 0; const limpo=str.toString().trim().replace(/[^\d.,-]/g,'').replace(/\./g,'').replace(',','.'); const v=parseFloat(limpo); return isNaN(v)?0:v; }
+
+// ── Período selecionado (retorna {from:'YYYY-MM', to:'YYYY-MM', label, key}) ──
+let FIN_PERIOD = null;
+function finCurrentPeriod(){
+  if(FIN_PERIOD) return FIN_PERIOD;
+  return finComputePeriod('mesatual');
+}
+function finComputePeriod(preset){
+  const now = new Date();
+  const ym = d => d.toISOString().slice(0,7);
+  const thisMonth = ym(now);
+  let from, to, label;
+  if(preset==='mesatual'){ from=to=thisMonth; label=finMesNome(thisMonth); }
+  else if(preset==='3m'){ const d=new Date(now); d.setMonth(d.getMonth()-2); from=ym(d); to=thisMonth; label='Últimos 3 meses'; }
+  else if(preset==='6m'){ const d=new Date(now); d.setMonth(d.getMonth()-5); from=ym(d); to=thisMonth; label='Últimos 6 meses'; }
+  else if(preset==='ano'){ from=now.getFullYear()+'-01'; to=thisMonth; label='Ano de '+now.getFullYear(); }
+  else if(preset==='tudo'){ from='2000-01'; to='2999-12'; label='Todo o período'; }
+  else if(preset==='custom'){
+    const f=(document.getElementById('fin-from')||{}).value||thisMonth;
+    const t=(document.getElementById('fin-to')||{}).value||thisMonth;
+    from=f; to=t; label = (from===to)?finMesNome(from):`${finMesNome(from)} → ${finMesNome(to)}`;
+  }
+  return {preset, from, to, label, key:`${preset}:${from}:${to}`};
+}
+const FIN_MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function finMesNome(ym){ if(!ym) return '—'; const [y,m]=ym.split('-'); return `${FIN_MESES[parseInt(m)-1]||'?'}/${y}`; }
+// número de meses no período (inclusivo)
+function finMonthsInPeriod(p){
+  if(p.preset==='tudo'){
+    // do mês mais antigo com dado até o mês atual
+    const first = finFirstActivityMonth();
+    const now=new Date().toISOString().slice(0,7);
+    return Math.max(finMonthDiff(first, now)+1, 1);
+  }
+  return Math.max(finMonthDiff(p.from, p.to)+1, 1);
+}
+function finMonthDiff(a,b){ if(!a||!b) return 0; const [ay,am]=a.split('-').map(Number); const [by,bm]=b.split('-').map(Number); return (by-ay)*12+(bm-am); }
+function finInPeriod(ym, p){ if(!ym) return false; if(p.preset==='tudo') return true; return ym>=p.from && ym<=p.to; }
+
+// primeiro mês com qualquer atividade (venda, despesa, investimento)
+function finFirstActivityMonth(){
+  let months=[];
+  const d=finLoad();
+  if(d.investInicialMes) months.push(d.investInicialMes);
+  d.aportes.forEach(a=>a.mes&&months.push(a.mes));
+  d.variaveis.forEach(v=>v.mes&&months.push(v.mes));
+  Object.values(loadData().leads||{}).forEach(l=>{ if(l.status==='Venda Realizada'){ const iso=leadSaleIso(l); if(iso) months.push(iso.slice(0,7)); }});
+  months=months.filter(Boolean).sort();
+  return months[0] || new Date().toISOString().slice(0,7);
+}
+
+// ── Faturamento BRUTO de um período (vendas por saleDate) ──
+function finValOf(l){ return Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100)); }
+function finFaturamentoBruto(p){
+  return Object.values(loadData().leads||{})
+    .filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); })
+    .reduce((s,l)=>s+finValOf(l),0);
+}
+function finQtdVendas(p){
+  return Object.values(loadData().leads||{})
+    .filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); }).length;
+}
+
+// ── Despesas do período ──
+// Fixas: recorrentes → multiplicam pelo nº de meses do período
+function finDespesasFixasMes(){ const d=finLoad(); return d.fixas.reduce((s,f)=>s+(Number(f.valor)||0),0); }
+function finDespesasFixasPeriodo(p){ return finDespesasFixasMes() * finMonthsInPeriod(p); }
+// Variáveis: lançadas por mês
+function finDespesasVariaveisPeriodo(p){
+  const d=finLoad();
+  return d.variaveis.filter(v=>finInPeriod(v.mes, p)).reduce((s,v)=>s+(Number(v.valor)||0),0);
+}
+function finDespesasTotaisPeriodo(p){ return finDespesasFixasPeriodo(p)+finDespesasVariaveisPeriodo(p)+finBolsaInvestidoPeriodo(p); }
+
+// ── Bolsa de Leads (integração automática) ──
+// O custo de aquisição na Bolsa entra como despesa. Atribuímos a compra ao
+// período pela data de origem do lead (l.data) e o reembolso pela mesma data.
+function finBolsaValor(l){ return Number(l.bolsaValor)||0; }
+function finBolsaLeads(){ return Object.values(loadData().leads||{}).filter(l=>l.isBolsa); }
+// Total pago em compras de leads no período
+function finBolsaCompradoPeriodo(p){
+  return finBolsaLeads().filter(l=>{ const iso=brToIso(l.data||''); return iso && finInPeriod(iso.slice(0,7), p); })
+    .reduce((s,l)=>s+finBolsaValor(l),0);
+}
+// Total reembolsado no período (volta como crédito → reduz a despesa)
+function finBolsaReembolsadoPeriodo(p){
+  return finBolsaLeads().filter(l=>l.status==='Reembolso')
+    .filter(l=>{ const iso=brToIso(l.data||''); return iso && finInPeriod(iso.slice(0,7), p); })
+    .reduce((s,l)=>s+finBolsaValor(l),0);
+}
+// Investimento líquido na Bolsa no período (comprado − reembolsado)
+function finBolsaInvestidoPeriodo(p){ return finBolsaCompradoPeriodo(p) - finBolsaReembolsadoPeriodo(p); }
+// Receita gerada por leads da Bolsa que viraram venda (pela data da venda)
+function finBolsaReceitaPeriodo(p){
+  return finBolsaLeads().filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); })
+    .reduce((s,l)=>s+finValOf(l),0);
+}
+function finBolsaVendasPeriodo(p){
+  return finBolsaLeads().filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); }).length;
+}
+function finBolsaQtdComprados(p){
+  return finBolsaLeads().filter(l=>{ const iso=brToIso(l.data||''); return iso && finInPeriod(iso.slice(0,7), p); }).length;
+}
+// Cohort de leads da Bolsa COMPRADOS no período (pela data de entrada).
+function finBolsaCohort(p){
+  return finBolsaLeads().filter(l=>{ const iso=brToIso(l.data||''); return iso && finInPeriod(iso.slice(0,7), p); });
+}
+// Estatísticas de conversão do cohort comprado no período.
+function finBolsaConversao(p){
+  const cohort = finBolsaCohort(p);
+  const total = cohort.length;
+  const vendas = cohort.filter(l=>l.status==='Venda Realizada').length;
+  const reemb = cohort.filter(l=>l.status==='Reembolso').length;
+  const perdidos = cohort.filter(l=>l.status==='Perdido'||l.status==='Sem Retorno'||l.status==='Não Pertence').length;
+  const emAberto = total - vendas - reemb - perdidos;
+  const taxa = total>0 ? (vendas/total*100) : 0;
+  // taxa desconsiderando reembolsados (leads que efetivamente "valeram")
+  const baseValida = total - reemb;
+  const taxaValida = baseValida>0 ? (vendas/baseValida*100) : 0;
+  const custoComprado = cohort.reduce((s,l)=>s+(Number(l.bolsaValor)||0),0);
+  const custoMedioLead = total>0 ? custoComprado/total : 0;
+  const custoPorVenda = vendas>0 ? custoComprado/vendas : null; // CAC
+  return { total, vendas, reemb, perdidos, emAberto, taxa, taxaValida, baseValida, custoMedioLead, custoPorVenda, custoComprado };
+}
+// ROI da Bolsa no período = (receita − investido) / investido
+function finBolsaRoiPeriodo(p){
+  const inv=finBolsaInvestidoPeriodo(p); const rec=finBolsaReceitaPeriodo(p);
+  return inv>0 ? ((rec-inv)/inv*100) : null;
+}
+
+// ── Repasse da franqueadora (mensal, digitado) e Resultado ──
+// Lista de meses (YYYY-MM) do período, do mais antigo ao mais novo.
+function finMesesDoPeriodo(p){
+  let from, to;
+  if(p.preset==='tudo'){ from=finFirstActivityMonth(); to=new Date().toISOString().slice(0,7); }
+  else { from=p.from; to=p.to; }
+  const out=[]; let [y,m]=from.split('-').map(Number); const [ty,tm]=to.split('-').map(Number);
+  let guard=0;
+  while((y<ty || (y===ty && m<=tm)) && guard<600){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} guard++; }
+  return out;
+}
+// Soma do repasse da franqueadora nos meses do período.
+function finRepassePeriodo(p){
+  const d=finLoad();
+  return finMesesDoPeriodo(p).reduce((s,ym)=>s+(Number(d.repasse[ym])||0),0);
+}
+// Quantos meses do período têm repasse informado.
+function finRepasseMesesInformados(p){
+  const d=finLoad();
+  return finMesesDoPeriodo(p).filter(ym=>d.repasse[ym]!=null && d.repasse[ym]!=='').length;
+}
+// Resultado real do franqueado = repasse da franqueadora − despesas.
+function finResultado(p){ return finRepassePeriodo(p) - finDespesasTotaisPeriodo(p); }
+
+// ══════════════ RENDER PRINCIPAL ══════════════
+function finRender(){
+  const p = finCurrentPeriod();
+  const lbl=document.getElementById('fin-period-label'); if(lbl) lbl.textContent='📅 '+p.label;
+
+  const bruto = finFaturamentoBruto(p);            // Total vendido (valor cheio ao cliente)
+  const qtd = finQtdVendas(p);
+  const repasse = finRepassePeriodo(p);            // O que a franqueadora repassa (digitado)
+  const fixasP = finDespesasFixasPeriodo(p);
+  const varP = finDespesasVariaveisPeriodo(p);
+  // Bolsa de Leads (automático)
+  const bolsaComprado = finBolsaCompradoPeriodo(p);
+  const bolsaReemb = finBolsaReembolsadoPeriodo(p);
+  const bolsaInvest = bolsaComprado - bolsaReemb;
+  const bolsaReceita = finBolsaReceitaPeriodo(p);
+  const bolsaRoi = finBolsaRoiPeriodo(p);
+  const despT = fixasP+varP+bolsaInvest;
+  const resultado = repasse - despT;               // Resultado real do franqueado
+  const margem = repasse>0 ? (resultado/repasse*100) : 0;   // margem sobre o repasse
+  const pctRepasse = bruto>0 ? (repasse/bruto*100) : 0;     // % do bruto que vira repasse
+  const meses = finMonthsInPeriod(p);
+  const mesesInf = finRepasseMesesInformados(p);
+  const ticket = qtd>0 ? bruto/qtd : 0;
+
+  // KPIs
+  const kpis = [
+    {lbl:'Total vendido (bruto)', num:finMoney(bruto), cls:'', rt:`${qtd} venda${qtd!==1?'s':''} · ticket ${finMoneyShort(ticket)}`,
+     tip:'Soma do valor cheio de todas as vendas do período (o que os clientes pagaram), atribuída pela data da venda. Inclui sua parte e a parte da franqueadora.'},
+    {lbl:'Repasse da franqueadora', num:finMoney(repasse), cls:'teal', rt: mesesInf>0?`${pctRepasse.toFixed(0)}% do bruto · ${mesesInf} mês(es) informado(s)`:'⚠️ informe o repasse mensal abaixo',
+     tip:'Valor líquido que a franqueadora efetivamente te paga, somando os meses do período. É digitado mês a mês na seção "Repasse da franqueadora" e já vem líquido das taxas/royalties da franqueadora.'},
+    {lbl:'Despesas totais', num:finMoney(despT), cls:'red', rt:`fixas ${finMoneyShort(fixasP)} · var. ${finMoneyShort(varP)} · bolsa ${finMoneyShort(bolsaInvest)}`,
+     tip:'Soma de todas as suas despesas no período: fixas (recorrentes × nº de meses) + variáveis (lançadas) + investimento líquido na Bolsa de Leads (compras − reembolsos).'},
+    {lbl:'Resultado (lucro)', num:finMoney(resultado), cls: resultado>=0?'green':'red', rt: meses>1?`média ${finMoneyShort(resultado/meses)}/mês`:'repasse − despesas',
+     tip:'Seu lucro real no período. Cálculo: repasse da franqueadora − despesas totais. É o dinheiro que de fato sobra pra você.'},
+    {lbl:'Margem do franqueado', num: repasse>0?`${margem.toFixed(1)}%`:'—', cls: margem>=30?'green':(margem>=0?'amber':'red'), rt:'resultado ÷ repasse',
+     tip:'Do que a franqueadora te repassa, qual percentual vira lucro. Cálculo: resultado ÷ repasse. Mede sua eficiência com o dinheiro que entra (não sobre o total vendido, pois a parte da franqueadora não é sua).'},
+    {lbl:'🎯 Investido na Bolsa', num:finMoney(bolsaInvest), cls:'bolsa', rt: bolsaReemb>0?`${finMoneyShort(bolsaComprado)} pago − ${finMoneyShort(bolsaReemb)} reemb.`:`${finBolsaQtdComprados(p)} leads comprados`,
+     tip:'Quanto você gastou líquido comprando leads na Bolsa no período. Cálculo: total pago em compras − reembolsos. Puxado automaticamente do CRM e contabilizado como despesa.'},
+  ];
+  document.getElementById('fin-kpis').innerHTML = kpis.map(k=>
+    `<div class="fin-kpi ${k.cls}"><div class="fk-lbl">${k.lbl}${k.tip?` <span class="fin-help" title="${finEsc(k.tip)}">i</span>`:''}</div><div class="fk-num">${k.num}</div><div class="fk-rt">${k.rt}</div></div>`).join('');
+
+  finRenderBolsa(p, {bolsaComprado, bolsaReemb, bolsaInvest, bolsaReceita, bolsaRoi});
+  finRenderMeta();
+  finRenderHealth(p, {bruto, repasse, despT, resultado, margem, pctRepasse, qtd, meses, mesesInf, fixasP, varP, bolsaInvest, bolsaReceita, bolsaRoi, ticket});
+  finRenderPayback(p, {resultado, meses});
+  finRenderAportes();
+  finRenderFixas();
+  finRenderVar(p);
+  finRenderRepasse(p);
+}
+
+// ══════════════ BOLSA DE LEADS (resumo automático) ══════════════
+function finRenderBolsa(p, b){
+  const box=document.getElementById('fin-bolsa-box');
+  if(!box) return;
+  const lucroBolsa = b.bolsaReceita - b.bolsaInvest;
+  const roiTxt = b.bolsaRoi==null ? '—' : `${b.bolsaRoi.toFixed(0)}%`;
+  const roiColor = b.bolsaRoi==null ? '#6B7280' : (b.bolsaRoi>=0?'#097A52':'#dc2626');
+  const multiplicador = b.bolsaInvest>0 ? (b.bolsaReceita/b.bolsaInvest) : null;
+  const cv = finBolsaConversao(p);
+
+  const fin = (lbl,val,color,tip)=>`<div><div style="font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">${lbl}${tip?` <span class="fin-help" title="${finEsc(tip)}">i</span>`:''}</div><div style="font-size:17px;font-weight:800;color:${color}">${val}</div></div>`;
+
+  // barra de funil do cohort (vendas / em aberto / perdidos / reembolsos)
+  const seg=(n,c)=> cv.total>0 ? `<div style="width:${(n/cv.total*100).toFixed(1)}%;background:${c}" title="${n}"></div>` : '';
+  const funil = cv.total>0 ? `
+    <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;margin:6px 0;border:1px solid #EDEFF2">
+      ${seg(cv.vendas,'#097A52')}${seg(cv.emAberto,'#3A5F8C')}${seg(cv.perdidos,'#d97706')}${seg(cv.reemb,'#A32532')}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:10px;color:#6B7280">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#097A52;vertical-align:middle"></span> ${cv.vendas} vendidos</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3A5F8C;vertical-align:middle"></span> ${cv.emAberto} em aberto</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d97706;vertical-align:middle"></span> ${cv.perdidos} perdidos</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#A32532;vertical-align:middle"></span> ${cv.reemb} reembolsados</span>
+    </div>` : '';
+
+  box.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💵 Financeiro</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+      ${fin('Comprado', finMoney(b.bolsaComprado), '#A32532', 'Total pago em compras de leads na Bolsa no período (pela data de entrada do lead).')}
+      ${fin('Reembolsado', finMoney(b.bolsaReemb), '#097A52', 'Valor de leads marcados como Reembolso, que volta ao seu saldo.')}
+      ${fin('Investido líquido', finMoney(b.bolsaInvest), '#d97706', 'Comprado − reembolsado. É o custo real de aquisição contabilizado como despesa.')}
+      ${fin('Receita gerada', finMoney(b.bolsaReceita), '#097A52', 'Valor das vendas (pela data da venda) dos leads comprados na Bolsa.')}
+      ${fin('Lucro da Bolsa', finMoney(lucroBolsa), lucroBolsa>=0?'#097A52':'#dc2626', 'Receita gerada − investido líquido.')}
+      ${fin('ROI', roiTxt, roiColor, 'Retorno sobre o investimento na Bolsa: (receita − investido) ÷ investido.')}
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;padding-top:14px;border-top:1px solid #EDEFF2">📈 Conversão dos leads comprados</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+      ${fin('Leads comprados', String(cv.total), '#0d1f3c', 'Quantidade de leads adquiridos na Bolsa no período (pela data de entrada).')}
+      ${fin('Convertidos', String(cv.vendas), '#097A52', 'Quantos desses leads comprados viraram Venda Realizada.')}
+      ${fin('Taxa de conversão', cv.total>0?`${cv.taxa.toFixed(1)}%`:'—', cv.taxa>=20?'#097A52':(cv.taxa>=10?'#d97706':'#dc2626'), 'Convertidos ÷ leads comprados. Quanto maior, mais eficiente é a Bolsa como canal.')}
+      ${fin('Taxa (sem reemb.)', cv.baseValida>0?`${cv.taxaValida.toFixed(1)}%`:'—', '#0d1f3c', 'Conversão considerando só os leads que não foram reembolsados — mostra o aproveitamento real dos leads válidos.')}
+      ${fin('Custo médio/lead', finMoney(cv.custoMedioLead), '#A32532', 'Quanto custou, em média, cada lead comprado. Total pago ÷ leads comprados.')}
+      ${fin('Custo por venda (CAC)', cv.custoPorVenda==null?'—':finMoney(cv.custoPorVenda), '#d97706', 'Custo de aquisição por cliente: total pago em leads ÷ nº de vendas. Compare com o ticket médio para saber se vale a pena.')}
+    </div>
+    ${funil}
+
+    <div class="fin-mini-note" style="margin-top:12px">${
+      cv.total<=0
+        ? 'Nenhuma compra de leads na Bolsa neste período. Compras, reembolsos e vendas marcadas no CRM aparecem aqui automaticamente.'
+        : (multiplicador!=null
+            ? `Cada R$ 1,00 investido na Bolsa gerou <b>${finMoney(multiplicador).replace('R$','R$ ')}</b> em receita · taxa de conversão de <b>${cv.taxa.toFixed(1)}%</b>${cv.custoPorVenda!=null?` · custo de ${finMoneyShort(cv.custoPorVenda)} por cliente`:''}.${b.bolsaRoi>=0?' 👍':' — atenção ao retorno.'}`
+            : `${cv.total} lead(s) comprados, ainda sem vendas atribuídas. Acompanhe a conversão dos ${cv.emAberto} em aberto.`)
+    }</div>`;
+}
+
+// ══════════════ META & DESAFIO (espelha o CRM) ══════════════
+function finRenderMeta(){
+  const body=document.getElementById('fin-meta-body');
+  if(!body || typeof getMetaPeriodo!=='function') return;
+  const p = finCurrentPeriod();
+  const mesAtual = new Date().toISOString().slice(0,7);
+  const mesesP = finMesesDoPeriodo(p);
+  const isUnicoMes = mesesP.length===1;
+  const isMesAtual = isUnicoMes && mesesP[0]===mesAtual;
+
+  // Meta/desafio acompanham o período filtrado (soma dos meses do período)
+  const {meta,desafio,mesesComMeta}=getMetaPeriodo(p);
+  const realizado=finFaturamentoBruto(p);   // bruto do período (mesma base do CRM)
+  const qtd=finQtdVendas(p);
+
+  const lbl=document.getElementById('fin-meta-mes');
+  if(lbl) lbl.textContent='· '+(isUnicoMes?finMesNome(mesesP[0]):`${p.label} (${mesesP.length} meses)`);
+
+  if(meta<=0 && desafio<=0){
+    const alvo = isUnicoMes ? mesesP[0] : mesAtual;
+    body.innerHTML=`<div class="fin-mini-note" style="padding:8px 0">Nenhuma meta definida para ${isUnicoMes?finMesNome(mesesP[0]):'os meses deste período'}. <a href="#" onclick="finToggleMetaEdit('${alvo}');return false;" style="color:#097A52;font-weight:700">Definir meta e desafio →</a></div>`;
+    return;
+  }
+
+  const topo=(desafio>meta)?desafio:meta;
+  const pctMeta=meta>0?(realizado/meta*100):0;
+  const pctTopo=topo>0?Math.min(realizado/topo*100,100):0;
+  const metaMarkerPos=(desafio>meta && topo>0)?(meta/topo*100):100;
+  const batidaMeta=realizado>=meta && meta>0;
+  const batidaDesafio=desafio>0 && realizado>=desafio;
+  const faltaMeta=Math.max(meta-realizado,0);
+  const faltaDesafio=desafio>0?Math.max(desafio-realizado,0):0;
+
+  // projeção pelo ritmo do mês — só faz sentido no mês corrente
+  let projecao=0, ritmoDia=0, diasRest=0, temProj=false;
+  if(isMesAtual){
+    const hoje=new Date(); const diaAtual=hoje.getDate();
+    const diasNoMes=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).getDate();
+    diasRest=diasNoMes-diaAtual;
+    ritmoDia=diaAtual>0?realizado/diaAtual:0;
+    projecao=ritmoDia*diasNoMes;
+    temProj=diaAtual>=3 && meta>0;
+  }
+
+  let fill='fin-meta-fill'; if(batidaDesafio)fill+=' challenge'; else if(batidaMeta)fill+=' over';
+
+  let insight;
+  if(batidaDesafio) insight=`🏆 <b>Desafio batido!</b> Faturamento de ${fatMoney(realizado)} ${isUnicoMes?'no mês':'no período'} já supera o desafio de ${fatMoney(desafio)}.`;
+  else if(batidaMeta) insight= desafio>0 ? `✅ <b>Meta atingida!</b> Faltam ${fatMoney(faltaDesafio)} para o desafio de ${fatMoney(desafio)}.` : `✅ <b>Meta atingida!</b> Faturamento de ${fatMoney(realizado)} ${isUnicoMes?'no mês':'no período'}.`;
+  else {
+    let proj='';
+    if(temProj){
+      proj = projecao>=meta ? ` No ritmo atual (${fatMoney(ritmoDia)}/dia), projeção de ~${fatMoney(projecao)} — deve <b>bater a meta</b>.`
+        : ` No ritmo atual, projeção de ~${fatMoney(projecao)} — <b>abaixo da meta</b>. Precisa de ${fatMoney(diasRest>0?faltaMeta/diasRest:faltaMeta)}/dia nos ${diasRest} dias restantes.`;
+    }
+    insight=`Faltam <b>${fatMoney(faltaMeta)}</b> para a meta de ${fatMoney(meta)} (${pctMeta.toFixed(0)}% concluído).${proj}`;
+  }
+
+  const metaLabelTxt = isUnicoMes ? 'Meta' : `Meta do período (${mesesComMeta} ${mesesComMeta===1?'mês':'meses'})`;
+  const editAlvo = isUnicoMes ? mesesP[0] : mesAtual;
+  const markerLbl=(desafio>meta && desafio>0)?'Meta':'';
+  body.innerHTML=`
+    <div class="fin-meta-bar">
+      <div class="${fill}" style="width:${pctTopo.toFixed(1)}%"></div>
+      ${(desafio>meta && desafio>0)?`<div class="fin-meta-marker" style="left:${metaMarkerPos}%"></div><div class="fin-meta-marker-lbl" style="left:${metaMarkerPos}%">${markerLbl}</div>`:''}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7280;font-weight:700">
+      <span>Realizado: <b style="color:#0d1f3c">${fatMoney(realizado)}</b></span>
+      <span>${(desafio>meta&&desafio>0)?'Desafio':'Meta'}: ${fatMoney(topo)}</span>
+    </div>
+    <div class="fin-meta-kpis">
+      <div class="fin-meta-kpi"><div class="mk-l">${metaLabelTxt}</div><div class="mk-v">${fatMoney(meta)}</div><div class="mk-r">${pctMeta.toFixed(0)}% atingido</div></div>
+      ${desafio>0?`<div class="fin-meta-kpi"><div class="mk-l">Desafio${isUnicoMes?'':' do período'}</div><div class="mk-v">${fatMoney(desafio)}</div><div class="mk-r">${(desafio>0?(realizado/desafio*100):0).toFixed(0)}% atingido</div></div>`:''}
+      <div class="fin-meta-kpi"><div class="mk-l">Realizado</div><div class="mk-v" style="color:#097A52">${fatMoney(realizado)}</div><div class="mk-r">${qtd} venda${qtd!==1?'s':''}</div></div>
+      ${isMesAtual?`<div class="fin-meta-kpi"><div class="mk-l">Projeção do mês</div><div class="mk-v">${temProj?fatMoney(projecao):'—'}</div><div class="mk-r">${temProj?'no ritmo atual':'aguardando dados'}</div></div>`:`<div class="fin-meta-kpi"><div class="mk-l">Falta p/ meta</div><div class="mk-v">${fatMoney(faltaMeta)}</div><div class="mk-r">${batidaMeta?'meta batida':'restante'}</div></div>`}
+    </div>
+    <div class="fin-insight ${batidaDesafio?'good':(batidaMeta?'good':'info')}" style="margin-top:12px"><span class="ic">${batidaDesafio?'🏆':(batidaMeta?'✅':'📈')}</span><span>${insight}</span></div>
+    <div style="margin-top:10px"><a href="#" onclick="finToggleMetaEdit('${editAlvo}');return false;" style="color:#097A52;font-weight:700;font-size:12px">✏️ Editar meta / desafio${isUnicoMes?'':' do mês atual'}</a></div>`;
+}
+function finToggleMetaEdit(alvoMes){
+  const box=document.getElementById('fin-meta-edit');
+  if(!box) return;
+  const showing=box.style.display!=='none';
+  if(showing){ box.style.display='none'; return; }
+  const ym = alvoMes || new Date().toISOString().slice(0,7);
+  box.dataset.mes = ym;
+  const {meta,desafio}=getMetaDeMes(ym);
+  const tit=document.getElementById('fin-meta-edit-title');
+  if(tit) tit.textContent = 'Definindo para: '+finMesNome(ym);
+  document.getElementById('fin-meta-input').value = meta>0?meta.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
+  document.getElementById('fin-desafio-input').value = desafio>0?desafio.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
+  box.style.display='block';
+}
+function finSaveMeta(){
+  const box=document.getElementById('fin-meta-edit');
+  const ym = (box && box.dataset.mes) || new Date().toISOString().slice(0,7);
+  const meta=finParse(document.getElementById('fin-meta-input').value);
+  const desafio=finParse(document.getElementById('fin-desafio-input').value);
+  const data=loadData();
+  if(!data.meta) data.meta={};
+  if(!data.meta.metas) data.meta.metas={};
+  data.meta.metas[ym]={meta,desafio};
+  saveData(data);
+  if(box) box.style.display='none';
+  finRenderMeta();
+  if(typeof renderMeta==='function') renderMeta();
+  finToast('🎯 Meta e desafio salvos para '+finMesNome(ym));
+}
+
+// ══════════════ RELATÓRIO PDF (diagramado p/ impressão) ══════════════
+function finGerarPDF(){
+  const p = finCurrentPeriod();
+  const d = finLoad();
+  const M = finMoney;
+  // dados do período
+  const bruto = finFaturamentoBruto(p);
+  const qtd = finQtdVendas(p);
+  const repasse = finRepassePeriodo(p);
+  const fixasP = finDespesasFixasPeriodo(p);
+  const varP = finDespesasVariaveisPeriodo(p);
+  const bolsaComprado = finBolsaCompradoPeriodo(p);
+  const bolsaReemb = finBolsaReembolsadoPeriodo(p);
+  const bolsaInvest = bolsaComprado - bolsaReemb;
+  const bolsaReceita = finBolsaReceitaPeriodo(p);
+  const bolsaRoi = finBolsaRoiPeriodo(p);
+  const cvPdf = finBolsaConversao(p);
+  const despT = fixasP+varP+bolsaInvest;
+  const resultado = repasse - despT;
+  const margem = repasse>0 ? (resultado/repasse*100) : 0;
+  const pctRepasse = bruto>0 ? (repasse/bruto*100) : 0;
+  const meses = finMonthsInPeriod(p);
+  const ticket = qtd>0 ? bruto/qtd : 0;
+  const fixasMes = finDespesasFixasMes();
+  // payback
+  const inicial = Number(d.investInicial)||0;
+  const totalAportes = (d.aportes||[]).reduce((s,a)=>s+(Number(a.valor)||0),0);
+  const investTotal = inicial+totalAportes;
+  const lucroAcum = finLucroAcumuladoTotal();
+  const ritmo = finRitmoLucroMensal();
+  const pbPct = investTotal>0 ? Math.max(0,Math.min(100,lucroAcum/investTotal*100)) : 0;
+  const pbRestante = Math.max(0, investTotal-lucroAcum);
+  let pbTempo;
+  if(investTotal<=0) pbTempo='—';
+  else if(lucroAcum>=investTotal) pbTempo='Recuperado ✔';
+  else if(ritmo>0){ const mf=pbRestante/ritmo; const dt=new Date(); dt.setMonth(dt.getMonth()+Math.ceil(mf)); pbTempo=`~${Math.ceil(mf)} mês(es) · ${dt.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}`; }
+  else pbTempo='sem ritmo de lucro positivo';
+  // meta
+  const metaInfo = (typeof getMetaPeriodo==='function')?getMetaPeriodo(p):{meta:0,desafio:0};
+  const realizadoMes = bruto;
+
+  const row=(l,v,strong,col)=>`<tr><td>${l}</td><td class="r" style="${strong?'font-weight:800;':''}${col?'color:'+col+';':''}">${v}</td></tr>`;
+  const hoje=new Date().toLocaleDateString('pt-BR');
+
+  // despesas detalhadas
+  const fixasRows=(d.fixas||[]).filter(f=>Number(f.valor)>0).map(f=>`<tr><td>${finEsc(f.desc||'—')}</td><td>${finEsc(f.cat||'')}</td><td class="r">${M(f.valor)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">Nenhuma despesa fixa cadastrada</td></tr>';
+  const varRows=(d.variaveis||[]).filter(v=>finInPeriod(v.mes,p)&&Number(v.valor)>0).map(v=>`<tr><td>${finMesNome(v.mes)}</td><td>${finEsc(v.desc||'—')}</td><td>${finEsc(v.cat||'')}</td><td class="r">${M(v.valor)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Nenhuma despesa variável no período</td></tr>';
+  const repRows=finMesesDoPeriodo(p).map(ym=>{const val=d.repasse[ym];return `<tr><td>${finMesNome(ym)}</td><td class="r">${(val!=null&&val!=='')?M(val):'<span class="muted">não informado</span>'}</td></tr>`;}).join('');
+
+  const win=window.open('','_blank');
+  if(!win){ finToast('⚠️ Permita pop-ups para gerar o PDF'); return; }
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório Financeiro — Só Multas</title>
+  <style>
+   @page{size:A4;margin:14mm}
+   *{box-sizing:border-box;margin:0;padding:0}
+   body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2937;font-size:11px;line-height:1.45}
+   .head{background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;padding:18px 22px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+   .head h1{font-size:19px;font-weight:800;letter-spacing:-.3px}
+   .head .sub{font-size:11px;opacity:.85;margin-top:3px}
+   .head .per{text-align:right;font-size:11px}
+   .head .per b{font-size:14px}
+   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+   .kpi{border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;border-left:4px solid #097A52}
+   .kpi.red{border-left-color:#dc2626}.kpi.blue{border-left-color:#3A5F8C}.kpi.amber{border-left-color:#d97706}.kpi.teal{border-left-color:#0d9488}.kpi.bolsa{border-left-color:#A32532}
+   .kpi .l{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#6B7280;font-weight:700}
+   .kpi .v{font-size:17px;font-weight:800;margin-top:2px}
+   .kpi .r{font-size:9.5px;color:#9aa3b0;margin-top:1px}
+   h2{font-size:12px;color:#097A52;text-transform:uppercase;letter-spacing:.6px;margin:16px 0 7px;padding-bottom:4px;border-bottom:2px solid #EAF7F1}
+   table{width:100%;border-collapse:collapse;font-size:10.5px}
+   th{text-align:left;background:#FAFBFC;color:#6B7280;font-size:9px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1.5px solid #e5e7eb}
+   td{padding:5px 8px;border-bottom:1px solid #f0f2f5}
+   td.r,th.r{text-align:right}
+   .muted{color:#9aa3b0;font-style:italic;text-align:center}
+   .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+   .box{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px}
+   .box h3{font-size:11px;font-weight:800;margin-bottom:8px;color:#1f2937}
+   .bar{height:16px;background:#EAEDF1;border-radius:8px;overflow:hidden;margin:8px 0 4px}
+   .bar > div{height:100%;background:linear-gradient(90deg,#097A52,#10b981);border-radius:8px}
+   .pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:800}
+   .foot{margin-top:22px;padding-top:10px;border-top:1px solid #e5e7eb;font-size:9px;color:#9aa3b0;display:flex;justify-content:space-between}
+   .calc{font-size:9.5px;color:#6B7280;margin-top:6px;line-height:1.6}
+   .res-line{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb}
+   .res-line.tot{border-bottom:none;border-top:2px solid #097A52;margin-top:4px;padding-top:7px;font-weight:800;font-size:13px}
+   @media print{.noprint{display:none}}
+  </style></head><body>
+   <div class="head">
+     <div><h1>⚡ Relatório Financeiro</h1><div class="sub">Só Multas · Unidade Bauru/SP</div></div>
+     <div class="per">Período<br><b>${p.label}</b><br><span style="opacity:.8">emitido em ${hoje}</span></div>
+   </div>
+
+   <div class="grid">
+     <div class="kpi blue"><div class="l">Total vendido (bruto)</div><div class="v">${M(bruto)}</div><div class="r">${qtd} venda(s) · ticket ${finMoneyShort(ticket)}</div></div>
+     <div class="kpi teal"><div class="l">Repasse da franqueadora</div><div class="v">${M(repasse)}</div><div class="r">${pctRepasse.toFixed(0)}% do bruto</div></div>
+     <div class="kpi red"><div class="l">Despesas totais</div><div class="v">${M(despT)}</div><div class="r">fixas+variáveis+bolsa</div></div>
+     <div class="kpi"><div class="l">Resultado (lucro)</div><div class="v" style="color:${resultado>=0?'#097A52':'#dc2626'}">${M(resultado)}</div><div class="r">repasse − despesas</div></div>
+     <div class="kpi amber"><div class="l">Margem do franqueado</div><div class="v">${repasse>0?margem.toFixed(1)+'%':'—'}</div><div class="r">resultado ÷ repasse</div></div>
+     <div class="kpi bolsa"><div class="l">Investido na Bolsa</div><div class="v">${M(bolsaInvest)}</div><div class="r">líquido de reembolsos</div></div>
+   </div>
+
+   <h2>Demonstrativo de Resultado</h2>
+   <div class="res-line"><span>Repasse da franqueadora (entrada real)</span><b>${M(repasse)}</b></div>
+   <div class="res-line"><span>(−) Despesas fixas (${meses} ${meses>1?'meses':'mês'} × ${M(fixasMes)})</span><span style="color:#dc2626">− ${M(fixasP)}</span></div>
+   <div class="res-line"><span>(−) Despesas variáveis</span><span style="color:#dc2626">− ${M(varP)}</span></div>
+   <div class="res-line"><span>(−) Investimento líquido na Bolsa de Leads</span><span style="color:#dc2626">− ${M(bolsaInvest)}</span></div>
+   <div class="res-line tot"><span>= Resultado do período</span><span style="color:${resultado>=0?'#097A52':'#dc2626'}">${M(resultado)}</span></div>
+
+   <div class="twocol" style="margin-top:16px">
+     <div>
+       <h2>Bolsa de Leads</h2>
+       <table>
+         ${row('Comprado (pago)',M(bolsaComprado))}
+         ${row('Reembolsado',M(bolsaReemb))}
+         ${row('Investido líquido',M(bolsaInvest),true,'#d97706')}
+         ${row('Receita gerada',M(bolsaReceita))}
+         ${row('Lucro da Bolsa',M(bolsaReceita-bolsaInvest),true,(bolsaReceita-bolsaInvest)>=0?'#097A52':'#dc2626')}
+         ${row('ROI',bolsaRoi==null?'—':bolsaRoi.toFixed(0)+'%',true,(bolsaRoi!=null&&bolsaRoi>=0)?'#097A52':'#dc2626')}
+         ${row('Leads comprados',String(cvPdf.total))}
+         ${row('Convertidos em venda',String(cvPdf.vendas),true,'#097A52')}
+         ${row('Taxa de conversão',cvPdf.total>0?cvPdf.taxa.toFixed(1)+'%':'—',true)}
+         ${row('Custo médio por lead',M(cvPdf.custoMedioLead))}
+         ${row('Custo por venda (CAC)',cvPdf.custoPorVenda==null?'—':M(cvPdf.custoPorVenda))}
+       </table>
+     </div>
+     <div>
+       <h2>Meta &amp; Desafio · ${p.label}</h2>
+       ${(metaInfo.meta>0||metaInfo.desafio>0)?`
+       <table>
+         ${row('Meta'+(finMesesDoPeriodo(p).length>1?' (período)':''),M(metaInfo.meta))}
+         ${metaInfo.desafio>0?row('Desafio'+(finMesesDoPeriodo(p).length>1?' (período)':''),M(metaInfo.desafio)):''}
+         ${row('Realizado (bruto)',M(realizadoMes),true,'#097A52')}
+         ${row('% da meta',metaInfo.meta>0?(realizadoMes/metaInfo.meta*100).toFixed(0)+'%':'—')}
+       </table>`:'<p class="muted" style="padding:14px 0">Nenhuma meta definida para o período.</p>'}
+     </div>
+   </div>
+
+   <h2>Retorno do Investimento (Payback)</h2>
+   <div class="box">
+     <div style="display:flex;justify-content:space-between;font-size:10.5px">
+       <span>Investimento inicial: <b>${M(inicial)}</b></span>
+       <span>Aportes: <b>${M(totalAportes)}</b></span>
+       <span>Total investido: <b style="color:#d97706">${M(investTotal)}</b></span>
+     </div>
+     <div class="bar"><div style="width:${pbPct.toFixed(1)}%"></div></div>
+     <div style="display:flex;justify-content:space-between;font-size:10px;color:#6B7280">
+       <span>Recuperado: <b style="color:#097A52">${M(Math.min(lucroAcum,investTotal))}</b> (${pbPct.toFixed(1)}%)</span>
+       <span>Falta: <b>${M(pbRestante)}</b> · ${pbTempo}</span>
+     </div>
+   </div>
+
+   <div class="twocol" style="margin-top:16px">
+     <div>
+       <h2>Despesas fixas (mensais)</h2>
+       <table><thead><tr><th>Descrição</th><th>Categoria</th><th class="r">Valor/mês</th></tr></thead><tbody>${fixasRows}</tbody></table>
+       <div class="calc">Total fixo mensal: <b>${M(fixasMes)}</b></div>
+     </div>
+     <div>
+       <h2>Repasses do período</h2>
+       <table><thead><tr><th>Mês</th><th class="r">Repasse</th></tr></thead><tbody>${repRows}</tbody></table>
+     </div>
+   </div>
+
+   <h2 style="margin-top:16px">Despesas variáveis do período</h2>
+   <table><thead><tr><th>Mês</th><th>Descrição</th><th>Categoria</th><th class="r">Valor</th></tr></thead><tbody>${varRows}</tbody></table>
+
+   <div class="foot"><span>Só Multas — Gestão Financeira · gerado pelo CRM Só Multas Central</span><span>${hoje}</span></div>
+   <div class="noprint" style="text-align:center;margin-top:18px">
+     <button onclick="window.print()" style="background:#097A52;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>
+   </div>
+   <script>setTimeout(function(){window.print()},400);<\/script>
+  </body></html>`;
+  win.document.write(html);
+  win.document.close();
+}
+function finRenderHealth(p, m){
+  // Score 0–100 ponderado pelo MODELO DE FRANQUIA:
+  // resultado = repasse da franqueadora − despesas.
+  let score = 50;
+  const insights = [];
+  const temRepasse = m.repasse>0;
+  const fixasMes = finDespesasFixasMes();
+  const repasseMes = m.meses>0 ? m.repasse/m.meses : m.repasse;
+
+  // 1) Margem do franqueado (resultado ÷ repasse) — peso alto
+  if(temRepasse){
+    if(m.margem>=40){ score+=24; }
+    else if(m.margem>=25){ score+=16; }
+    else if(m.margem>=10){ score+=7; }
+    else if(m.margem>=0){ score-=4; }
+    else { score-=26; }
+  }
+  // 2) Resultado positivo
+  if(m.resultado>0) score+=12; else if(m.resultado<0) score-=18;
+  // 3) Cobertura de despesas fixas pelo repasse
+  if(fixasMes>0 && temRepasse){
+    const cob = repasseMes/fixasMes;
+    if(cob>=3) score+=10;
+    else if(cob>=1.5) score+=4;
+    else if(cob>=1) score-=2;
+    else score-=15;
+  }
+  // 4) Sem dados
+  if(!temRepasse) score-=8;
+  if(m.qtd===0 && m.bruto===0) score-=8;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  let cat, color, badgeBg;
+  if(score>=75){ cat='Saudável'; color='#097A52'; badgeBg='#EAF7F1'; }
+  else if(score>=55){ cat='Estável'; color='#3A5F8C'; badgeBg='#EAF1FB'; }
+  else if(score>=38){ cat='Atenção'; color='#d97706'; badgeBg='#FEF6E7'; }
+  else { cat='Crítica'; color='#dc2626'; badgeBg='#FCEBEC'; }
+
+  document.getElementById('fin-health-badge').innerHTML = `<span class="fin-badge" style="background:${badgeBg};color:${color}">${cat}</span>`;
+  document.getElementById('fin-health-note').textContent = `Índice 0–100`;
+
+  // ring SVG (maior, com score central)
+  const ring=document.getElementById('fin-health-ring');
+  const dash=`${score}, 100`;
+  ring.innerHTML=`
+    <path stroke="#EAEDF1" stroke-width="3.2" fill="none" d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"/>
+    <path stroke="${color}" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-dasharray="${dash}" d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"/>
+    <text x="18" y="20.5" text-anchor="middle" fill="${color}" font-size="11" font-weight="900" font-family="Titillium Web">${score}</text>`;
+
+  // ── Métricas-chave (preenche o espaço ao lado do anel) ──
+  const ticketMedio = m.qtd>0 ? m.bruto/m.qtd : 0;
+  const equilibrio = ticketMedio>0 && fixasMes>0 ? Math.ceil(fixasMes/ticketMedio) : null;
+  const cobertura = fixasMes>0 ? repasseMes/fixasMes : null;
+  const resMes = m.meses>0 ? m.resultado/m.meses : m.resultado;
+  const metrics = [
+    {lbl:'Resultado/mês', num: finMoneyShort(resMes), sub: m.resultado>=0?'lucro médio':'prejuízo médio', color: m.resultado>=0?'#097A52':'#dc2626',
+     tip:'Lucro real médio por mês no período. Cálculo: (repasse da franqueadora − despesas) ÷ nº de meses. É o que efetivamente sobra pra você.'},
+    {lbl:'Margem do franqueado', num: temRepasse?`${m.margem.toFixed(0)}%`:'—', sub:'resultado ÷ repasse', color: m.margem>=25?'#097A52':(m.margem>=0?'#d97706':'#dc2626'),
+     tip:'Do dinheiro que a franqueadora te repassa, quanto vira lucro depois de pagar as contas. Cálculo: resultado ÷ repasse. Base é o repasse (o que entra pra você), não o total vendido — porque a parte da franqueadora nunca foi sua. Quanto maior, melhor você administra o que recebe.'},
+    {lbl:'Repasse ÷ fixas', num: cobertura!=null?`${cobertura.toFixed(1)}×`:'—', sub:'cobertura de custos', color: (cobertura!=null&&cobertura>=2)?'#097A52':(cobertura!=null&&cobertura>=1?'#d97706':'#dc2626'),
+     tip:'Quantas vezes o repasse mensal da franqueadora cobre suas despesas fixas. Cálculo: repasse mensal ÷ despesas fixas mensais. Abaixo de 1× é perigoso (o repasse nem paga o básico); a partir de 2× você tem folga para variáveis, lucro e reinvestir.'},
+    {lbl:'Ponto de equilíbrio', num: equilibrio!=null?`${equilibrio} venda${equilibrio!==1?'s':''}`:'—', sub:'/mês p/ cobrir fixas', color:'#0d1f3c',
+     tip:'Quantas vendas por mês você precisa, no ticket médio atual, só para cobrir as despesas fixas. Cálculo: despesas fixas mensais ÷ ticket médio. Acima desse número, você começa a ter lucro.'},
+    {lbl:'% do bruto repassado', num: m.bruto>0?`${m.pctRepasse.toFixed(0)}%`:'—', sub:'sua fatia do total', color:'#0d1f3c',
+     tip:'De tudo que foi vendido (valor cheio pago pelo cliente), quanto chega até você antes das despesas. Cálculo: repasse ÷ total vendido. Mostra o tamanho da sua fatia no contrato de franquia. Tende a ser estável; se cair de repente, vale investigar.'},
+    {lbl:'Ticket médio', num: finMoneyShort(ticketMedio), sub:`${m.qtd} venda(s)`, color:'#0d1f3c',
+     tip:'Valor médio (cheio) de cada venda no período. Cálculo: total vendido ÷ número de vendas.'},
+  ];
+  const mEl=document.getElementById('fin-health-metrics');
+  if(mEl) mEl.innerHTML = metrics.map(x=>
+    `<div class="fin-hm"><div class="hm-lbl-row"><span class="hm-lbl">${x.lbl}</span><span class="fin-help" title="${finEsc(x.tip)}">i</span></div><div class="hm-num" style="color:${x.color}">${x.num}</div><div class="hm-sub">${x.sub}</div></div>`).join('');
+
+  // ── INSIGHTS profissionais ──
+  if(!temRepasse){
+    insights.push(['info','📥',`Informe o repasse mensal da franqueadora (na seção abaixo) para o painel calcular seu resultado real, margem e saúde financeira.`]);
+  }
+  if(m.bruto<=0){
+    insights.push(['info','📭',`Nenhuma venda registrada no período. Lance vendas no CRM ("Venda Realizada" com valor e data) para alimentar o total vendido.`]);
+  } else if(temRepasse){
+    if(m.margem>=40) insights.push(['good','💪',`Margem de ${m.margem.toFixed(1)}% sobre o repasse é excelente: o negócio converte o que recebe da franqueadora em lucro com folga.`]);
+    else if(m.margem>=20) insights.push(['good','👍',`Margem de ${m.margem.toFixed(1)}% é saudável. Há espaço para crescer reduzindo despesas ou ampliando o volume de vendas.`]);
+    else if(m.margem>=0) insights.push(['warn','⚠️',`Margem apertada (${m.margem.toFixed(1)}%). O lucro existe mas é frágil frente ao repasse. Revise despesas fixas e Bolsa.`]);
+    else insights.push(['bad','🚨',`Margem negativa (${m.margem.toFixed(1)}%): as despesas superam o repasse da franqueadora no período. Priorize cortar custos.`]);
+  }
+  // cobertura de fixas pelo repasse
+  if(fixasMes>0 && temRepasse){
+    if(cobertura<1) insights.push(['bad','🏗️',`O repasse médio mensal (${finMoneyShort(repasseMes)}) não cobre as despesas fixas (${finMoneyShort(fixasMes)}/mês). Faltam ${finMoneyShort(fixasMes-repasseMes)}/mês só para empatar.`]);
+    else if(cobertura<1.5) insights.push(['warn','📊',`O repasse cobre as fixas em ${cobertura.toFixed(1)}×. O ideal é manter acima de 2× para ter folga e reinvestir.`]);
+    else insights.push(['good','🛡️',`O repasse cobre as despesas fixas em ${cobertura.toFixed(1)}×, boa margem de segurança operacional.`]);
+  } else if(fixasMes<=0){
+    insights.push(['info','📝',`Cadastre suas despesas fixas mensais (aluguel, royalties, software...) para o painel calcular ponto de equilíbrio com precisão.`]);
+  }
+  // ponto de equilíbrio
+  if(equilibrio!=null){
+    insights.push(['info','⚖️',`Ponto de equilíbrio: com ticket médio de ${finMoneyShort(ticketMedio)}, são ~${equilibrio} venda${equilibrio!==1?'s':''}/mês para cobrir as fixas.`]);
+  }
+  // proporção variáveis sobre repasse
+  if(temRepasse && m.varP>0){
+    const pctVar = m.varP/m.repasse*100;
+    if(pctVar>40) insights.push(['warn','📉',`Despesas variáveis consomem ${pctVar.toFixed(0)}% do repasse. Vale investigar onde está concentrado o gasto.`]);
+  }
+  // reserva de caixa
+  if(m.resultado>0 && m.margem>=20){
+    insights.push(['good','🏦',`Com lucro consistente, considere formar reserva de caixa de 3–6× as despesas fixas mensais antes de reinvestir.`]);
+  }
+  // Bolsa de Leads
+  if(m.bolsaInvest>0){
+    if(m.bolsaRoi==null || m.bolsaReceita<=0){
+      insights.push(['warn','🎯',`Você investiu ${finMoneyShort(m.bolsaInvest)} na Bolsa de Leads, mas ainda não há receita atribuída a essas compras. Acompanhe a conversão.`]);
+    } else if(m.bolsaRoi>=100){
+      insights.push(['good','🎯',`Bolsa de Leads com ROI de ${m.bolsaRoi.toFixed(0)}%: canal de aquisição eficiente. Vale escalar com cautela.`]);
+    } else if(m.bolsaRoi>=0){
+      insights.push(['info','🎯',`Bolsa de Leads com ROI de ${m.bolsaRoi.toFixed(0)}% (receita ${finMoneyShort(m.bolsaReceita)} sobre ${finMoneyShort(m.bolsaInvest)}). Positivo, mas dá pra melhorar a conversão.`]);
+    } else {
+      insights.push(['bad','🎯',`Bolsa de Leads com ROI negativo (${m.bolsaRoi.toFixed(0)}%): o gasto com leads pagos superou a receita que geraram. Revise fontes/tags antes de comprar mais.`]);
+    }
+  }
+
+  document.getElementById('fin-insights').innerHTML = insights.map(([c,ic,txt])=>
+    `<div class="fin-insight ${c}"><span class="ic">${ic}</span><span>${txt}</span></div>`).join('');
+}
+
+// ══════════════ PAYBACK ══════════════
+function finRenderPayback(p, m){
+  const d=finLoad();
+  const inicial = Number(d.investInicial)||0;
+  const totalAportes = d.aportes.reduce((s,a)=>s+(Number(a.valor)||0),0);
+  const investTotal = inicial+totalAportes;
+
+  // Lucro acumulado de TODA a operação (independe do período selecionado)
+  const lucroAcumulado = finLucroAcumuladoTotal();
+  // ritmo de lucro mensal (média dos últimos meses ativos)
+  const ritmoMensal = finRitmoLucroMensal();
+
+  // preenche inputs
+  const ii=document.getElementById('fin-invest-inicial'); if(ii && document.activeElement!==ii) ii.value = inicial>0 ? inicial.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  const im=document.getElementById('fin-invest-data'); if(im && document.activeElement!==im) im.value = d.investInicialMes||'';
+
+  // Box do investimento inicial
+  document.getElementById('fin-pb-inicial-box').innerHTML = finPaybackBox(inicial, lucroAcumulado, ritmoMensal, 'inicial');
+  // Box total
+  document.getElementById('fin-pb-total-box').innerHTML =
+    `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+       <div><div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Inicial</div><div style="font-size:15px;font-weight:800;color:#0d1f3c">${finMoney(inicial)}</div></div>
+       <div><div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">+ Aportes</div><div style="font-size:15px;font-weight:800;color:#7c3aed">${finMoney(totalAportes)}</div></div>
+       <div><div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">= Total investido</div><div style="font-size:15px;font-weight:800;color:#d97706">${finMoney(investTotal)}</div></div>
+     </div>` + finPaybackBox(investTotal, lucroAcumulado, ritmoMensal, 'total');
+}
+
+function finPaybackBox(alvo, lucroAcum, ritmo, tipo){
+  if(alvo<=0){
+    return `<div class="fin-mini-note">${tipo==='inicial'?'Informe o valor do investimento inicial acima':'Sem capital investido cadastrado'} para calcular o payback.</div>`;
+  }
+  const pago = Math.min(lucroAcum, alvo);
+  const pct = Math.max(0, Math.min(100, lucroAcum/alvo*100));
+  const restante = Math.max(0, alvo - lucroAcum);
+  let tempoTxt;
+  if(lucroAcum>=alvo){
+    tempoTxt = `<span style="color:#097A52;font-weight:800">✅ Investimento ${tipo==='inicial'?'inicial ':''}recuperado!</span> O lucro acumulado já cobre o capital aplicado.`;
+  } else if(ritmo>0){
+    const mesesFalta = restante/ritmo;
+    const dataPrev = new Date(); dataPrev.setMonth(dataPrev.getMonth()+Math.ceil(mesesFalta));
+    const prevTxt = dataPrev.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    tempoTxt = `Faltam <b style="color:#d97706">${finMoney(restante)}</b> · ~<b>${mesesFalta<1?'menos de 1':Math.ceil(mesesFalta)} ${mesesFalta<1||Math.ceil(mesesFalta)===1?'mês':'meses'}</b> no ritmo atual (${finMoneyShort(ritmo)}/mês) → previsão <b>${prevTxt}</b>`;
+  } else {
+    tempoTxt = `Faltam <b style="color:#d97706">${finMoney(restante)}</b>. Sem ritmo de lucro mensal positivo ainda — registre vendas e despesas para estimar o prazo.`;
+  }
+  return `
+    <div class="fin-pb-bar"><div class="fin-pb-fill" style="width:${pct.toFixed(1)}%">${pct>=12?pct.toFixed(0)+'%':''}</div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#6B7280;margin-top:-4px">
+      <span>Recuperado: <b style="color:#097A52">${finMoney(pago)}</b></span>
+      <span>${pct.toFixed(1)}% de ${finMoney(alvo)}</span>
+    </div>
+    <div class="fin-mini-note" style="margin-top:10px;line-height:1.6">${tempoTxt}</div>`;
+}
+
+// Lucro acumulado de toda a operação (bruto histórico − despesas históricas)
+function finLucroAcumuladoTotal(){
+  const pTudo = {preset:'tudo', from:'2000-01', to:'2999-12', key:'acc'};
+  const d=finLoad();
+  // Receita real do franqueado = soma de TODOS os repasses informados.
+  const repasseTotal = Object.values(d.repasse||{}).reduce((s,v)=>s+(Number(v)||0),0);
+  // Despesas acumuladas: fixas × meses ativos + todas variáveis + bolsa líquida total.
+  const meses = finMonthsInPeriod({preset:'tudo'});
+  const fixas = finDespesasFixasMes()*meses;
+  const variaveis = d.variaveis.reduce((s,v)=>s+(Number(v.valor)||0),0);
+  const bolsa = finBolsaInvestidoPeriodo(pTudo);
+  return repasseTotal - fixas - variaveis - bolsa;
+}
+// Ritmo médio de lucro mensal (lucro acumulado / meses ativos), nunca negativo p/ projeção
+function finRitmoLucroMensal(){
+  const meses = finMonthsInPeriod({preset:'tudo'});
+  const lucro = finLucroAcumuladoTotal();
+  const r = meses>0 ? lucro/meses : 0;
+  return r>0 ? r : 0;
+}
+
+// ══════════════ TABELAS ══════════════
+function finRenderAportes(){
+  const d=finLoad();
+  const body=document.getElementById('fin-aportes-body');
+  const arr=[...d.aportes].sort((a,b)=>(a.mes||'').localeCompare(b.mes||''));
+  if(!arr.length){ body.innerHTML=`<tr><td colspan="4" style="text-align:center;color:#6B7280;padding:14px">Nenhum aporte registrado</td></tr>`; return; }
+  body.innerHTML=arr.map(a=>`
+    <tr>
+      <td><input type="month" value="${a.mes||''}" onchange="finUpdAporte('${a.id}','mes',this.value)"></td>
+      <td><input type="text" value="${finEsc(a.desc||'')}" placeholder="Descrição" onchange="finUpdAporte('${a.id}','desc',this.value)"></td>
+      <td class="r"><input type="text" style="text-align:right;color:#a78bfa;font-weight:700" value="${a.valor?Number(a.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finUpdAporte('${a.id}','valor',this.value)"></td>
+      <td><button class="del-btn" onclick="finDelAporte('${a.id}')">✕</button></td>
+    </tr>`).join('');
+}
+function finRenderFixas(){
+  const d=finLoad();
+  const body=document.getElementById('fin-fixas-body');
+  if(!d.fixas.length){ body.innerHTML=`<tr><td colspan="4" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa fixa cadastrada</td></tr>`; }
+  else body.innerHTML=d.fixas.map(f=>`
+    <tr>
+      <td><input type="text" value="${finEsc(f.desc||'')}" placeholder="Ex: Aluguel, Royalties..." onchange="finUpdFixa('${f.id}','desc',this.value)"></td>
+      <td>${finCatSelect(f.cat,`finUpdFixa('${f.id}','cat',this.value)`)}</td>
+      <td class="r"><input type="text" style="text-align:right;color:#f87171;font-weight:700" value="${f.valor?Number(f.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finUpdFixa('${f.id}','valor',this.value)"></td>
+      <td><button class="del-btn" onclick="finDelFixa('${f.id}')">✕</button></td>
+    </tr>`).join('');
+  const total=finDespesasFixasMes();
+  document.getElementById('fin-fixas-total').innerHTML=`Total fixo mensal: <b style="color:#f87171">${finMoney(total)}</b> · anual: <b>${finMoney(total*12)}</b>`;
+}
+function finRenderVar(p){
+  const d=finLoad();
+  const body=document.getElementById('fin-var-body');
+  const arr=[...d.variaveis].sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
+  if(!arr.length){ body.innerHTML=`<tr><td colspan="5" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa variável lançada</td></tr>`; }
+  else body.innerHTML=arr.map(v=>{
+    const inP=finInPeriod(v.mes,p);
+    return `<tr style="${inP?'':'opacity:.45'}" title="${inP?'':'Fora do período selecionado'}">
+      <td><input type="month" value="${v.mes||''}" onchange="finUpdVar('${v.id}','mes',this.value)"></td>
+      <td><input type="text" value="${finEsc(v.desc||'')}" placeholder="Descrição" onchange="finUpdVar('${v.id}','desc',this.value)"></td>
+      <td>${finCatSelect(v.cat,`finUpdVar('${v.id}','cat',this.value)`)}</td>
+      <td class="r"><input type="text" style="text-align:right;color:#f87171;font-weight:700" value="${v.valor?Number(v.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finUpdVar('${v.id}','valor',this.value)"></td>
+      <td><button class="del-btn" onclick="finDelVar('${v.id}')">✕</button></td>
+    </tr>`;}).join('');
+  const totalP=finDespesasVariaveisPeriodo(p);
+  document.getElementById('fin-var-total').innerHTML=`Variáveis no período: <b style="color:#f87171">${finMoney(totalP)}</b>`;
+}
+const FIN_CATS=['Operacional','Marketing','Royalties / Franquia','Salários / Pró-labore','Impostos / Taxas','Software / Ferramentas','Aluguel / Estrutura','Deslocamento','Outros'];
+function finCatSelect(val,onchange){
+  return `<select onchange="${onchange}" style="background:#fff;border:1px solid #E2E5EA;color:#0d1f3c;border-radius:6px;padding:5px 6px;font-size:11.5px;font-family:inherit;width:100%">
+    ${FIN_CATS.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('')}</select>`;
+}
+function finEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function finRenderRepasse(p){
+  const body=document.getElementById('fin-repasse-body');
+  if(!body) return;
+  const d=finLoad();
+  const meses = finMesesDoPeriodo(p);
+  // limita exibição para não explodir em "todo o período"
+  const lista = meses.length>24 ? meses.slice(-24) : meses;
+  body.innerHTML = lista.map(ym=>{
+    const val=d.repasse[ym];
+    const bruto=finFaturamentoBruto({preset:'custom',from:ym,to:ym,key:'r'+ym});
+    const pctTxt = (val!=null&&val!==''&&bruto>0) ? `${(Number(val)/bruto*100).toFixed(0)}% do bruto` : (bruto>0?`bruto ${finMoneyShort(bruto)}`:'sem vendas');
+    return `<tr>
+      <td style="font-weight:700;color:#0d1f3c">${finMesNome(ym)}</td>
+      <td class="r"><input type="text" style="text-align:right;color:#0d9488;font-weight:700" value="${(val!=null&&val!=='')?Number(val).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finSaveRepasse('${ym}',this.value)"></td>
+      <td style="color:#6B7280;font-size:11.5px">${pctTxt}</td>
+    </tr>`;
+  }).join('');
+  const totalRep=finRepassePeriodo(p);
+  const desp=finDespesasTotaisPeriodo(p);
+  const note=document.getElementById('fin-repasse-note');
+  if(note) note.innerHTML = `Repasse no período: <b style="color:#0d9488">${finMoney(totalRep)}</b> − despesas ${finMoney(desp)} = <b style="color:${totalRep-desp>=0?'#097A52':'#dc2626'}">${finMoney(totalRep-desp)}</b> de resultado` + (meses.length>24?` · <span style="color:#9aa3b0">mostrando últimos 24 meses</span>`:'');
+}
+
+// ══════════════ AÇÕES (CRUD) ══════════════
+function finToast(msg){ const t=document.getElementById('fin-toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); clearTimeout(window._finT); window._finT=setTimeout(()=>t.classList.remove('show'),1800); }
+
+function finSaveInvestInicial(v){ const d=finLoad(); d.investInicial=finParse(v); finSave(d); finRender(); finToast('💰 Investimento inicial salvo'); }
+function finSaveInvestData(v){ const d=finLoad(); d.investInicialMes=v; finSave(d); finRender(); }
+
+function finAddAporte(){ const d=finLoad(); d.aportes.push({id:finUID(),mes:new Date().toISOString().slice(0,7),desc:'',valor:0}); finSave(d); finRenderAportes(); }
+function finUpdAporte(id,f,v){ const d=finLoad(); const a=d.aportes.find(x=>x.id===id); if(!a)return; a[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'){finRender();} finToast('✓ Aporte atualizado'); }
+function finDelAporte(id){ const d=finLoad(); d.aportes=d.aportes.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Aporte removido'); }
+
+function finAddFixa(){ const d=finLoad(); d.fixas.push({id:finUID(),desc:'',cat:'Operacional',valor:0}); finSave(d); finRenderFixas(); }
+function finUpdFixa(id,f,v){ const d=finLoad(); const x=d.fixas.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'){finRender();} finToast('✓ Despesa fixa atualizada'); }
+function finDelFixa(id){ const d=finLoad(); d.fixas=d.fixas.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa fixa removida'); }
+
+function finAddVar(){ const d=finLoad(); d.variaveis.push({id:finUID(),mes:new Date().toISOString().slice(0,7),desc:'',cat:'Outros',valor:0}); finSave(d); finRenderVar(finCurrentPeriod()); }
+function finUpdVar(id,f,v){ const d=finLoad(); const x=d.variaveis.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); finRender(); finToast('✓ Despesa atualizada'); }
+function finDelVar(id){ const d=finLoad(); d.variaveis=d.variaveis.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa removida'); }
+
+function finSaveRepasse(ym,v){ const d=finLoad(); if(v.trim()==='') delete d.repasse[ym]; else d.repasse[ym]=finParse(v); finSave(d); finRender(); finToast('💵 Repasse atualizado'); }
+
+// ══════════════ PERÍODO ══════════════
+function finPeriodPreset(){
+  const preset=document.getElementById('fin-period-preset').value;
+  const custom = preset==='custom';
+  ['fin-from','fin-period-sep','fin-to'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = custom?'':'none'; });
+  if(custom){
+    const now=new Date().toISOString().slice(0,7);
+    if(!document.getElementById('fin-from').value) document.getElementById('fin-from').value=now;
+    if(!document.getElementById('fin-to').value) document.getElementById('fin-to').value=now;
+  }
+  FIN_PERIOD = finComputePeriod(preset);
+  finRender();
+}
+function finSetCustom(){ FIN_PERIOD = finComputePeriod('custom'); finRender(); }
+
+// Init ao abrir o módulo
+function finInit(){ if(!FIN_PERIOD) FIN_PERIOD=finComputePeriod('mesatual'); finRender(); }
+
 
 function toggleMetaEdit(){
   const box = document.getElementById('metaEditBox');
@@ -11644,6 +12767,8 @@ function switchModule(mod) {
   crm.style.display   = 'none';
   var _painel = document.getElementById('modulePainel');
   if (_painel) _painel.style.display = 'none';
+  var _fin = document.getElementById('moduleFinanceiro');
+  if (_fin) _fin.style.display = 'none';
   fecharCrmPainelDrawer();
 
   _updateGlobalNav(mod);
@@ -11687,6 +12812,14 @@ function switchModule(mod) {
     document.body.style.overflow = 'hidden';
     // init painel if needed
     setTimeout(function(){ if (typeof pm_renderCards === 'function') pm_renderCards(); }, 50);
+    return;
+  }
+
+  if (mod === 'financeiro') {
+    var fin = document.getElementById('moduleFinanceiro');
+    if (fin) fin.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    setTimeout(function(){ if (typeof finInit === 'function') finInit(); }, 50);
     return;
   }
 }
