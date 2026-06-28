@@ -7736,6 +7736,27 @@ window.pm_importData        = importData;
               <input type="text" id="md-bolsatag" placeholder="Ex: Lei Seca, Premium..." oninput="saveBolsa()">
             </div>
           </div>
+          <div id="md-bolsa-venda-fields" style="display:none;margin-top:10px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:10px 12px">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#065F46;margin-bottom:8px">💰 Venda da Bolsa · campos obrigatórios</div>
+            <div class="cm-grid">
+              <div class="cm-field">
+                <div class="fl">Meio de pagamento <span style="color:#dc2626">*</span></div>
+                <select id="md-bolsapgto" onchange="saveBolsa()">
+                  <option value="">— Selecione —</option>
+                  <option value="Pix">Pix</option>
+                  <option value="Boleto">Boleto</option>
+                  <option value="Cartão">Cartão de crédito</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Transferência">Transferência</option>
+                </select>
+              </div>
+              <div class="cm-field">
+                <div class="fl">Repasse da franqueadora (R$) <span style="color:#dc2626">*</span></div>
+                <input type="number" id="md-bolsarepasse" step="0.5" min="0" placeholder="0,00" oninput="saveBolsa()" title="Quanto a franqueadora te repassou referente a esta venda específica">
+              </div>
+            </div>
+            <div id="md-bolsa-venda-warn" style="display:none;margin-top:8px;font-size:.72rem;color:#b91c1c;font-weight:700">⚠️ Informe o meio de pagamento e o repasse desta venda da Bolsa.</div>
+          </div>
           <div id="md-bolsa-reembolso-info" style="display:none;margin-top:10px;background:#D1FAE5;border:1px solid #6EE7B7;border-radius:8px;padding:8px 12px;font-size:.76rem;color:#065F46;font-weight:600">
             ✅ Status = Reembolso · o valor pago será devolvido ao seu saldo da Bolsa de Leads.
           </div>
@@ -8303,8 +8324,16 @@ window.pm_importData        = importData;
       <div class="fin-insights-grid" id="fin-insights"></div>
     </div>
 
+    <!-- Estimativa de Pró-labore -->
+    <div class="fin-sec-title">🎯 Estimativa de Pró-labore <span style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0">· quanto preciso vender para tirar X por mês</span></div>
+    <div class="fin-card">
+      <div class="sub">Defina o pró-labore mensal que você quer retirar (seu lucro-alvo) e o painel calcula, a partir das suas métricas reais, quanto precisa <b>vender (bruto)</b> e quanto de <b>repasse</b> isso representa no mês. Os parâmetros vêm do seu histórico, mas você pode ajustá-los para simular cenários.</div>
+      <div id="fin-prolabore-box"></div>
+    </div>
+
     <!-- Payback -->
     <div class="fin-sec-title">🎯 Retorno do investimento (Payback)</div>
+    <div class="fin-card" id="fin-pb-acumulado-box" style="margin-bottom:14px"></div>
     <div class="fin-grid2">
       <div class="fin-card">
         <h3>Investimento inicial (franquia)</h3>
@@ -8335,8 +8364,8 @@ window.pm_importData        = importData;
     <!-- Despesas fixas -->
     <div class="fin-sec-title">🏢 Despesas fixas mensais</div>
     <div class="fin-card">
-      <div class="sub">Custos recorrentes que se repetem todo mês (aluguel, royalties, salários, software...)</div>
-      <table class="fin-tbl"><thead><tr><th>Descrição</th><th style="width:150px">Categoria</th><th class="r" style="width:140px">Valor / mês</th><th style="width:44px"></th></tr></thead>
+      <div class="sub">Custos recorrentes que se repetem todo mês (aluguel, royalties, salários, software...). Defina o <b>mês de início</b> de cada despesa — e, se ela deixou de existir, o <b>mês de fim</b>. Cada fixa só é computada nos meses em que esteve vigente dentro do período consultado.</div>
+      <table class="fin-tbl"><thead><tr><th>Descrição</th><th style="width:140px">Categoria</th><th style="width:120px">Início</th><th style="width:120px">Fim</th><th class="r" style="width:120px">Valor / mês</th><th style="width:54px;text-align:center">CAC</th><th style="width:44px"></th></tr></thead>
         <tbody id="fin-fixas-body"></tbody></table>
       <button class="fin-add-btn" onclick="finAddFixa()">+ Adicionar despesa fixa</button>
       <div class="fin-mini-note" id="fin-fixas-total"></div>
@@ -8345,8 +8374,8 @@ window.pm_importData        = importData;
     <!-- Despesas variáveis -->
     <div class="fin-sec-title">📉 Despesas variáveis</div>
     <div class="fin-card">
-      <div class="sub">Gastos pontuais lançados por data (marketing, taxas, deslocamento, eventuais...)</div>
-      <table class="fin-tbl"><thead><tr><th style="width:130px">Mês</th><th>Descrição</th><th style="width:150px">Categoria</th><th class="r" style="width:140px">Valor</th><th style="width:44px"></th></tr></thead>
+      <div class="sub">Gastos pontuais lançados por data (marketing, taxas, deslocamento, eventuais...). Marque <span style="color:#A32532">☑ CAC</span> nas que forem esforço comercial de aquisição (anúncios, leads, prospecção) para entrarem no <b>CAC Global da Unidade</b>.</div>
+      <table class="fin-tbl"><thead><tr><th style="width:120px">Mês</th><th>Descrição</th><th style="width:140px">Categoria</th><th class="r" style="width:120px">Valor</th><th style="width:54px;text-align:center">CAC</th><th style="width:44px"></th></tr></thead>
         <tbody id="fin-var-body"></tbody></table>
       <button class="fin-add-btn" onclick="finAddVar()">+ Adicionar despesa variável</button>
       <div class="fin-mini-note" id="fin-var-total"></div>
@@ -9258,9 +9287,13 @@ function finLoad(){
       fixas: [],          // {id, desc, cat, valor}
       variaveis: [],      // {id, mes:'YYYY-MM', desc, cat, valor}
       repasse: {},        // { 'YYYY-MM': valor } repasse mensal da franqueadora (digitado)
+      whatsapp: {},       // { 'YYYY-MM': valor } investimento em WhatsApp Business (anúncios/ferramentas) por mês
+      pctRepasseBolsa: 39, // % do valor da venda que é repasse real do franqueado nas vendas vindas da Bolsa de Leads
+      proLabore: { alvo:0, pctRep:null, fixas:null, varPct:null }, // estimativa de pró-labore (parâmetros opcionais sobrescrevem o histórico)
+      custosOcultosSeed: false, // flag: já inseriu os campos [A Preencher] de custos ocultos do DRE
       liquidoManual: {}   // legado (não mais usado no cálculo principal)
     }, d);
-  }catch(e){ return {investInicial:0,investInicialMes:'',aportes:[],fixas:[],variaveis:[],repasse:{},liquidoManual:{}}; }
+  }catch(e){ return {investInicial:0,investInicialMes:'',aportes:[],fixas:[],variaveis:[],repasse:{},whatsapp:{},pctRepasseBolsa:39,custosOcultosSeed:false,liquidoManual:{}}; }
 }
 function finSave(d){ localStorage.setItem(FIN_KEY, JSON.stringify(d)); }
 function finUID(){ return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -9336,9 +9369,28 @@ function finQtdVendas(p){
 }
 
 // ── Despesas do período ──
-// Fixas: recorrentes → multiplicam pelo nº de meses do período
-function finDespesasFixasMes(){ const d=finLoad(); return d.fixas.reduce((s,f)=>s+(Number(f.valor)||0),0); }
-function finDespesasFixasPeriodo(p){ return finDespesasFixasMes() * finMonthsInPeriod(p); }
+// Fixas: recorrentes, mas com vigência própria (mês de início e, opcionalmente, fim).
+// Uma fixa só é computada nos meses em que estava ativa.
+// f.inicio = 'YYYY-MM' (início da vigência) · f.fim = 'YYYY-MM' (fim, inclusivo; vazio = ainda vigente)
+function finFixaAtivaNoMes(f, ym){
+  if(!ym) return false;
+  const ini = f.inicio || null;          // sem início definido → considera vigente desde sempre (compatibilidade)
+  const fim = f.fim || null;             // sem fim → ainda vigente
+  if(ini && ym < ini) return false;
+  if(fim && ym > fim) return false;
+  return true;
+}
+// Soma das fixas vigentes em UM mês específico (YYYY-MM).
+function finDespesasFixasDoMes(ym){
+  const d=finLoad();
+  return d.fixas.filter(f=>finFixaAtivaNoMes(f,ym)).reduce((s,f)=>s+(Number(f.valor)||0),0);
+}
+// Soma "mensal de referência" = fixas vigentes no MÊS ATUAL (usado em métricas mês-a-mês: cobertura, equilíbrio...).
+function finDespesasFixasMes(){ return finDespesasFixasDoMes(new Date().toISOString().slice(0,7)); }
+// Total de fixas no período = soma, mês a mês, apenas das fixas vigentes em cada mês.
+function finDespesasFixasPeriodo(p){
+  return finMesesDoPeriodo(p).reduce((s,ym)=>s+finDespesasFixasDoMes(ym),0);
+}
 // Variáveis: lançadas por mês
 function finDespesasVariaveisPeriodo(p){
   const d=finLoad();
@@ -9398,10 +9450,53 @@ function finBolsaConversao(p){
   const custoPorVenda = vendas>0 ? custoComprado/vendas : null; // CAC
   return { total, vendas, reemb, perdidos, emAberto, taxa, taxaValida, baseValida, custoMedioLead, custoPorVenda, custoComprado };
 }
-// ROI da Bolsa no período = (receita − investido) / investido
+// ROI da Bolsa no período = (receita − investido) / investido — visão BRUTA (valor cheio da venda, não é só seu).
 function finBolsaRoiPeriodo(p){
   const inv=finBolsaInvestidoPeriodo(p); const rec=finBolsaReceitaPeriodo(p);
   return inv>0 ? ((rec-inv)/inv*100) : null;
+}
+// % do valor da venda que realmente é seu (repasse), configurável (padrão 39%).
+// Mantido apenas para referência/retrocompatibilidade; o cálculo real usa o repasse informado por venda.
+function finPctRepasseBolsa(){ const d=finLoad(); const v=Number(d.pctRepasseBolsa); return (v>0&&v<=100)?v:39; }
+// Sua fatia REAL da receita gerada pela Bolsa = SOMA do repasse informado em cada venda da Bolsa.
+// Usa EXCLUSIVAMENTE o campo bolsaRepasse (valor que a franqueadora te repassou por aquela venda da Bolsa).
+// Nenhum outro valor (ex.: valor comercial da venda) é considerado.
+function finBolsaReceitaFranqueado(p){
+  return finBolsaLeads().filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); })
+    .reduce((s,l)=>s+(Number(l.bolsaRepasse)||0),0);
+}
+// Lucro real da Bolsa para o franqueado = sua fatia da receita − investido líquido (o que você de fato embolsa).
+function finBolsaLucroFranqueado(p){ return finBolsaReceitaFranqueado(p) - finBolsaInvestidoPeriodo(p); }
+// ROI real da Bolsa para o franqueado = lucro real ÷ investido líquido.
+function finBolsaRoiFranqueado(p){
+  const inv=finBolsaInvestidoPeriodo(p);
+  return inv>0 ? (finBolsaLucroFranqueado(p)/inv*100) : null;
+}
+
+// ── Despesas marcadas para compor o CAC Global (checkmark) ──
+// Fixas marcadas: somadas só nos meses em que estavam vigentes dentro do período.
+function finFixasCacPeriodo(p){
+  const d=finLoad();
+  return finMesesDoPeriodo(p).reduce((s,ym)=>
+    s + d.fixas.filter(f=>f.cac && finFixaAtivaNoMes(f,ym)).reduce((a,f)=>a+(Number(f.valor)||0),0)
+  ,0);
+}
+// Variáveis marcadas: somadas no período (pela data de lançamento).
+function finVarCacPeriodo(p){
+  const d=finLoad();
+  return d.variaveis.filter(v=>v.cac && finInPeriod(v.mes,p)).reduce((s,v)=>s+(Number(v.valor)||0),0);
+}
+// Investimento total em aquisição no período (entra no CAC Global).
+// Considera o investido líquido na Bolsa + despesas (fixas/variáveis) marcadas com ☑ CAC.
+function finInvestAquisicaoPeriodo(p){
+  return finBolsaInvestidoPeriodo(p) + finFixasCacPeriodo(p) + finVarCacPeriodo(p);
+}
+// CAC Global da Unidade = todo o esforço comercial pago marcado ÷ total de vendas do período.
+function finCacGlobalPeriodo(p){
+  const qtd = finQtdVendas(p);
+  if(qtd<=0) return null;
+  return finInvestAquisicaoPeriodo(p)/qtd;
 }
 
 // ── Repasse da franqueadora (mensal, digitado) e Resultado ──
@@ -9430,6 +9525,7 @@ function finResultado(p){ return finRepassePeriodo(p) - finDespesasTotaisPeriodo
 
 // ══════════════ RENDER PRINCIPAL ══════════════
 function finRender(){
+  finSeedCustosOcultos();
   const p = finCurrentPeriod();
   const lbl=document.getElementById('fin-period-label'); if(lbl) lbl.textContent='📅 '+p.label;
 
@@ -9447,6 +9543,7 @@ function finRender(){
   const despT = fixasP+varP+bolsaInvest;
   const resultado = repasse - despT;               // Resultado real do franqueado
   const margem = repasse>0 ? (resultado/repasse*100) : 0;   // margem sobre o repasse
+  const margemReal = bruto>0 ? (resultado/bruto*100) : 0;   // margem líquida real sobre o total vendido bruto
   const pctRepasse = bruto>0 ? (repasse/bruto*100) : 0;     // % do bruto que vira repasse
   const meses = finMonthsInPeriod(p);
   const mesesInf = finRepasseMesesInformados(p);
@@ -9459,11 +9556,11 @@ function finRender(){
     {lbl:'Repasse da franqueadora', num:finMoney(repasse), cls:'teal', rt: mesesInf>0?`${pctRepasse.toFixed(0)}% do bruto · ${mesesInf} mês(es) informado(s)`:'⚠️ informe o repasse mensal abaixo',
      tip:'Valor líquido que a franqueadora efetivamente te paga, somando os meses do período. É digitado mês a mês na seção "Repasse da franqueadora" e já vem líquido das taxas/royalties da franqueadora.'},
     {lbl:'Despesas totais', num:finMoney(despT), cls:'red', rt:`fixas ${finMoneyShort(fixasP)} · var. ${finMoneyShort(varP)} · bolsa ${finMoneyShort(bolsaInvest)}`,
-     tip:'Soma de todas as suas despesas no período: fixas (recorrentes × nº de meses) + variáveis (lançadas) + investimento líquido na Bolsa de Leads (compras − reembolsos).'},
+     tip:'Soma de todas as suas despesas no período: fixas (cada uma contada só nos meses em que esteve vigente) + variáveis (lançadas) + investimento líquido na Bolsa de Leads (compras − reembolsos).'},
     {lbl:'Resultado (lucro)', num:finMoney(resultado), cls: resultado>=0?'green':'red', rt: meses>1?`média ${finMoneyShort(resultado/meses)}/mês`:'repasse − despesas',
      tip:'Seu lucro real no período. Cálculo: repasse da franqueadora − despesas totais. É o dinheiro que de fato sobra pra você.'},
-    {lbl:'Margem do franqueado', num: repasse>0?`${margem.toFixed(1)}%`:'—', cls: margem>=30?'green':(margem>=0?'amber':'red'), rt:'resultado ÷ repasse',
-     tip:'Do que a franqueadora te repassa, qual percentual vira lucro. Cálculo: resultado ÷ repasse. Mede sua eficiência com o dinheiro que entra (não sobre o total vendido, pois a parte da franqueadora não é sua).'},
+    {lbl:'Margem Líquida Real', num: bruto>0?`${margemReal.toFixed(1)}%`:'—', cls: margemReal>=15?'green':(margemReal>=0?'amber':'red'), rt:'resultado ÷ total vendido (bruto)',
+     tip:'✅ Sua margem de lucro sobre TUDO que foi vendido (valor cheio pago pelo cliente, incluindo a parte da franqueadora). Cálculo: Resultado (lucro) ÷ Total Vendido (Bruto). É a margem que mostra o quanto o negócio, no tamanho real que ele gera, vira lucro pra você.'},
     {lbl:'🎯 Investido na Bolsa', num:finMoney(bolsaInvest), cls:'bolsa', rt: bolsaReemb>0?`${finMoneyShort(bolsaComprado)} pago − ${finMoneyShort(bolsaReemb)} reemb.`:`${finBolsaQtdComprados(p)} leads comprados`,
      tip:'Quanto você gastou líquido comprando leads na Bolsa no período. Cálculo: total pago em compras − reembolsos. Puxado automaticamente do CRM e contabilizado como despesa.'},
   ];
@@ -9472,7 +9569,8 @@ function finRender(){
 
   finRenderBolsa(p, {bolsaComprado, bolsaReemb, bolsaInvest, bolsaReceita, bolsaRoi});
   finRenderMeta();
-  finRenderHealth(p, {bruto, repasse, despT, resultado, margem, pctRepasse, qtd, meses, mesesInf, fixasP, varP, bolsaInvest, bolsaReceita, bolsaRoi, ticket});
+  finRenderHealth(p, {bruto, repasse, despT, resultado, margem, pctRepasse, qtd, meses, mesesInf, fixasP, varP, bolsaInvest, bolsaReceita, bolsaRoi, bolsaRoiReal: finBolsaRoiFranqueado(p), bolsaReceitaFranqueado: finBolsaReceitaFranqueado(p), ticket});
+  finRenderProlabore(p, {bruto, repasse, pctRepasse, qtd, meses, varP, bolsaInvest});
   finRenderPayback(p, {resultado, meses});
   finRenderAportes();
   finRenderFixas();
@@ -9484,11 +9582,19 @@ function finRender(){
 function finRenderBolsa(p, b){
   const box=document.getElementById('fin-bolsa-box');
   if(!box) return;
-  const lucroBolsa = b.bolsaReceita - b.bolsaInvest;
-  const roiTxt = b.bolsaRoi==null ? '—' : `${b.bolsaRoi.toFixed(0)}%`;
-  const roiColor = b.bolsaRoi==null ? '#6B7280' : (b.bolsaRoi>=0?'#097A52':'#dc2626');
-  const multiplicador = b.bolsaInvest>0 ? (b.bolsaReceita/b.bolsaInvest) : null;
+  const receitaFranqueado = finBolsaReceitaFranqueado(p);   // soma do repasse informado em cada venda da Bolsa
+  const lucroBolsaReal = receitaFranqueado - b.bolsaInvest;  // repasse das vendas − investido líquido
+  const roiReal = b.bolsaInvest>0 ? (lucroBolsaReal/b.bolsaInvest*100) : null;
+  const roiRealTxt = roiReal==null ? '—' : `${roiReal.toFixed(0)}%`;
+  const roiRealColor = roiReal==null ? '#6B7280' : (roiReal>=0?'#097A52':'#dc2626');
+  const multiplicador = b.bolsaInvest>0 ? (receitaFranqueado/b.bolsaInvest) : null;
   const cv = finBolsaConversao(p);
+  const qtdTotal = finQtdVendas(p);
+  const cacGlobal = finCacGlobalPeriodo(p);
+  // quantas vendas da Bolsa estão sem o repasse informado (campo obrigatório)
+  const vendasSemRepasse = finBolsaLeads().filter(l=>l.status==='Venda Realizada')
+    .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); })
+    .filter(l=>!(Number(l.bolsaRepasse)>0)).length;
 
   const fin = (lbl,val,color,tip)=>`<div><div style="font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">${lbl}${tip?` <span class="fin-help" title="${finEsc(tip)}">i</span>`:''}</div><div style="font-size:17px;font-weight:800;color:${color}">${val}</div></div>`;
 
@@ -9506,14 +9612,19 @@ function finRenderBolsa(p, b){
     </div>` : '';
 
   box.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💵 Financeiro</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px">💵 Financeiro · só valores da Bolsa</div>
+    </div>
+    <div class="fin-mini-note" style="margin-bottom:10px">Valores apurados <b>exclusivamente</b> das vendas marcadas como Bolsa de Leads. <b>Receita gerada</b> é o valor cheio movimentado nessas vendas; <b>Repasse recebido</b> é a sua fatia real (o que a franqueadora te pagou em cada venda da Bolsa). O lucro e o ROI usam o repasse, não o valor cheio.</div>
+    ${vendasSemRepasse>0?`<div class="fin-insight warn" style="margin-bottom:10px"><span class="ic">⚠️</span><span>${vendasSemRepasse} venda${vendasSemRepasse!==1?'s':''} da Bolsa sem o repasse informado. Abra o lead e preencha o repasse da franqueadora para o cálculo ficar completo.</span></div>`:''}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
       ${fin('Comprado', finMoney(b.bolsaComprado), '#A32532', 'Total pago em compras de leads na Bolsa no período (pela data de entrada do lead).')}
       ${fin('Reembolsado', finMoney(b.bolsaReemb), '#097A52', 'Valor de leads marcados como Reembolso, que volta ao seu saldo.')}
       ${fin('Investido líquido', finMoney(b.bolsaInvest), '#d97706', 'Comprado − reembolsado. É o custo real de aquisição contabilizado como despesa.')}
-      ${fin('Receita gerada', finMoney(b.bolsaReceita), '#097A52', 'Valor das vendas (pela data da venda) dos leads comprados na Bolsa.')}
-      ${fin('Lucro da Bolsa', finMoney(lucroBolsa), lucroBolsa>=0?'#097A52':'#dc2626', 'Receita gerada − investido líquido.')}
-      ${fin('ROI', roiTxt, roiColor, 'Retorno sobre o investimento na Bolsa: (receita − investido) ÷ investido.')}
+      ${fin('Receita gerada (Bolsa)', finMoney(b.bolsaReceita), '#3A5F8C', 'Valor cheio das vendas (pela data da venda) dos leads que vieram da Bolsa. É o total movimentado por esse canal — inclui a parte da franqueadora. Mostra o tamanho do negócio gerado pela Bolsa.')}
+      ${fin('Repasse recebido', finMoney(receitaFranqueado), '#097A52', 'Soma do repasse que a franqueadora te pagou nas vendas da Bolsa (campo "Repasse da franqueadora" informado em cada venda da Bolsa). É a sua receita real vinda da Bolsa.')}
+      ${fin('Lucro real da Bolsa', finMoney(lucroBolsaReal), lucroBolsaReal>=0?'#097A52':'#dc2626', '✅ Repasse recebido nas vendas da Bolsa − investido líquido. É o lucro que você de fato embolsa com a Bolsa.')}
+      ${fin('ROI real', roiRealTxt, roiRealColor, 'Retorno sobre o investimento na Bolsa: lucro real ÷ investido líquido.')}
     </div>
 
     <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;padding-top:14px;border-top:1px solid #EDEFF2">📈 Conversão dos leads comprados</div>
@@ -9523,7 +9634,8 @@ function finRenderBolsa(p, b){
       ${fin('Taxa de conversão', cv.total>0?`${cv.taxa.toFixed(1)}%`:'—', cv.taxa>=20?'#097A52':(cv.taxa>=10?'#d97706':'#dc2626'), 'Convertidos ÷ leads comprados. Quanto maior, mais eficiente é a Bolsa como canal.')}
       ${fin('Taxa (sem reemb.)', cv.baseValida>0?`${cv.taxaValida.toFixed(1)}%`:'—', '#0d1f3c', 'Conversão considerando só os leads que não foram reembolsados — mostra o aproveitamento real dos leads válidos.')}
       ${fin('Custo médio/lead', finMoney(cv.custoMedioLead), '#A32532', 'Quanto custou, em média, cada lead comprado. Total pago ÷ leads comprados.')}
-      ${fin('Custo por venda (CAC)', cv.custoPorVenda==null?'—':finMoney(cv.custoPorVenda), '#d97706', 'Custo de aquisição por cliente: total pago em leads ÷ nº de vendas. Compare com o ticket médio para saber se vale a pena.')}
+      ${fin('CAC da Bolsa', cv.custoPorVenda==null?'—':finMoney(cv.custoPorVenda), '#d97706', 'Custo de aquisição por cliente considerando só a Bolsa: total pago em leads ÷ nº de vendas vindas da Bolsa.')}
+      ${fin('CAC Global da Unidade', cacGlobal==null?'—':finMoney(cacGlobal), '#A32532', `Considera TODO o esforço comercial pago da unidade no período: investido líquido na Bolsa (${finMoneyShort(b.bolsaInvest)}) + despesas fixas/variáveis marcadas com ☑ CAC (${finMoneyShort(finFixasCacPeriodo(p)+finVarCacPeriodo(p))}), dividido pelo total de vendas do período (${qtdTotal}) — de qualquer origem, não só da Bolsa.`)}
     </div>
     ${funil}
 
@@ -9531,7 +9643,7 @@ function finRenderBolsa(p, b){
       cv.total<=0
         ? 'Nenhuma compra de leads na Bolsa neste período. Compras, reembolsos e vendas marcadas no CRM aparecem aqui automaticamente.'
         : (multiplicador!=null
-            ? `Cada R$ 1,00 investido na Bolsa gerou <b>${finMoney(multiplicador).replace('R$','R$ ')}</b> em receita · taxa de conversão de <b>${cv.taxa.toFixed(1)}%</b>${cv.custoPorVenda!=null?` · custo de ${finMoneyShort(cv.custoPorVenda)} por cliente`:''}.${b.bolsaRoi>=0?' 👍':' — atenção ao retorno.'}`
+            ? `Cada R$ 1,00 investido na Bolsa retornou <b>${finMoney(multiplicador).replace('R$','R$ ')}</b> de repasse seu · taxa de conversão de <b>${cv.taxa.toFixed(1)}%</b>${cv.custoPorVenda!=null?` · custo de ${finMoneyShort(cv.custoPorVenda)} por cliente`:''}.${roiReal!=null&&roiReal>=0?' 👍':' — atenção ao retorno.'}`
             : `${cv.total} lead(s) comprados, ainda sem vendas atribuídas. Acompanhe a conversão dos ${cv.emAberto} em aberto.`)
     }</div>`;
 }
@@ -9647,6 +9759,7 @@ function finSaveMeta(){
 
 // ══════════════ RELATÓRIO PDF (diagramado p/ impressão) ══════════════
 function finGerarPDF(){
+  finSeedCustosOcultos();
   const p = finCurrentPeriod();
   const d = finLoad();
   const M = finMoney;
@@ -9661,13 +9774,21 @@ function finGerarPDF(){
   const bolsaInvest = bolsaComprado - bolsaReemb;
   const bolsaReceita = finBolsaReceitaPeriodo(p);
   const bolsaRoi = finBolsaRoiPeriodo(p);
+  const pctRepBolsa = finPctRepasseBolsa();
+  const bolsaReceitaFranqueado = finBolsaReceitaFranqueado(p);
+  const lucroBolsaReal = finBolsaLucroFranqueado(p);
+  const roiBolsaReal = finBolsaRoiFranqueado(p);
+  const cacExtra = finFixasCacPeriodo(p)+finVarCacPeriodo(p);
+  const cacGlobal = finCacGlobalPeriodo(p);
   const cvPdf = finBolsaConversao(p);
   const despT = fixasP+varP+bolsaInvest;
   const resultado = repasse - despT;
   const margem = repasse>0 ? (resultado/repasse*100) : 0;
+  const margemReal = bruto>0 ? (resultado/bruto*100) : 0;
   const pctRepasse = bruto>0 ? (repasse/bruto*100) : 0;
   const meses = finMonthsInPeriod(p);
   const ticket = qtd>0 ? bruto/qtd : 0;
+  const ticketLiquido = qtd>0 ? repasse/qtd : 0;
   const fixasMes = finDespesasFixasMes();
   // payback
   const inicial = Number(d.investInicial)||0;
@@ -9675,6 +9796,11 @@ function finGerarPDF(){
   const investTotal = inicial+totalAportes;
   const lucroAcum = finLucroAcumuladoTotal();
   const ritmo = finRitmoLucroMensal();
+  // Resultado acumulado anterior: lucro acumulado de toda a operação MENOS o resultado do mês atual (real).
+  const ymAtual = new Date().toISOString().slice(0,7);
+  const pMesAtual = {preset:'custom', from:ymAtual, to:ymAtual, key:'pdf-mesAtual'};
+  const resultadoMesAtual = finResultado(pMesAtual);
+  const resultadoAcumuladoAnterior = lucroAcum - resultadoMesAtual;
   const pbPct = investTotal>0 ? Math.max(0,Math.min(100,lucroAcum/investTotal*100)) : 0;
   const pbRestante = Math.max(0, investTotal-lucroAcum);
   let pbTempo;
@@ -9690,7 +9816,10 @@ function finGerarPDF(){
   const hoje=new Date().toLocaleDateString('pt-BR');
 
   // despesas detalhadas
-  const fixasRows=(d.fixas||[]).filter(f=>Number(f.valor)>0).map(f=>`<tr><td>${finEsc(f.desc||'—')}</td><td>${finEsc(f.cat||'')}</td><td class="r">${M(f.valor)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">Nenhuma despesa fixa cadastrada</td></tr>';
+  const fixasRows=(d.fixas||[]).filter(f=>Number(f.valor)>0||f.tagOculto).map(f=>{
+    const vig = (f.inicio||f.fim) ? `${f.inicio?finMesNome(f.inicio):'início'} → ${f.fim?finMesNome(f.fim):'vigente'}` : 'desde o início';
+    return `<tr><td>${finEsc(f.desc||'—')}${f.cac?' <span style="color:#A32532;font-weight:700">·CAC</span>':''}</td><td>${finEsc(f.cat||'')}</td><td style="font-size:9px;color:#6B7280">${vig}</td><td class="r">${(f.tagOculto&&!Number(f.valor))?'<span style="color:#d97706;font-weight:700">[A Preencher]</span>':M(f.valor)}</td></tr>`;
+  }).join('')||'<tr><td colspan="4" class="muted">Nenhuma despesa fixa cadastrada</td></tr>';
   const varRows=(d.variaveis||[]).filter(v=>finInPeriod(v.mes,p)&&Number(v.valor)>0).map(v=>`<tr><td>${finMesNome(v.mes)}</td><td>${finEsc(v.desc||'—')}</td><td>${finEsc(v.cat||'')}</td><td class="r">${M(v.valor)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Nenhuma despesa variável no período</td></tr>';
   const repRows=finMesesDoPeriodo(p).map(ym=>{const val=d.repasse[ym];return `<tr><td>${finMesNome(ym)}</td><td class="r">${(val!=null&&val!=='')?M(val):'<span class="muted">não informado</span>'}</td></tr>`;}).join('');
 
@@ -9740,16 +9869,19 @@ function finGerarPDF(){
      <div class="kpi teal"><div class="l">Repasse da franqueadora</div><div class="v">${M(repasse)}</div><div class="r">${pctRepasse.toFixed(0)}% do bruto</div></div>
      <div class="kpi red"><div class="l">Despesas totais</div><div class="v">${M(despT)}</div><div class="r">fixas+variáveis+bolsa</div></div>
      <div class="kpi"><div class="l">Resultado (lucro)</div><div class="v" style="color:${resultado>=0?'#097A52':'#dc2626'}">${M(resultado)}</div><div class="r">repasse − despesas</div></div>
-     <div class="kpi amber"><div class="l">Margem do franqueado</div><div class="v">${repasse>0?margem.toFixed(1)+'%':'—'}</div><div class="r">resultado ÷ repasse</div></div>
+     <div class="kpi amber"><div class="l">Margem Líquida Real</div><div class="v" style="color:${margemReal>=0?'#097A52':'#dc2626'}">${bruto>0?margemReal.toFixed(1)+'%':'—'}</div><div class="r">resultado ÷ total vendido (bruto)</div></div>
      <div class="kpi bolsa"><div class="l">Investido na Bolsa</div><div class="v">${M(bolsaInvest)}</div><div class="r">líquido de reembolsos</div></div>
+     <div class="kpi teal"><div class="l">Ticket Médio Líquido (Franqueado)</div><div class="v">${finMoneyShort(ticketLiquido)}</div><div class="r">repasse ÷ ${qtd} venda(s)</div></div>
+     <div class="kpi red"><div class="l">CAC Global da Unidade</div><div class="v">${cacGlobal==null?'—':M(cacGlobal)}</div><div class="r">(bolsa + despesas CAC) ÷ ${qtd} venda(s)</div></div>
    </div>
 
    <h2>Demonstrativo de Resultado</h2>
    <div class="res-line"><span>Repasse da franqueadora (entrada real)</span><b>${M(repasse)}</b></div>
-   <div class="res-line"><span>(−) Despesas fixas (${meses} ${meses>1?'meses':'mês'} × ${M(fixasMes)})</span><span style="color:#dc2626">− ${M(fixasP)}</span></div>
+   <div class="res-line"><span>(−) Despesas fixas (vigentes no período · ${meses} ${meses>1?'meses':'mês'})</span><span style="color:#dc2626">− ${M(fixasP)}</span></div>
    <div class="res-line"><span>(−) Despesas variáveis</span><span style="color:#dc2626">− ${M(varP)}</span></div>
    <div class="res-line"><span>(−) Investimento líquido na Bolsa de Leads</span><span style="color:#dc2626">− ${M(bolsaInvest)}</span></div>
    <div class="res-line tot"><span>= Resultado do período</span><span style="color:${resultado>=0?'#097A52':'#dc2626'}">${M(resultado)}</span></div>
+   <div class="calc">Margem Líquida Real (sobre o total vendido bruto): <b style="color:${margemReal>=0?'#097A52':'#dc2626'}">${bruto>0?margemReal.toFixed(1)+'%':'—'}</b> = Resultado (${M(resultado)}) ÷ Total Vendido Bruto (${M(bruto)}).</div>
 
    <div class="twocol" style="margin-top:16px">
      <div>
@@ -9758,14 +9890,17 @@ function finGerarPDF(){
          ${row('Comprado (pago)',M(bolsaComprado))}
          ${row('Reembolsado',M(bolsaReemb))}
          ${row('Investido líquido',M(bolsaInvest),true,'#d97706')}
-         ${row('Receita gerada',M(bolsaReceita))}
-         ${row('Lucro da Bolsa',M(bolsaReceita-bolsaInvest),true,(bolsaReceita-bolsaInvest)>=0?'#097A52':'#dc2626')}
-         ${row('ROI',bolsaRoi==null?'—':bolsaRoi.toFixed(0)+'%',true,(bolsaRoi!=null&&bolsaRoi>=0)?'#097A52':'#dc2626')}
+         ${row('Receita gerada (valor cheio das vendas)',M(bolsaReceita),false,'#3A5F8C')}
+         ${row('Repasse recebido nas vendas da Bolsa',M(bolsaReceitaFranqueado),true,'#097A52')}
+         ${row('Lucro real da Bolsa (repasse − investido)',M(lucroBolsaReal),true,lucroBolsaReal>=0?'#097A52':'#dc2626')}
+         ${row('ROI real',roiBolsaReal==null?'—':roiBolsaReal.toFixed(0)+'%',true,(roiBolsaReal!=null&&roiBolsaReal>=0)?'#097A52':'#dc2626')}
          ${row('Leads comprados',String(cvPdf.total))}
          ${row('Convertidos em venda',String(cvPdf.vendas),true,'#097A52')}
          ${row('Taxa de conversão',cvPdf.total>0?cvPdf.taxa.toFixed(1)+'%':'—',true)}
          ${row('Custo médio por lead',M(cvPdf.custoMedioLead))}
-         ${row('Custo por venda (CAC)',cvPdf.custoPorVenda==null?'—':M(cvPdf.custoPorVenda))}
+         ${row('CAC da Bolsa (só leads pagos)',cvPdf.custoPorVenda==null?'—':M(cvPdf.custoPorVenda))}
+         ${row('Despesas marcadas como CAC',M(cacExtra))}
+         ${row('CAC Global da Unidade',cacGlobal==null?'—':M(cacGlobal),true,'#A32532')}
        </table>
      </div>
      <div>
@@ -9792,13 +9927,18 @@ function finGerarPDF(){
        <span>Recuperado: <b style="color:#097A52">${M(Math.min(lucroAcum,investTotal))}</b> (${pbPct.toFixed(1)}%)</span>
        <span>Falta: <b>${M(pbRestante)}</b> · ${pbTempo}</span>
      </div>
+     <div class="calc" style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb">
+       Resultado Acumulado Anterior: <b style="color:${resultadoAcumuladoAnterior>=0?'#097A52':'#dc2626'}">${M(resultadoAcumuladoAnterior)}</b>
+       &nbsp;+&nbsp; Lucro do mês atual (${finMesNome(ymAtual)}): <b style="color:${resultadoMesAtual>=0?'#097A52':'#dc2626'}">${M(resultadoMesAtual)}</b>
+       &nbsp;=&nbsp; Resultado Acumulado Total: <b style="color:${lucroAcum>=0?'#097A52':'#dc2626'}">${M(lucroAcum)}</b>
+     </div>
    </div>
 
    <div class="twocol" style="margin-top:16px">
      <div>
        <h2>Despesas fixas (mensais)</h2>
-       <table><thead><tr><th>Descrição</th><th>Categoria</th><th class="r">Valor/mês</th></tr></thead><tbody>${fixasRows}</tbody></table>
-       <div class="calc">Total fixo mensal: <b>${M(fixasMes)}</b></div>
+       <table><thead><tr><th>Descrição</th><th>Categoria</th><th>Vigência</th><th class="r">Valor/mês</th></tr></thead><tbody>${fixasRows}</tbody></table>
+       <div class="calc">Total fixo mensal: <b>${M(fixasMes)}</b> · itens marcados <span style="color:#d97706;font-weight:700">[A Preencher]</span> ainda não têm valor lançado e não entram nesse total.</div>
      </div>
      <div>
        <h2>Repasses do período</h2>
@@ -9869,7 +10009,9 @@ function finRenderHealth(p, m){
 
   // ── Métricas-chave (preenche o espaço ao lado do anel) ──
   const ticketMedio = m.qtd>0 ? m.bruto/m.qtd : 0;
-  const equilibrio = ticketMedio>0 && fixasMes>0 ? Math.ceil(fixasMes/ticketMedio) : null;
+  const ticketLiquido = m.qtd>0 ? m.repasse/m.qtd : 0;
+  const margemReal = m.bruto>0 ? (m.resultado/m.bruto*100) : 0;
+  const equilibrio = ticketLiquido>0 && fixasMes>0 ? Math.ceil(fixasMes/ticketLiquido) : null;
   const cobertura = fixasMes>0 ? repasseMes/fixasMes : null;
   const resMes = m.meses>0 ? m.resultado/m.meses : m.resultado;
   const metrics = [
@@ -9877,14 +10019,18 @@ function finRenderHealth(p, m){
      tip:'Lucro real médio por mês no período. Cálculo: (repasse da franqueadora − despesas) ÷ nº de meses. É o que efetivamente sobra pra você.'},
     {lbl:'Margem do franqueado', num: temRepasse?`${m.margem.toFixed(0)}%`:'—', sub:'resultado ÷ repasse', color: m.margem>=25?'#097A52':(m.margem>=0?'#d97706':'#dc2626'),
      tip:'Do dinheiro que a franqueadora te repassa, quanto vira lucro depois de pagar as contas. Cálculo: resultado ÷ repasse. Base é o repasse (o que entra pra você), não o total vendido — porque a parte da franqueadora nunca foi sua. Quanto maior, melhor você administra o que recebe.'},
+    {lbl:'Margem Líquida Real', num: m.bruto>0?`${margemReal.toFixed(1)}%`:'—', sub:'resultado ÷ total vendido (bruto)', color: margemReal>=15?'#097A52':(margemReal>=0?'#d97706':'#dc2626'),
+     tip:'✅ Sua margem de lucro sobre TUDO que foi vendido (valor cheio pago pelo cliente, incluindo a parte da franqueadora). Cálculo: Resultado (lucro) ÷ Total Vendido (Bruto). Diferente da "Margem do franqueado" (que divide pelo repasse): aqui o lucro é comparado ao tamanho real do negócio gerado.'},
     {lbl:'Repasse ÷ fixas', num: cobertura!=null?`${cobertura.toFixed(1)}×`:'—', sub:'cobertura de custos', color: (cobertura!=null&&cobertura>=2)?'#097A52':(cobertura!=null&&cobertura>=1?'#d97706':'#dc2626'),
      tip:'Quantas vezes o repasse mensal da franqueadora cobre suas despesas fixas. Cálculo: repasse mensal ÷ despesas fixas mensais. Abaixo de 1× é perigoso (o repasse nem paga o básico); a partir de 2× você tem folga para variáveis, lucro e reinvestir.'},
     {lbl:'Ponto de equilíbrio', num: equilibrio!=null?`${equilibrio} venda${equilibrio!==1?'s':''}`:'—', sub:'/mês p/ cobrir fixas', color:'#0d1f3c',
-     tip:'Quantas vendas por mês você precisa, no ticket médio atual, só para cobrir as despesas fixas. Cálculo: despesas fixas mensais ÷ ticket médio. Acima desse número, você começa a ter lucro.'},
+     tip:'Quantas vendas por mês você precisa para cobrir as despesas fixas. Como as fixas são pagas com a SUA parte (o repasse), o cálculo usa o ticket médio líquido (sua fatia por venda): despesas fixas mensais ÷ ticket médio líquido. Acima desse número, você começa a ter lucro.'},
     {lbl:'% do bruto repassado', num: m.bruto>0?`${m.pctRepasse.toFixed(0)}%`:'—', sub:'sua fatia do total', color:'#0d1f3c',
      tip:'De tudo que foi vendido (valor cheio pago pelo cliente), quanto chega até você antes das despesas. Cálculo: repasse ÷ total vendido. Mostra o tamanho da sua fatia no contrato de franquia. Tende a ser estável; se cair de repente, vale investigar.'},
-    {lbl:'Ticket médio', num: finMoneyShort(ticketMedio), sub:`${m.qtd} venda(s)`, color:'#0d1f3c',
+    {lbl:'Ticket médio', num: finMoneyShort(ticketMedio), sub:`${m.qtd} venda(s) · bruto`, color:'#0d1f3c',
      tip:'Valor médio (cheio) de cada venda no período. Cálculo: total vendido ÷ número de vendas.'},
+    {lbl:'Ticket Médio Líquido (Franqueado)', num: finMoneyShort(ticketLiquido), sub:`${m.qtd} venda(s) · sua parte`, color:'#0d1f3c',
+     tip:'Quanto, em média, cada venda realmente coloca no seu bolso. Cálculo: Repasse da Franqueadora ÷ total de vendas. Diferente do ticket médio bruto, que conta o valor cheio pago pelo cliente — aqui é só a sua fatia.'},
   ];
   const mEl=document.getElementById('fin-health-metrics');
   if(mEl) mEl.innerHTML = metrics.map(x=>
@@ -9912,7 +10058,7 @@ function finRenderHealth(p, m){
   }
   // ponto de equilíbrio
   if(equilibrio!=null){
-    insights.push(['info','⚖️',`Ponto de equilíbrio: com ticket médio de ${finMoneyShort(ticketMedio)}, são ~${equilibrio} venda${equilibrio!==1?'s':''}/mês para cobrir as fixas.`]);
+    insights.push(['info','⚖️',`Ponto de equilíbrio: com ticket médio líquido (sua fatia) de ${finMoneyShort(ticketLiquido)}, são ~${equilibrio} venda${equilibrio!==1?'s':''}/mês para cobrir as fixas.`]);
   }
   // proporção variáveis sobre repasse
   if(temRepasse && m.varP>0){
@@ -9925,19 +10071,150 @@ function finRenderHealth(p, m){
   }
   // Bolsa de Leads
   if(m.bolsaInvest>0){
-    if(m.bolsaRoi==null || m.bolsaReceita<=0){
+    if(m.bolsaRoiReal==null || m.bolsaReceita<=0){
       insights.push(['warn','🎯',`Você investiu ${finMoneyShort(m.bolsaInvest)} na Bolsa de Leads, mas ainda não há receita atribuída a essas compras. Acompanhe a conversão.`]);
-    } else if(m.bolsaRoi>=100){
-      insights.push(['good','🎯',`Bolsa de Leads com ROI de ${m.bolsaRoi.toFixed(0)}%: canal de aquisição eficiente. Vale escalar com cautela.`]);
-    } else if(m.bolsaRoi>=0){
-      insights.push(['info','🎯',`Bolsa de Leads com ROI de ${m.bolsaRoi.toFixed(0)}% (receita ${finMoneyShort(m.bolsaReceita)} sobre ${finMoneyShort(m.bolsaInvest)}). Positivo, mas dá pra melhorar a conversão.`]);
+    } else if(m.bolsaRoiReal>=100){
+      insights.push(['good','🎯',`Bolsa de Leads com ROI real de ${m.bolsaRoiReal.toFixed(0)}% (sobre o repasse recebido nas vendas da Bolsa): canal de aquisição eficiente. Vale escalar com cautela.`]);
+    } else if(m.bolsaRoiReal>=0){
+      insights.push(['info','🎯',`Bolsa de Leads com ROI real de ${m.bolsaRoiReal.toFixed(0)}% (repasse recebido ${finMoneyShort(m.bolsaReceitaFranqueado)} sobre ${finMoneyShort(m.bolsaInvest)} investido). Positivo, mas dá pra melhorar a conversão.`]);
     } else {
-      insights.push(['bad','🎯',`Bolsa de Leads com ROI negativo (${m.bolsaRoi.toFixed(0)}%): o gasto com leads pagos superou a receita que geraram. Revise fontes/tags antes de comprar mais.`]);
+      insights.push(['bad','🎯',`Bolsa de Leads com ROI real negativo (${m.bolsaRoiReal.toFixed(0)}%): o repasse recebido nas vendas da Bolsa não cobriu o gasto com leads pagos. Revise fontes/tags antes de comprar mais.`]);
     }
   }
 
   document.getElementById('fin-insights').innerHTML = insights.map(([c,ic,txt])=>
     `<div class="fin-insight ${c}"><span class="ic">${ic}</span><span>${txt}</span></div>`).join('');
+}
+
+// ══════════════ ESTIMATIVA DE PRÓ-LABORE ══════════════
+// Pergunta inversa: "para eu retirar R$ X de pró-labore por mês, quanto preciso
+// vender (bruto) no mês?" Trabalha de trás pra frente a partir das métricas reais:
+//   resultado_mês = repasse − fixas − (variáveis + bolsa)
+//   repasse        = bruto × pctRep         (pctRep = % do bruto que vira repasse)
+//   custo variável = bruto × varPct         (varPct = (variáveis+bolsa) ÷ bruto)
+//   → bruto = (proLabore + fixas) / (pctRep − varPct)
+// pctRep, fixas e varPct vêm do histórico do período, mas podem ser editados p/ simular cenários.
+function finRenderProlabore(p, m){
+  const box = document.getElementById('fin-prolabore-box');
+  if(!box) return;
+  const d = finLoad();
+  const cfg = d.proLabore || {alvo:0, pctRep:null, fixas:null, varPct:null};
+
+  // ── Parâmetros derivados do histórico (período selecionado) ──
+  const meses = Math.max(m.meses||1, 1);
+  // % do bruto que vira repasse (média do período)
+  const pctRepHist = m.bruto>0 ? (m.repasse/m.bruto*100) : 0;
+  // custo variável (variáveis + bolsa) como % do bruto
+  const custoVarPeriodo = (m.varP||0) + (m.bolsaInvest||0);
+  const varPctHist = m.bruto>0 ? (custoVarPeriodo/m.bruto*100) : 0;
+  // fixas mensais vigentes hoje
+  const fixasMesHist = finDespesasFixasMes();
+  // ticket bruto médio (p/ converter bruto em nº de vendas)
+  const ticketBruto = m.qtd>0 ? (m.bruto/m.qtd) : 0;
+
+  // ── Valores efetivos (override do usuário OU histórico) ──
+  const alvo   = Number(cfg.alvo)||0;
+  const pctRep = (cfg.pctRep!=null && cfg.pctRep!=='') ? Number(cfg.pctRep) : pctRepHist;
+  const fixas  = (cfg.fixas!=null && cfg.fixas!=='') ? Number(cfg.fixas) : fixasMesHist;
+  const varPct = (cfg.varPct!=null && cfg.varPct!=='') ? Number(cfg.varPct) : varPctHist;
+
+  // margem de contribuição por R$1 de venda bruta (fração)
+  const margContrib = (pctRep - varPct)/100;
+
+  // ── Cálculo inverso ──
+  let brutoNec=null, repasseNec=null, vendasNec=null, viavel=true, motivo='';
+  if(pctRep<=0){ viavel=false; motivo='Informe o % do bruto repassado (não há histórico de repasse no período).'; }
+  else if(margContrib<=0){ viavel=false; motivo='Com esses parâmetros, o custo variável consome todo o repasse: a margem de contribuição é zero ou negativa. Reduza o custo variável ou aumente o % de repasse.'; }
+  else {
+    brutoNec = (alvo + fixas) / margContrib;
+    repasseNec = brutoNec * (pctRep/100);
+    vendasNec = ticketBruto>0 ? Math.ceil(brutoNec/ticketBruto) : null;
+  }
+
+  // ── Referência: média mensal atual ──
+  const brutoMedioMes = m.bruto/meses;
+  const resultadoMedioMes = (m.repasse - fixas*meses - custoVarPeriodo)/meses;
+
+  const inp = (id,val,ph,suf)=>`<div style="display:flex;align-items:center;gap:6px">
+      ${suf==='R$'?'<span style="font-size:12px;color:#6B7280">R$</span>':''}
+      <input type="text" id="${id}" value="${val}" placeholder="${ph}" onchange="finSaveProlabore('${id.replace('fin-pl-','')}',this.value)"
+        style="width:100%;text-align:right;border:1px solid #E2E5EA;border-radius:8px;padding:7px 9px;font-weight:700;color:#0d1f3c;font-size:13px">
+      ${suf==='%'?'<span style="font-size:12px;color:#6B7280">%</span>':''}
+    </div>`;
+
+  const card = (lbl,val,color,sub)=>`<div style="background:#F8FAFC;border:1px solid #EDEFF2;border-radius:10px;padding:12px 14px">
+      <div style="font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">${lbl}</div>
+      <div style="font-size:20px;font-weight:800;color:${color};margin-top:3px">${val}</div>
+      ${sub?`<div style="font-size:10.5px;color:#9aa3b0;margin-top:2px">${sub}</div>`:''}
+    </div>`;
+
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px">
+      <div>
+        <div style="font-size:10.5px;color:#097A52;text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:5px">🎯 Pró-labore desejado / mês</div>
+        ${inp('fin-pl-alvo', alvo>0?alvo.toLocaleString('pt-BR',{minimumFractionDigits:2}):'', '0,00', 'R$')}
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px">% do bruto repassado</div>
+        ${inp('fin-pl-pctRep', (cfg.pctRep!=null&&cfg.pctRep!=='')?Number(cfg.pctRep).toLocaleString('pt-BR'):'', pctRepHist.toFixed(1), '%')}
+        <div style="font-size:9.5px;color:#9aa3b0;margin-top:3px">histórico: ${pctRepHist.toFixed(1)}%</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px">Despesas fixas / mês</div>
+        ${inp('fin-pl-fixas', (cfg.fixas!=null&&cfg.fixas!=='')?Number(cfg.fixas).toLocaleString('pt-BR',{minimumFractionDigits:2}):'', fixasMesHist.toLocaleString('pt-BR',{minimumFractionDigits:2}), 'R$')}
+        <div style="font-size:9.5px;color:#9aa3b0;margin-top:3px">cadastradas: ${finMoneyShort(fixasMesHist)}</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px">Custo variável (% do bruto)</div>
+        ${inp('fin-pl-varPct', (cfg.varPct!=null&&cfg.varPct!=='')?Number(cfg.varPct).toLocaleString('pt-BR'):'', varPctHist.toFixed(1), '%')}
+        <div style="font-size:9.5px;color:#9aa3b0;margin-top:3px">histórico: ${varPctHist.toFixed(1)}% (variáveis+bolsa)</div>
+      </div>
+    </div>
+
+    ${alvo<=0
+      ? `<div class="fin-insight info"><span class="ic">🎯</span><span>Informe o pró-labore mensal que você quer retirar acima para calcular a venda bruta necessária.</span></div>`
+      : (!viavel
+        ? `<div class="fin-insight bad"><span class="ic">🚫</span><span>${motivo}</span></div>`
+        : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+            ${card('Venda bruta necessária / mês', finMoney(brutoNec), '#097A52', `p/ retirar ${finMoneyShort(alvo)} de pró-labore`)}
+            ${card('Repasse correspondente', finMoney(repasseNec), '#0d9488', `${pctRep.toFixed(1)}% do bruto`)}
+            ${card('Vendas necessárias / mês', vendasNec!=null?`${vendasNec} venda${vendasNec!==1?'s':''}`:'—', '#0d1f3c', ticketBruto>0?`no ticket médio de ${finMoneyShort(ticketBruto)}`:'cadastre vendas p/ estimar ticket')}
+            ${card('Margem de contribuição', `${(margContrib*100).toFixed(1)}%`, '#7c3aed', 'sobra de cada R$1 vendido p/ fixas+lucro')}
+          </div>
+          <div class="fin-insight ${brutoMedioMes>=brutoNec?'good':'warn'}" style="margin-top:12px">
+            <span class="ic">${brutoMedioMes>=brutoNec?'✅':'📊'}</span>
+            <span>${brutoMedioMes>=brutoNec
+              ? `Sua média atual de <b>${finMoney(brutoMedioMes)}</b>/mês já supera os <b>${finMoney(brutoNec)}</b> necessários — o pró-labore de ${finMoneyShort(alvo)} é sustentável no ritmo atual.`
+              : `Sua média atual é <b>${finMoney(brutoMedioMes)}</b>/mês. Faltam <b>${finMoney(Math.max(0,brutoNec-brutoMedioMes))}</b>/mês em vendas brutas para sustentar um pró-labore de ${finMoneyShort(alvo)}.`}</span>
+          </div>`)}
+
+    <div class="fin-mini-note" style="margin-top:12px">Cálculo: venda bruta = (pró-labore + despesas fixas) ÷ margem de contribuição, onde a margem de contribuição = % repassado − % de custo variável. Os parâmetros vêm do período <b>${p.label}</b>; edite qualquer campo para simular outro cenário (deixe vazio para voltar ao histórico).</div>`;
+}
+function finSaveProlabore(campo, valor){
+  const d = finLoad();
+  if(!d.proLabore) d.proLabore = {alvo:0, pctRep:null, fixas:null, varPct:null};
+  if(campo==='alvo' || campo==='fixas'){
+    d.proLabore[campo] = finParse(valor);
+  } else { // pctRep, varPct — percentuais, ou vazio p/ usar histórico
+    const t = String(valor).trim();
+    d.proLabore[campo] = t==='' ? null : (Number(t.replace(/\./g,'').replace(',','.'))||0);
+  }
+  finSave(d);
+  finRenderProlabore(finCurrentPeriod(), finProlaboreMetrics());
+  finToast('🎯 Cenário de pró-labore atualizado');
+}
+// Recalcula as métricas de base p/ o pró-labore (sem refazer todo o finRender).
+function finProlaboreMetrics(){
+  const p = finCurrentPeriod();
+  return {
+    bruto: finFaturamentoBruto(p),
+    repasse: finRepassePeriodo(p),
+    pctRepasse: 0,
+    qtd: finQtdVendas(p),
+    meses: finMonthsInPeriod(p),
+    varP: finDespesasVariaveisPeriodo(p),
+    bolsaInvest: finBolsaInvestidoPeriodo(p),
+  };
 }
 
 // ══════════════ PAYBACK ══════════════
@@ -9951,6 +10228,24 @@ function finRenderPayback(p, m){
   const lucroAcumulado = finLucroAcumuladoTotal();
   // ritmo de lucro mensal (média dos últimos meses ativos)
   const ritmoMensal = finRitmoLucroMensal();
+
+  // ── Resultado Acumulado Anterior: quanto já estava acumulado ANTES do mês atual ──
+  const ymAtual = new Date().toISOString().slice(0,7);
+  const resultadoMesAtual = finResultado({preset:'custom', from:ymAtual, to:ymAtual, key:'pb-mesAtual'});
+  const resultadoAcumuladoAnterior = lucroAcumulado - resultadoMesAtual;
+  const acBox=document.getElementById('fin-pb-acumulado-box');
+  if(acBox){
+    acBox.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📐 Como chegamos ao Resultado Acumulado Total</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px">
+        <div><div class="fin-mini-note">Resultado Acumulado Anterior</div><b style="font-size:16px;color:${resultadoAcumuladoAnterior>=0?'#097A52':'#dc2626'}">${finMoney(resultadoAcumuladoAnterior)}</b></div>
+        <span style="color:#6B7280;font-weight:800">+</span>
+        <div><div class="fin-mini-note">Lucro do mês atual (${finMesNome(ymAtual)})</div><b style="font-size:16px;color:${resultadoMesAtual>=0?'#097A52':'#dc2626'}">${finMoney(resultadoMesAtual)}</b></div>
+        <span style="color:#6B7280;font-weight:800">=</span>
+        <div><div class="fin-mini-note">Resultado Acumulado Total</div><b style="font-size:16px;color:${lucroAcumulado>=0?'#097A52':'#dc2626'}">${finMoney(lucroAcumulado)}</b></div>
+      </div>
+      <div class="fin-mini-note" style="margin-top:8px">É esse "Resultado Acumulado Total" que entra no cálculo do payback abaixo (quanto já foi recuperado do capital investido). O "Resultado Acumulado Anterior" é tudo que veio antes do mês atual: meses anteriores somados.</div>`;
+  }
 
   // preenche inputs
   const ii=document.getElementById('fin-invest-inicial'); if(ii && document.activeElement!==ii) ii.value = inicial>0 ? inicial.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
@@ -10000,9 +10295,8 @@ function finLucroAcumuladoTotal(){
   const d=finLoad();
   // Receita real do franqueado = soma de TODOS os repasses informados.
   const repasseTotal = Object.values(d.repasse||{}).reduce((s,v)=>s+(Number(v)||0),0);
-  // Despesas acumuladas: fixas × meses ativos + todas variáveis + bolsa líquida total.
-  const meses = finMonthsInPeriod({preset:'tudo'});
-  const fixas = finDespesasFixasMes()*meses;
+  // Despesas acumuladas: fixas (só nos meses em que cada uma esteve vigente) + todas variáveis + bolsa líquida total.
+  const fixas = finDespesasFixasPeriodo(pTudo);
   const variaveis = d.variaveis.reduce((s,v)=>s+(Number(v.valor)||0),0);
   const bolsa = finBolsaInvestidoPeriodo(pTudo);
   return repasseTotal - fixas - variaveis - bolsa;
@@ -10030,31 +10324,56 @@ function finRenderAportes(){
     </tr>`).join('');
 }
 function finRenderFixas(){
+  finSeedCustosOcultos();
   const d=finLoad();
   const body=document.getElementById('fin-fixas-body');
-  if(!d.fixas.length){ body.innerHTML=`<tr><td colspan="4" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa fixa cadastrada</td></tr>`; }
-  else body.innerHTML=d.fixas.map(f=>`
-    <tr>
-      <td><input type="text" value="${finEsc(f.desc||'')}" placeholder="Ex: Aluguel, Royalties..." onchange="finUpdFixa('${f.id}','desc',this.value)"></td>
+  if(!d.fixas.length){ body.innerHTML=`<tr><td colspan="7" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa fixa cadastrada</td></tr>`; }
+  else body.innerHTML=d.fixas.map(f=>{
+    const vazio = f.tagOculto && !Number(f.valor);
+    const cac = !!f.cac;
+    return `
+    <tr${vazio?' style="background:#FFF8EB"':''}>
+      <td><input type="text" value="${finEsc(f.desc||'')}" placeholder="Ex: Aluguel, Royalties..." onchange="finUpdFixa('${f.id}','desc',this.value)">${vazio?'<div style="font-size:10px;color:#d97706;font-weight:700;margin-top:2px">⚠️ [A Preencher] · custo do franqueado que ainda não foi lançado</div>':''}</td>
       <td>${finCatSelect(f.cat,`finUpdFixa('${f.id}','cat',this.value)`)}</td>
+      <td><input type="month" value="${f.inicio||''}" onchange="finUpdFixa('${f.id}','inicio',this.value)" title="Mês em que esta despesa passou a existir" style="font-size:11px"></td>
+      <td><input type="month" value="${f.fim||''}" onchange="finUpdFixa('${f.id}','fim',this.value)" title="Mês em que esta despesa deixou de existir (deixe vazio se ainda vigente)" style="font-size:11px"></td>
       <td class="r"><input type="text" style="text-align:right;color:#f87171;font-weight:700" value="${f.valor?Number(f.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finUpdFixa('${f.id}','valor',this.value)"></td>
+      <td style="text-align:center"><input type="checkbox" ${cac?'checked':''} onchange="finUpdFixa('${f.id}','cac',this.checked)" title="Computar esta despesa no CAC Global da Unidade" style="width:17px;height:17px;cursor:pointer;accent-color:#A32532"></td>
       <td><button class="del-btn" onclick="finDelFixa('${f.id}')">✕</button></td>
-    </tr>`).join('');
+    </tr>`;}).join('');
   const total=finDespesasFixasMes();
-  document.getElementById('fin-fixas-total').innerHTML=`Total fixo mensal: <b style="color:#f87171">${finMoney(total)}</b> · anual: <b>${finMoney(total*12)}</b>`;
+  document.getElementById('fin-fixas-total').innerHTML=`Total fixo mensal (vigente no mês atual): <b style="color:#f87171">${finMoney(total)}</b> · anual: <b>${finMoney(total*12)}</b> · <span style="color:#A32532">☑ CAC</span> marca despesas somadas ao CAC Global.`;
+}
+// Insere uma única vez os campos de custos ocultos que faltavam na visão do franqueado
+// (Impostos/Simples, Honorários Contábeis, Rateio de Custos Operacionais, Pró-labore do Sócio), marcados [A Preencher].
+function finSeedCustosOcultos(){
+  const d=finLoad();
+  if(d.custosOcultosSeed) return;
+  d.fixas = d.fixas || [];
+  const seeds = [
+    {desc:'Impostos (Simples Nacional / DAS)', cat:'Impostos / Taxas'},
+    {desc:'Honorários Contábeis', cat:'Operacional'},
+    {desc:'Rateio de Custos Operacionais (Energia, Internet, etc.)', cat:'Aluguel / Estrutura'},
+    {desc:'Pró-labore do Sócio', cat:'Salários / Pró-labore'},
+  ];
+  seeds.forEach(s=> d.fixas.push({id:finUID(), desc:s.desc, cat:s.cat, valor:0, tagOculto:true, inicio:finFirstActivityMonth(), fim:'', cac:false}));
+  d.custosOcultosSeed = true;
+  finSave(d);
 }
 function finRenderVar(p){
   const d=finLoad();
   const body=document.getElementById('fin-var-body');
   const arr=[...d.variaveis].sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
-  if(!arr.length){ body.innerHTML=`<tr><td colspan="5" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa variável lançada</td></tr>`; }
+  if(!arr.length){ body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa variável lançada</td></tr>`; }
   else body.innerHTML=arr.map(v=>{
     const inP=finInPeriod(v.mes,p);
+    const cac = !!v.cac;
     return `<tr style="${inP?'':'opacity:.45'}" title="${inP?'':'Fora do período selecionado'}">
       <td><input type="month" value="${v.mes||''}" onchange="finUpdVar('${v.id}','mes',this.value)"></td>
       <td><input type="text" value="${finEsc(v.desc||'')}" placeholder="Descrição" onchange="finUpdVar('${v.id}','desc',this.value)"></td>
       <td>${finCatSelect(v.cat,`finUpdVar('${v.id}','cat',this.value)`)}</td>
       <td class="r"><input type="text" style="text-align:right;color:#f87171;font-weight:700" value="${v.valor?Number(v.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''}" placeholder="0,00" onchange="finUpdVar('${v.id}','valor',this.value)"></td>
+      <td style="text-align:center"><input type="checkbox" ${cac?'checked':''} onchange="finUpdVar('${v.id}','cac',this.checked)" title="Computar esta despesa no CAC Global da Unidade" style="width:17px;height:17px;cursor:pointer;accent-color:#A32532"></td>
       <td><button class="del-btn" onclick="finDelVar('${v.id}')">✕</button></td>
     </tr>`;}).join('');
   const totalP=finDespesasVariaveisPeriodo(p);
@@ -10100,15 +10419,16 @@ function finAddAporte(){ const d=finLoad(); d.aportes.push({id:finUID(),mes:new 
 function finUpdAporte(id,f,v){ const d=finLoad(); const a=d.aportes.find(x=>x.id===id); if(!a)return; a[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'){finRender();} finToast('✓ Aporte atualizado'); }
 function finDelAporte(id){ const d=finLoad(); d.aportes=d.aportes.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Aporte removido'); }
 
-function finAddFixa(){ const d=finLoad(); d.fixas.push({id:finUID(),desc:'',cat:'Operacional',valor:0}); finSave(d); finRenderFixas(); }
-function finUpdFixa(id,f,v){ const d=finLoad(); const x=d.fixas.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'){finRender();} finToast('✓ Despesa fixa atualizada'); }
+function finAddFixa(){ const d=finLoad(); d.fixas.push({id:finUID(),desc:'',cat:'Operacional',valor:0,inicio:new Date().toISOString().slice(0,7),fim:'',cac:false}); finSave(d); finRenderFixas(); }
+function finUpdFixa(id,f,v){ const d=finLoad(); const x=d.fixas.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'||f==='inicio'||f==='fim'||f==='cac'){finRender();} finToast('✓ Despesa fixa atualizada'); }
 function finDelFixa(id){ const d=finLoad(); d.fixas=d.fixas.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa fixa removida'); }
 
-function finAddVar(){ const d=finLoad(); d.variaveis.push({id:finUID(),mes:new Date().toISOString().slice(0,7),desc:'',cat:'Outros',valor:0}); finSave(d); finRenderVar(finCurrentPeriod()); }
+function finAddVar(){ const d=finLoad(); d.variaveis.push({id:finUID(),mes:new Date().toISOString().slice(0,7),desc:'',cat:'Outros',valor:0,cac:false}); finSave(d); finRenderVar(finCurrentPeriod()); }
 function finUpdVar(id,f,v){ const d=finLoad(); const x=d.variaveis.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); finRender(); finToast('✓ Despesa atualizada'); }
 function finDelVar(id){ const d=finLoad(); d.variaveis=d.variaveis.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa removida'); }
 
 function finSaveRepasse(ym,v){ const d=finLoad(); if(v.trim()==='') delete d.repasse[ym]; else d.repasse[ym]=finParse(v); finSave(d); finRender(); finToast('💵 Repasse atualizado'); }
+function finSavePctRepasseBolsa(v){ const d=finLoad(); let n=Number(String(v).replace(',','.')); if(!(n>0&&n<=100)) n=39; d.pctRepasseBolsa=n; finSave(d); finRender(); finToast('🎯 % de repasse da Bolsa atualizado'); }
 
 // ══════════════ PERÍODO ══════════════
 function finPeriodPreset(){
@@ -11222,6 +11542,11 @@ function changeStatusModal(ns) {
   // info de reembolso (apenas se for lead da bolsa)
   const ri = document.getElementById('md-bolsa-reembolso-info');
   if (ri) ri.style.display = (S.modalLead.isBolsa && ns==='Reembolso') ? 'block' : 'none';
+  // campos obrigatórios da venda da Bolsa (meio de pagamento + repasse)
+  finBolsaVendaFieldsToggle(S.modalLead.isBolsa, ns);
+  if (S.modalLead.isBolsa && ns==='Venda Realizada' && (!S.modalLead.bolsaPgto || !(Number(S.modalLead.bolsaRepasse)>0))){
+    crmShowToast('⚠️ Venda da Bolsa: informe o meio de pagamento e o repasse da franqueadora.');
+  }
   const dt = document.getElementById('md-dtctt');
   if (dt) dt.innerHTML = S.modalLead.dtContato
     ? `<span>${esc(S.modalLead.dtContato)}</span>`
@@ -11445,9 +11770,30 @@ function fillBolsa(l){
   document.getElementById('md-bolsacod').value = l.bolsaCodigo || '';
   document.getElementById('md-bolsaval').value = (l.bolsaValor!=null && l.bolsaValor!=='') ? l.bolsaValor : '';
   document.getElementById('md-bolsatag').value = l.bolsaTag || '';
+  const pg = document.getElementById('md-bolsapgto');   if(pg) pg.value = l.bolsaPgto || '';
+  const rp = document.getElementById('md-bolsarepasse'); if(rp) rp.value = (l.bolsaRepasse!=null && l.bolsaRepasse!=='') ? l.bolsaRepasse : '';
+  // mostra os campos de venda (pgto + repasse) só quando é bolsa E venda realizada
+  finBolsaVendaFieldsToggle(l.isBolsa, l.status);
   // info de reembolso
   const ri = document.getElementById('md-bolsa-reembolso-info');
   if (ri) ri.style.display = (l.isBolsa && l.status==='Reembolso') ? 'block' : 'none';
+}
+
+// Mostra/oculta o bloco de campos obrigatórios da venda da Bolsa e atualiza o aviso.
+function finBolsaVendaFieldsToggle(isBolsa, status){
+  const vf = document.getElementById('md-bolsa-venda-fields');
+  if(!vf) return;
+  const show = !!isBolsa && status==='Venda Realizada';
+  vf.style.display = show ? 'block' : 'none';
+  if(show) finBolsaVendaWarnRefresh();
+}
+// Atualiza só o aviso de pendência (sem reabrir o bloco).
+function finBolsaVendaWarnRefresh(){
+  const warn = document.getElementById('md-bolsa-venda-warn');
+  if(!warn) return;
+  const pg = (document.getElementById('md-bolsapgto')||{}).value || '';
+  const rp = parseFloat((document.getElementById('md-bolsarepasse')||{}).value)||0;
+  warn.style.display = (!pg || rp<=0) ? 'block' : 'none';
 }
 
 function saveBolsa(){
@@ -11457,6 +11803,8 @@ function saveBolsa(){
   const cod = document.getElementById('md-bolsacod').value;
   const val = parseFloat(document.getElementById('md-bolsaval').value)||0;
   const tag = document.getElementById('md-bolsatag').value;
+  const pgto = (document.getElementById('md-bolsapgto')||{}).value || '';
+  const repasse = parseFloat((document.getElementById('md-bolsarepasse')||{}).value)||0;
   const data = loadData();
   const lead = data.leads[S.modalLead.key];
   if (!lead) return;
@@ -11464,8 +11812,12 @@ function saveBolsa(){
   lead.bolsaCodigo = isBolsa ? cod : '';
   lead.bolsaValor  = isBolsa ? val : 0;
   lead.bolsaTag    = isBolsa ? tag : '';
+  lead.bolsaPgto   = isBolsa ? pgto : '';
+  lead.bolsaRepasse= isBolsa ? repasse : 0;
   saveData(data);
-  Object.assign(S.modalLead, {isBolsa, bolsaCodigo:lead.bolsaCodigo, bolsaValor:lead.bolsaValor, bolsaTag:lead.bolsaTag});
+  Object.assign(S.modalLead, {isBolsa, bolsaCodigo:lead.bolsaCodigo, bolsaValor:lead.bolsaValor, bolsaTag:lead.bolsaTag, bolsaPgto:lead.bolsaPgto, bolsaRepasse:lead.bolsaRepasse});
+  // atualiza visibilidade dos campos de venda + aviso
+  finBolsaVendaFieldsToggle(isBolsa, S.modalLead.status);
   // atualiza info de reembolso e o cabeçalho (badge)
   const ri = document.getElementById('md-bolsa-reembolso-info');
   if (ri) ri.style.display = (isBolsa && S.modalLead.status==='Reembolso') ? 'block' : 'none';
@@ -11718,9 +12070,13 @@ function salvarTudoModal(){
   const isB = document.getElementById('md-isbolsa');
   if(isB){ lead.isBolsa = isB.checked;
     if(isB.checked){
-      const bc=gv('md-bolsacod'); if(bc!==undefined) lead.bolsaCod = bc;
+      const bc=gv('md-bolsacod'); if(bc!==undefined) lead.bolsaCodigo = bc;
       const bv=gv('md-bolsaval'); if(bv!==undefined && bv!=='') lead.bolsaValor = parseFloat(bv)||0;
       const bt=gv('md-bolsatag'); if(bt!==undefined) lead.bolsaTag = bt;
+      const bpg=gv('md-bolsapgto');     if(bpg!==undefined) lead.bolsaPgto = bpg;
+      const brp=gv('md-bolsarepasse');  if(brp!==undefined) lead.bolsaRepasse = (brp!=='') ? (parseFloat(brp)||0) : 0;
+    } else {
+      lead.bolsaPgto=''; lead.bolsaRepasse=0;
     }
   }
   // Prazos
@@ -11732,7 +12088,12 @@ function salvarTudoModal(){
   renderLeads();
   // Atualiza cabeçalho do modal
   const h=document.getElementById('md-nome'); if(h) h.textContent = lead.nome||'—';
-  crmShowToast('💾 Alterações salvas!');
+  if(lead.isBolsa && lead.status==='Venda Realizada' && (!lead.bolsaPgto || !(Number(lead.bolsaRepasse)>0))){
+    finBolsaVendaWarnRefresh();
+    crmShowToast('⚠️ Salvo, mas falta o meio de pagamento e/ou o repasse desta venda da Bolsa.');
+  } else {
+    crmShowToast('💾 Alterações salvas!');
+  }
 }
 
 // Exclui o lead atualmente aberto no cartão
@@ -12028,7 +12389,9 @@ function aplicarComercialBolsa(lead, row, cols){
   const valorPago = num('VALOR PAGO LEAD');
   const tagBolsa  = txt('TAG BOLSA');
   const codBolsa  = txt('CÓDIGO BOLSA') || txt('CODIGO BOLSA');
-  if(['SIM','S','TRUE','1','X'].includes(bolsaFlag) || valorPago!=null || tagBolsa || codBolsa){
+  const pgtoBolsa = txt('MEIO PGTO BOLSA');
+  const repBolsa  = num('REPASSE BOLSA');
+  if(['SIM','S','TRUE','1','X'].includes(bolsaFlag) || valorPago!=null || tagBolsa || codBolsa || pgtoBolsa || repBolsa!=null){
     lead.isBolsa = true;
     if(valorPago!=null) lead.bolsaValor = valorPago;
     else if(present('VALOR PAGO LEAD')) lead.bolsaValor = 0;
@@ -12036,11 +12399,17 @@ function aplicarComercialBolsa(lead, row, cols){
     else if(present('TAG BOLSA')) lead.bolsaTag = '';
     if(codBolsa) lead.bolsaCodigo = codBolsa;
     else if(present('CÓDIGO BOLSA','CODIGO BOLSA')) lead.bolsaCodigo = '';
+    if(pgtoBolsa) lead.bolsaPgto = pgtoBolsa;
+    else if(present('MEIO PGTO BOLSA')) lead.bolsaPgto = '';
+    if(repBolsa!=null) lead.bolsaRepasse = repBolsa;
+    else if(present('REPASSE BOLSA')) lead.bolsaRepasse = 0;
   } else if(bolsaFlag==='NAO' || bolsaFlag==='NÃO' || bolsaFlag==='N' || (present('BOLSA DE LEADS') && bolsaFlag==='')){
     lead.isBolsa = false;
     if(present('VALOR PAGO LEAD')) lead.bolsaValor = 0;
     if(present('TAG BOLSA')) lead.bolsaTag = '';
     if(present('CÓDIGO BOLSA','CODIGO BOLSA')) lead.bolsaCodigo = '';
+    if(present('MEIO PGTO BOLSA')) lead.bolsaPgto = '';
+    if(present('REPASSE BOLSA')) lead.bolsaRepasse = 0;
   }
 
   // ── Comercial ──
@@ -12381,6 +12750,8 @@ function exportXLSX() {
     'CÓDIGO BOLSA': l.bolsaCodigo||'',
     'VALOR PAGO LEAD': (l.bolsaValor!=null && l.bolsaValor!=='') ? Number(l.bolsaValor) : '',
     'TAG BOLSA': l.bolsaTag||'',
+    'MEIO PGTO BOLSA': l.bolsaPgto||'',
+    'REPASSE BOLSA': (l.bolsaRepasse!=null && l.bolsaRepasse!=='') ? Number(l.bolsaRepasse) : '',
     'SERVIÇO': l.servico||'', 'VALOR BASE': (l.valorBase!=null && l.valorBase!=='') ? Number(l.valorBase) : '',
     'DESCONTO %': (l.descPct!=null && l.descPct!=='') ? Number(l.descPct) : '',
     'VALOR FINAL': (l.valorFinal!=null && l.valorFinal!=='') ? Number(l.valorFinal) : '',
@@ -13368,7 +13739,9 @@ function _doSubir(cfg, parsed, n) {
   syncLog('Enviando '+n+' lead(s)...','info');
   document.getElementById('sync-upload-status').textContent = '⏳ Enviando...';
 
+  var _finRaw = null; try { _finRaw = localStorage.getItem(FIN_KEY); } catch(e){}
   var payload = JSON.stringify(Object.assign({}, parsed, {
+    _fin: _finRaw ? JSON.parse(_finRaw) : undefined,
     _sync: {
       exportedAt: new Date().toISOString(),
       leadsCount: n,
@@ -13426,6 +13799,9 @@ function syncBaixar() {
     function aplicar(cloud) {
       btn.disabled = false; btn.textContent = '⬇️ Baixar e aplicar';
       var _meta = cloud._sync; delete cloud._sync;
+      // Restaura os dados financeiros (módulo Financeiro), se vierem na nuvem
+      var _fin = cloud._fin; delete cloud._fin;
+      if (_fin) { try { localStorage.setItem(FIN_KEY, JSON.stringify(_fin)); } catch(e){} }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
       localStorage.setItem('somultas_last_import', new Date().toISOString());
       var n = Object.keys(cloud.leads||{}).length;
@@ -13434,6 +13810,7 @@ function syncBaixar() {
       document.getElementById('sync-download-status').textContent = '✅ '+n+' leads aplicados!';
       try { if(typeof renderDashboard==='function') renderDashboard(); } catch(e){}
       try { if(typeof renderLeads==='function') renderLeads(); } catch(e){}
+      try { if(typeof finRender==='function' && document.getElementById('moduleFinanceiro') && document.getElementById('moduleFinanceiro').style.display!=='none') finRender(); } catch(e){}
       try { if(typeof crmShowToast==='function') crmShowToast('⬇️ '+n+' leads atualizados da nuvem'); } catch(e){}
     }
 
