@@ -8233,17 +8233,20 @@ window.pm_importData        = importData;
 .fin-insight .ic{font-size:16px;flex-shrink:0}
 .fin-health{display:flex;align-items:center;gap:16px;margin-bottom:6px}
 .fin-health-score{font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1}
-.fin-health-ring{width:96px;height:96px;flex-shrink:0}
-.fin-health-top{display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #EDEFF2;margin-bottom:14px}
-.fin-health-ringbox{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.fin-health-ring{width:104px;height:104px;flex-shrink:0}
+.fin-health-top{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #EDEFF2;margin-bottom:14px}
+.fin-health-ringbox{display:flex;align-items:center;gap:14px;flex-shrink:0;padding-top:6px}
 .fin-health-meta{display:flex;flex-direction:column;gap:2px}
-.fin-health-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px 18px;flex:1;min-width:240px}
-.fin-hm{padding:2px 0}
-.fin-hm .hm-lbl{font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
-.fin-hm .hm-num{font-size:17px;font-weight:800;color:#0d1f3c;line-height:1.2;margin-top:1px}
-.fin-hm .hm-sub{font-size:10.5px;color:#9aa3b0;margin-top:0}
+.fin-health-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;flex:1;min-width:260px}
+.fin-hm{padding:11px 13px;background:#FAFBFC;border:1px solid #EDEFF2;border-radius:10px}
+.fin-hm .hm-lbl{font-size:10.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:700;line-height:1.25}
+.fin-hm .hm-num{font-size:23px;font-weight:800;color:#0d1f3c;line-height:1.15;margin-top:4px;letter-spacing:-.3px}
+.fin-hm .hm-sub{font-size:10.5px;color:#9aa3b0;margin-top:2px}
 .fin-hm .hm-lbl-row{display:flex;align-items:center;gap:4px}
-.fin-help{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#E2E5EA;color:#6B7280;font-size:9px;font-weight:800;cursor:help;flex-shrink:0;font-style:normal}
+.fin-hm-destaque{background:#fff;border-width:1.5px;box-shadow:0 1px 4px rgba(13,31,60,.06)}
+.fin-hm-destaque .hm-num{font-size:29px}
+.fin-hm-destaque .hm-lbl{color:#0d1f3c}
+.fin-help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#E2E5EA;color:#6B7280;font-size:9px;font-weight:800;cursor:help;flex-shrink:0;font-style:normal}
 .fin-help:hover{background:#097A52;color:#fff}
 .fin-insights-head{font-size:12px;font-weight:700;color:#0d1f3c;margin-bottom:10px}
 .fin-insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -8283,6 +8286,10 @@ window.pm_importData        = importData;
     <!-- KPIs principais -->
     <div class="fin-sec-title">📊 Resultado do período</div>
     <div class="fin-kpis" id="fin-kpis"></div>
+
+    <!-- Gráficos de acompanhamento (sempre o ano corrente) -->
+    <div class="fin-sec-title">📈 Acompanhamento do ano <span style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0">· evolução, plano de faturamento, payback e metas — ano corrente, independente do filtro</span></div>
+    <div id="fin-graficos-box"></div>
 
     <!-- Meta & Desafio do mês -->
     <div class="fin-sec-title">🎯 Meta &amp; Desafio <span id="fin-meta-mes" style="font-size:10px;font-weight:600;color:#6B7280;text-transform:none;letter-spacing:0"></span></div>
@@ -9523,6 +9530,59 @@ function finRepasseMesesInformados(p){
 // Resultado real do franqueado = repasse da franqueadora − despesas.
 function finResultado(p){ return finRepassePeriodo(p) - finDespesasTotaisPeriodo(p); }
 
+// ── Séries mensais para os gráficos do relatório ──
+// Faturamento bruto (valor cheio das vendas) de UM mês.
+function finBrutoDoMes(ym){
+  const valOf = l => Number(l.valorFinal) || ((Number(l.valorBase)||0)*(1-(Number(l.descPct)||0)/100));
+  return Object.values(loadData().leads||{})
+    .filter(l=>l.status==='Venda Realizada' && (leadSaleIso(l)||'').slice(0,7)===ym)
+    .reduce((s,l)=>s+valOf(l),0);
+}
+// Repasse informado de UM mês.
+function finRepasseDoMes(ym){ const d=finLoad(); return Number(d.repasse[ym])||0; }
+// Despesas totais de UM mês (fixas vigentes + variáveis do mês + investido líquido na bolsa do mês).
+function finDespesasDoMes(ym){
+  const d=finLoad();
+  const fix=finDespesasFixasDoMes(ym);
+  const varM=d.variaveis.filter(v=>v.mes===ym).reduce((s,v)=>s+(Number(v.valor)||0),0);
+  const pMes={preset:'custom',from:ym,to:ym};
+  const bolsa=finBolsaInvestidoPeriodo(pMes);
+  return fix+varM+bolsa;
+}
+// Constrói a série mensal completa do período (faturamento, repasse, meta, desafio, despesas, resultado).
+function finSerieMensal(p){
+  return finMesesDoPeriodo(p).map(ym=>{
+    const bruto=finBrutoDoMes(ym);
+    const rep=finRepasseDoMes(ym);
+    const desp=finDespesasDoMes(ym);
+    const mt=(typeof getMetaDeMes==='function')?getMetaDeMes(ym):{meta:0,desafio:0};
+    return { ym, label:finMesNome(ym), bruto, repasse:rep, despesas:desp,
+             resultado: rep-desp, meta:mt.meta||0, desafio:mt.desafio||0 };
+  });
+}
+// Série fixa de Janeiro a Dezembro do ANO CORRENTE (os gráficos sempre mostram o ano todo).
+function finSerieAnoCorrente(){
+  const hoje=new Date();
+  const ano=hoje.getFullYear();
+  const mesAtual=hoje.getMonth()+1; // 1-based
+  const out=[];
+  for(let m=1;m<=12;m++){
+    const ym=`${ano}-${String(m).padStart(2,'0')}`;
+    const futuro = m>mesAtual; // mês ainda não ocorrido
+    const bruto=finBrutoDoMes(ym);
+    const rep=finRepasseDoMes(ym);
+    const desp=finDespesasDoMes(ym);
+    const mt=(typeof getMetaDeMes==='function')?getMetaDeMes(ym):{meta:0,desafio:0};
+    out.push({ ym, label:finMesAbrev(ym), futuro, bruto, repasse:rep, despesas:desp,
+               resultado: rep-desp, meta:mt.meta||0, desafio:mt.desafio||0 });
+  }
+  return out;
+}
+// Rótulo curto de mês (jan, fev…) para os eixos dos gráficos do ano corrente.
+function finMesAbrev(ym){ if(!ym) return '—'; const m=parseInt(ym.split('-')[1]); return (FIN_MESES[m-1]||'?').slice(0,3); }
+// Plano de faturamento mensal acordado com a franqueadora (referência fixa).
+const FIN_PLANO_FATURAMENTO = 15000;
+
 // ══════════════ RENDER PRINCIPAL ══════════════
 function finRender(){
   finSeedCustosOcultos();
@@ -9576,6 +9636,7 @@ function finRender(){
   finRenderFixas();
   finRenderVar(p);
   finRenderRepasse(p);
+  finRenderGraficos();
 }
 
 // ══════════════ BOLSA DE LEADS (resumo automático) ══════════════
@@ -9596,7 +9657,7 @@ function finRenderBolsa(p, b){
     .filter(l=>{ const iso=leadSaleIso(l); return iso && finInPeriod(iso.slice(0,7), p); })
     .filter(l=>!(Number(l.bolsaRepasse)>0)).length;
 
-  const fin = (lbl,val,color,tip)=>`<div><div style="font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;font-weight:700">${lbl}${tip?` <span class="fin-help" title="${finEsc(tip)}">i</span>`:''}</div><div style="font-size:17px;font-weight:800;color:${color}">${val}</div></div>`;
+  const fin = (lbl,val,color,tip,destaque)=>`<div class="fin-hm${destaque?' fin-hm-destaque':''}" style="${destaque?'border-color:'+color+'33':''}"><div class="hm-lbl-row"><span class="hm-lbl">${lbl}</span>${tip?`<span class="fin-help" title="${finEsc(tip)}">i</span>`:''}</div><div class="hm-num" style="color:${color}">${val}</div></div>`;
 
   // barra de funil do cohort (vendas / em aberto / perdidos / reembolsos)
   const seg=(n,c)=> cv.total>0 ? `<div style="width:${(n/cv.total*100).toFixed(1)}%;background:${c}" title="${n}"></div>` : '';
@@ -9617,18 +9678,18 @@ function finRenderBolsa(p, b){
     </div>
     <div class="fin-mini-note" style="margin-bottom:10px">Valores apurados <b>exclusivamente</b> das vendas marcadas como Bolsa de Leads. <b>Receita gerada</b> é o valor cheio movimentado nessas vendas; <b>Repasse recebido</b> é a sua fatia real (o que a franqueadora te pagou em cada venda da Bolsa). O lucro e o ROI usam o repasse, não o valor cheio.</div>
     ${vendasSemRepasse>0?`<div class="fin-insight warn" style="margin-bottom:10px"><span class="ic">⚠️</span><span>${vendasSemRepasse} venda${vendasSemRepasse!==1?'s':''} da Bolsa sem o repasse informado. Abra o lead e preencha o repasse da franqueadora para o cálculo ficar completo.</span></div>`:''}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
       ${fin('Comprado', finMoney(b.bolsaComprado), '#A32532', 'Total pago em compras de leads na Bolsa no período (pela data de entrada do lead).')}
       ${fin('Reembolsado', finMoney(b.bolsaReemb), '#097A52', 'Valor de leads marcados como Reembolso, que volta ao seu saldo.')}
       ${fin('Investido líquido', finMoney(b.bolsaInvest), '#d97706', 'Comprado − reembolsado. É o custo real de aquisição contabilizado como despesa.')}
-      ${fin('Receita gerada (Bolsa)', finMoney(b.bolsaReceita), '#3A5F8C', 'Valor cheio das vendas (pela data da venda) dos leads que vieram da Bolsa. É o total movimentado por esse canal — inclui a parte da franqueadora. Mostra o tamanho do negócio gerado pela Bolsa.')}
-      ${fin('Repasse recebido', finMoney(receitaFranqueado), '#097A52', 'Soma do repasse que a franqueadora te pagou nas vendas da Bolsa (campo "Repasse da franqueadora" informado em cada venda da Bolsa). É a sua receita real vinda da Bolsa.')}
-      ${fin('Lucro real da Bolsa', finMoney(lucroBolsaReal), lucroBolsaReal>=0?'#097A52':'#dc2626', '✅ Repasse recebido nas vendas da Bolsa − investido líquido. É o lucro que você de fato embolsa com a Bolsa.')}
-      ${fin('ROI real', roiRealTxt, roiRealColor, 'Retorno sobre o investimento na Bolsa: lucro real ÷ investido líquido.')}
+      ${fin('Receita gerada (Bolsa)', finMoney(b.bolsaReceita), '#3A5F8C', 'Valor cheio das vendas (pela data da venda) dos leads que vieram da Bolsa. É o total movimentado por esse canal — inclui a parte da franqueadora. Mostra o tamanho do negócio gerado pela Bolsa.', true)}
+      ${fin('Repasse recebido', finMoney(receitaFranqueado), '#097A52', 'Soma do repasse que a franqueadora te pagou nas vendas da Bolsa (campo "Repasse da franqueadora" informado em cada venda da Bolsa). É a sua receita real vinda da Bolsa.', true)}
+      ${fin('Lucro real da Bolsa', finMoney(lucroBolsaReal), lucroBolsaReal>=0?'#097A52':'#dc2626', '✅ Repasse recebido nas vendas da Bolsa − investido líquido. É o lucro que você de fato embolsa com a Bolsa.', true)}
+      ${fin('ROI real', roiRealTxt, roiRealColor, 'Retorno sobre o investimento na Bolsa: lucro real ÷ investido líquido.', true)}
     </div>
 
     <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;padding-top:14px;border-top:1px solid #EDEFF2">📈 Conversão dos leads comprados</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
       ${fin('Leads comprados', String(cv.total), '#0d1f3c', 'Quantidade de leads adquiridos na Bolsa no período (pela data de entrada).')}
       ${fin('Convertidos', String(cv.vendas), '#097A52', 'Quantos desses leads comprados viraram Venda Realizada.')}
       ${fin('Taxa de conversão', cv.total>0?`${cv.taxa.toFixed(1)}%`:'—', cv.taxa>=20?'#097A52':(cv.taxa>=10?'#d97706':'#dc2626'), 'Convertidos ÷ leads comprados. Quanto maior, mais eficiente é a Bolsa como canal.')}
@@ -9758,6 +9819,95 @@ function finSaveMeta(){
 }
 
 // ══════════════ RELATÓRIO PDF (diagramado p/ impressão) ══════════════
+// ══════════════ GRÁFICOS DE ACOMPANHAMENTO (SVG inline · página principal · ano corrente) ══════════════
+// Abreviação curta para eixos (R$ 15k, R$ 1,2k…)
+function finK(v){ v=Number(v)||0; const a=Math.abs(v); if(a>=1000) return (v/1000).toFixed(a>=10000?0:1).replace('.',',')+'k'; return String(Math.round(v)); }
+function finChartEscape(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Gráfico de linhas/área: faturamento bruto por mês + linha de meta + linha do plano de faturamento.
+function finSvgEvolucao(serie){
+  const W=720, H=240, padL=54, padR=18, padT=18, padB=46;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const n=serie.length;
+  const plano=FIN_PLANO_FATURAMENTO;
+  const maxData=Math.max(plano, ...serie.map(s=>Math.max(s.bruto, s.meta||0, s.desafio||0)), 1);
+  const maxY=Math.ceil(maxData*1.12/1000)*1000;
+  const x=i=> n<=1 ? padL+iw/2 : padL + (iw*i/(n-1));
+  const y=v=> padT + ih - (ih*(v/maxY));
+  // gridlines
+  const ticks=4; let grid='';
+  for(let t=0;t<=ticks;t++){ const gv=maxY*t/ticks; const gy=y(gv);
+    grid+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}" stroke="#EEF1F4" stroke-width="1"/>`+
+          `<text x="${padL-8}" y="${(gy+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9aa3b0">${finK(gv)}</text>`; }
+  // área + linha do faturamento (somente meses já ocorridos)
+  const ocorridos=serie.filter(s=>!s.futuro);
+  const lastIdx=ocorridos.length-1; // índice do último mês ocorrido
+  const pts=serie.map((s,i)=> s.futuro?null:`${x(i).toFixed(1)},${y(s.bruto).toFixed(1)}`).filter(Boolean).join(' ');
+  const xEndArea = lastIdx>=0 ? x(lastIdx) : padL;
+  const area=`${padL},${(padT+ih).toFixed(1)} ${pts} ${xEndArea.toFixed(1)},${(padT+ih).toFixed(1)}`;
+  // linha plano
+  const yPlano=y(plano);
+  // linha meta (conecta metas mensais dos meses já ocorridos)
+  const metaPts=serie.map((s,i)=> (!s.futuro && s.meta>0)?`${x(i).toFixed(1)},${y(s.meta).toFixed(1)}`:null).filter(Boolean).join(' ');
+  // eixo X labels
+  let xlabels='';
+  serie.forEach((s,i)=>{ if(n>12 && i%2!==0 && i!==n-1) return;
+    xlabels+=`<text x="${x(i).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="8.5" fill="${s.futuro?'#c2c8d0':'#6B7280'}">${finChartEscape(s.label)}</text>`; });
+  // pontos faturamento (somente meses já ocorridos)
+  let dots='';
+  serie.forEach((s,i)=>{ if(s.futuro) return; dots+=`<circle cx="${x(i).toFixed(1)}" cy="${y(s.bruto).toFixed(1)}" r="2.6" fill="#097A52"/>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Arial,Helvetica,sans-serif">
+    ${grid}
+    <polygon points="${area}" fill="rgba(16,185,129,0.10)" stroke="none"/>
+    <polyline points="${pts}" fill="none" stroke="#097A52" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    <line x1="${padL}" y1="${yPlano.toFixed(1)}" x2="${W-padR}" y2="${yPlano.toFixed(1)}" stroke="#A32532" stroke-width="1.6" stroke-dasharray="6 4"/>
+    <text x="${W-padR}" y="${(yPlano-5).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" fill="#A32532">Plano de faturamento ${finK(plano)}</text>
+    ${metaPts?`<polyline points="${metaPts}" fill="none" stroke="#d97706" stroke-width="1.8" stroke-dasharray="3 3"/>`:''}
+    ${xlabels}
+  </svg>`;
+}
+
+
+// Conteúdo dos gráficos (cards internos) — usado na página principal de gestão.
+// Conteúdo dos gráficos (cards internos). Recebe a série mensal e o investimento total.
+// Usado na página principal de gestão — sempre reflete o ANO CORRENTE.
+function finChartsHTML(serie, investTotal){
+  if(!serie.length) return '';
+  const ano=new Date().getFullYear();
+  const min = localStorage.getItem('fin_grafico_min')==='1';
+  const lgLine=(c,t,dash)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#4b5563;margin-right:14px"><span style="width:16px;height:0;border-top:2px ${dash?'dashed':'solid'} ${c};display:inline-block"></span>${t}</span>`;
+  return `
+   <div class="fin-card" style="margin-top:0">
+     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer" onclick="finToggleGrafico()">
+       <h3 style="font-size:13px;font-weight:700;margin:0;color:#0d1f3c">📈 Evolução do faturamento bruto · ${ano}</h3>
+       <button type="button" title="${min?'Expandir':'Minimizar'} gráfico" style="background:#F0F3F8;border:1px solid #E2E5EA;border-radius:8px;width:30px;height:30px;font-size:14px;line-height:1;cursor:pointer;color:#097A52;flex-shrink:0">${min?'▢':'━'}</button>
+     </div>
+     <div id="fin-grafico-corpo" style="display:${min?'none':'block'};margin-top:10px">
+       <div style="margin:2px 0 8px">${lgLine('#097A52','Faturamento real')} ${lgLine('#d97706','Meta do mês',true)} ${lgLine('#A32532','Plano de faturamento (R$ 15k)',true)}</div>
+       ${finSvgEvolucao(serie)}
+     </div>
+   </div>`;
+}
+// Minimiza/expande o gráfico de faturamento (estado salvo entre sessões).
+function finToggleGrafico(){
+  const corpo=document.getElementById('fin-grafico-corpo');
+  if(!corpo) return;
+  const min = corpo.style.display!=='none';
+  localStorage.setItem('fin_grafico_min', min?'1':'0');
+  finRenderGraficos();
+}
+// Renderiza os gráficos na página principal de gestão (sempre o ano corrente).
+function finRenderGraficos(){
+  const box=document.getElementById('fin-graficos-box');
+  if(!box) return;
+  const d=finLoad();
+  const inicial=Number(d.investInicial)||0;
+  const totalAportes=(d.aportes||[]).reduce((s,a)=>s+(Number(a.valor)||0),0);
+  const investTotal=inicial+totalAportes;
+  box.innerHTML=finChartsHTML(finSerieAnoCorrente(), investTotal);
+}
+
 function finGerarPDF(){
   finSeedCustosOcultos();
   const p = finCurrentPeriod();
@@ -9829,7 +9979,9 @@ function finGerarPDF(){
   <style>
    @page{size:A4;margin:14mm}
    *{box-sizing:border-box;margin:0;padding:0}
-   body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2937;font-size:11px;line-height:1.45}
+   body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2937;font-size:11px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+   svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+   .box{break-inside:avoid;page-break-inside:avoid}
    .head{background:linear-gradient(135deg,#0a5c3d,#097A52);color:#fff;padding:18px 22px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
    .head h1{font-size:19px;font-weight:800;letter-spacing:-.3px}
    .head .sub{font-size:11px;opacity:.85;margin-top:3px}
@@ -10015,26 +10167,26 @@ function finRenderHealth(p, m){
   const cobertura = fixasMes>0 ? repasseMes/fixasMes : null;
   const resMes = m.meses>0 ? m.resultado/m.meses : m.resultado;
   const metrics = [
-    {lbl:'Resultado/mês', num: finMoneyShort(resMes), sub: m.resultado>=0?'lucro médio':'prejuízo médio', color: m.resultado>=0?'#097A52':'#dc2626',
+    {lbl:'Resultado / mês', num: finMoneyShort(resMes), sub: m.resultado>=0?'lucro médio mensal':'prejuízo médio mensal', color: m.resultado>=0?'#097A52':'#dc2626', destaque:true,
      tip:'Lucro real médio por mês no período. Cálculo: (repasse da franqueadora − despesas) ÷ nº de meses. É o que efetivamente sobra pra você.'},
+    {lbl:'Margem Líquida Real', num: m.bruto>0?`${margemReal.toFixed(1)}%`:'—', sub:'resultado ÷ total vendido', color: margemReal>=15?'#097A52':(margemReal>=0?'#d97706':'#dc2626'), destaque:true,
+     tip:'✅ Sua margem de lucro sobre TUDO que foi vendido (valor cheio pago pelo cliente, incluindo a parte da franqueadora). Cálculo: Resultado (lucro) ÷ Total Vendido (Bruto). Diferente da "Margem do franqueado" (que divide pelo repasse): aqui o lucro é comparado ao tamanho real do negócio gerado.'},
+    {lbl:'Ponto de equilíbrio', num: equilibrio!=null?`${equilibrio}`:'—', sub: equilibrio!=null?`venda${equilibrio!==1?'s':''}/mês p/ cobrir fixas`:'cadastre fixas e vendas', color:'#A32532', destaque:true,
+     tip:'Quantas vendas por mês você precisa para cobrir as despesas fixas. Como as fixas são pagas com a SUA parte (o repasse), o cálculo usa o ticket médio líquido (sua fatia por venda): despesas fixas mensais ÷ ticket médio líquido. Acima desse número, você começa a ter lucro.'},
     {lbl:'Margem do franqueado', num: temRepasse?`${m.margem.toFixed(0)}%`:'—', sub:'resultado ÷ repasse', color: m.margem>=25?'#097A52':(m.margem>=0?'#d97706':'#dc2626'),
      tip:'Do dinheiro que a franqueadora te repassa, quanto vira lucro depois de pagar as contas. Cálculo: resultado ÷ repasse. Base é o repasse (o que entra pra você), não o total vendido — porque a parte da franqueadora nunca foi sua. Quanto maior, melhor você administra o que recebe.'},
-    {lbl:'Margem Líquida Real', num: m.bruto>0?`${margemReal.toFixed(1)}%`:'—', sub:'resultado ÷ total vendido (bruto)', color: margemReal>=15?'#097A52':(margemReal>=0?'#d97706':'#dc2626'),
-     tip:'✅ Sua margem de lucro sobre TUDO que foi vendido (valor cheio pago pelo cliente, incluindo a parte da franqueadora). Cálculo: Resultado (lucro) ÷ Total Vendido (Bruto). Diferente da "Margem do franqueado" (que divide pelo repasse): aqui o lucro é comparado ao tamanho real do negócio gerado.'},
     {lbl:'Repasse ÷ fixas', num: cobertura!=null?`${cobertura.toFixed(1)}×`:'—', sub:'cobertura de custos', color: (cobertura!=null&&cobertura>=2)?'#097A52':(cobertura!=null&&cobertura>=1?'#d97706':'#dc2626'),
      tip:'Quantas vezes o repasse mensal da franqueadora cobre suas despesas fixas. Cálculo: repasse mensal ÷ despesas fixas mensais. Abaixo de 1× é perigoso (o repasse nem paga o básico); a partir de 2× você tem folga para variáveis, lucro e reinvestir.'},
-    {lbl:'Ponto de equilíbrio', num: equilibrio!=null?`${equilibrio} venda${equilibrio!==1?'s':''}`:'—', sub:'/mês p/ cobrir fixas', color:'#0d1f3c',
-     tip:'Quantas vendas por mês você precisa para cobrir as despesas fixas. Como as fixas são pagas com a SUA parte (o repasse), o cálculo usa o ticket médio líquido (sua fatia por venda): despesas fixas mensais ÷ ticket médio líquido. Acima desse número, você começa a ter lucro.'},
     {lbl:'% do bruto repassado', num: m.bruto>0?`${m.pctRepasse.toFixed(0)}%`:'—', sub:'sua fatia do total', color:'#0d1f3c',
      tip:'De tudo que foi vendido (valor cheio pago pelo cliente), quanto chega até você antes das despesas. Cálculo: repasse ÷ total vendido. Mostra o tamanho da sua fatia no contrato de franquia. Tende a ser estável; se cair de repente, vale investigar.'},
     {lbl:'Ticket médio', num: finMoneyShort(ticketMedio), sub:`${m.qtd} venda(s) · bruto`, color:'#0d1f3c',
      tip:'Valor médio (cheio) de cada venda no período. Cálculo: total vendido ÷ número de vendas.'},
-    {lbl:'Ticket Médio Líquido (Franqueado)', num: finMoneyShort(ticketLiquido), sub:`${m.qtd} venda(s) · sua parte`, color:'#0d1f3c',
+    {lbl:'Ticket médio líquido', num: finMoneyShort(ticketLiquido), sub:`${m.qtd} venda(s) · sua parte`, color:'#0d1f3c',
      tip:'Quanto, em média, cada venda realmente coloca no seu bolso. Cálculo: Repasse da Franqueadora ÷ total de vendas. Diferente do ticket médio bruto, que conta o valor cheio pago pelo cliente — aqui é só a sua fatia.'},
   ];
   const mEl=document.getElementById('fin-health-metrics');
   if(mEl) mEl.innerHTML = metrics.map(x=>
-    `<div class="fin-hm"><div class="hm-lbl-row"><span class="hm-lbl">${x.lbl}</span><span class="fin-help" title="${finEsc(x.tip)}">i</span></div><div class="hm-num" style="color:${x.color}">${x.num}</div><div class="hm-sub">${x.sub}</div></div>`).join('');
+    `<div class="fin-hm${x.destaque?' fin-hm-destaque':''}" style="${x.destaque?'border-color:'+x.color+'33':''}"><div class="hm-lbl-row"><span class="hm-lbl">${x.lbl}</span><span class="fin-help" title="${finEsc(x.tip)}">i</span></div><div class="hm-num" style="color:${x.color}">${x.num}</div><div class="hm-sub">${x.sub}</div></div>`).join('');
 
   // ── INSIGHTS profissionais ──
   if(!temRepasse){
@@ -10363,12 +10515,14 @@ function finSeedCustosOcultos(){
 function finRenderVar(p){
   const d=finLoad();
   const body=document.getElementById('fin-var-body');
-  const arr=[...d.variaveis].sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
-  if(!arr.length){ body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa variável lançada</td></tr>`; }
+  // Mostra APENAS as despesas cujo mês pertence ao período selecionado.
+  const arr=[...d.variaveis]
+    .filter(v=>finInPeriod(v.mes,p))
+    .sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
+  if(!arr.length){ body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:#6B7280;padding:14px">Nenhuma despesa variável neste período</td></tr>`; }
   else body.innerHTML=arr.map(v=>{
-    const inP=finInPeriod(v.mes,p);
     const cac = !!v.cac;
-    return `<tr style="${inP?'':'opacity:.45'}" title="${inP?'':'Fora do período selecionado'}">
+    return `<tr>
       <td><input type="month" value="${v.mes||''}" onchange="finUpdVar('${v.id}','mes',this.value)"></td>
       <td><input type="text" value="${finEsc(v.desc||'')}" placeholder="Descrição" onchange="finUpdVar('${v.id}','desc',this.value)"></td>
       <td>${finCatSelect(v.cat,`finUpdVar('${v.id}','cat',this.value)`)}</td>
@@ -10377,7 +10531,10 @@ function finRenderVar(p){
       <td><button class="del-btn" onclick="finDelVar('${v.id}')">✕</button></td>
     </tr>`;}).join('');
   const totalP=finDespesasVariaveisPeriodo(p);
-  document.getElementById('fin-var-total').innerHTML=`Variáveis no período: <b style="color:#f87171">${finMoney(totalP)}</b>`;
+  const totalGeral=d.variaveis.reduce((s,v)=>s+(Number(v.valor)||0),0);
+  const ocultas=d.variaveis.length-arr.length;
+  document.getElementById('fin-var-total').innerHTML=`Variáveis no período: <b style="color:#f87171">${finMoney(totalP)}</b>`+
+    (ocultas>0?` · <span style="color:#9aa3b0">${ocultas} despesa(s) em outros meses não exibida(s) — total geral ${finMoney(totalGeral)}</span>`:'');
 }
 const FIN_CATS=['Operacional','Marketing','Royalties / Franquia','Salários / Pró-labore','Impostos / Taxas','Software / Ferramentas','Aluguel / Estrutura','Deslocamento','Outros'];
 function finCatSelect(val,onchange){
@@ -10423,7 +10580,17 @@ function finAddFixa(){ const d=finLoad(); d.fixas.push({id:finUID(),desc:'',cat:
 function finUpdFixa(id,f,v){ const d=finLoad(); const x=d.fixas.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); if(f==='valor'||f==='inicio'||f==='fim'||f==='cac'){finRender();} finToast('✓ Despesa fixa atualizada'); }
 function finDelFixa(id){ const d=finLoad(); d.fixas=d.fixas.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa fixa removida'); }
 
-function finAddVar(){ const d=finLoad(); d.variaveis.push({id:finUID(),mes:new Date().toISOString().slice(0,7),desc:'',cat:'Outros',valor:0,cac:false}); finSave(d); finRenderVar(finCurrentPeriod()); }
+function finAddVar(){
+  const d=finLoad();
+  const mesAtual=new Date().toISOString().slice(0,7);
+  d.variaveis.push({id:finUID(),mes:mesAtual,desc:'',cat:'Outros',valor:0,cac:false});
+  finSave(d);
+  const p=finCurrentPeriod();
+  finRenderVar(p);
+  if(!finInPeriod(mesAtual,p)){
+    finToast('ℹ️ Despesa criada em '+finMesNome(mesAtual)+', fora do período filtrado. Ajuste o mês ou o filtro para vê-la.');
+  }
+}
 function finUpdVar(id,f,v){ const d=finLoad(); const x=d.variaveis.find(y=>y.id===id); if(!x)return; x[f]= f==='valor'?finParse(v):v; finSave(d); finRender(); finToast('✓ Despesa atualizada'); }
 function finDelVar(id){ const d=finLoad(); d.variaveis=d.variaveis.filter(x=>x.id!==id); finSave(d); finRender(); finToast('🗑️ Despesa removida'); }
 
